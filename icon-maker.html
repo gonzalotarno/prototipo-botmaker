@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Icon Maker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      gap: 0;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      min-height: 100vh;
+      background: #1a1a1a;
+      border-right: 1px solid #2a2a2a;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    .sidebar h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .section { display: flex; flex-direction: column; gap: 10px; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* SHAPE GRID */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+    .option-btn {
+      background: #252525;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      padding: 10px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #888;
+      transition: all 0.15s;
+    }
+    .option-btn:hover { border-color: #555; color: #ccc; }
+    .option-btn.active { border-color: #6366f1; background: #1e1e3a; color: #a5b4fc; }
+    .option-btn svg { width: 22px; height: 22px; }
+
+    /* COLOR */
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-label { font-size: 12px; color: #888; flex: 1; }
+    .color-input {
+      width: 44px; height: 28px;
+      border: 1.5px solid #333;
+      border-radius: 6px;
+      cursor: pointer;
+      background: none;
+      padding: 2px;
+    }
+    .color-input::-webkit-color-swatch { border-radius: 4px; border: none; }
+
+    /* SLIDER */
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row label { font-size: 12px; color: #888; flex: 1; }
+    .slider-row span { font-size: 11px; color: #666; min-width: 28px; text-align: right; }
+    input[type=range] {
+      flex: 1; accent-color: #6366f1; height: 4px;
+    }
+
+    /* PRESETS */
+    .preset-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .preset-swatch {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .preset-swatch:hover { transform: scale(1.08); }
+    .preset-swatch.active { border-color: white; }
+
+    /* EXPORT */
+    .export-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .export-btn:hover { background: #4f46e5; }
+    .export-btn.secondary {
+      background: #252525;
+      color: #ccc;
+      border: 1.5px solid #333;
+    }
+    .export-btn.secondary:hover { background: #2f2f2f; }
+
+    /* CANVAS */
+    .canvas-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 40px;
+    }
+
+    .preview-sizes {
+      display: flex;
+      align-items: flex-end;
+      gap: 32px;
+    }
+
+    .preview-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-item span {
+      font-size: 11px;
+      color: #444;
+    }
+
+    .canvas-bg {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #mainCanvas {
+      border-radius: 12px;
+    }
+
+    .bg-toggle {
+      display: flex;
+      gap: 8px;
+    }
+    .bg-toggle button {
+      background: #252525;
+      border: 1.5px solid #333;
+      border-radius: 6px;
+      color: #888;
+      font-size: 11px;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    .bg-toggle button.active {
+      border-color: #6366f1;
+      color: #a5b4fc;
+      background: #1e1e3a;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h1>Icon Maker</h1>
+
+  <!-- SHAPE -->
+  <div class="section">
+    <div class="section-label">Forma base</div>
+    <div class="grid-3">
+      <button class="option-btn active" data-shape="roundedSquare" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>
+        Cuadrado
+      </button>
+      <button class="option-btn" data-shape="circle" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+        Círculo
+      </button>
+      <button class="option-btn" data-shape="squircle" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="9"/></svg>
+        Squircle
+      </button>
+      <button class="option-btn" data-shape="hexagon" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 21,7 21,17 12,22 3,17 3,7"/></svg>
+        Hexágono
+      </button>
+      <button class="option-btn" data-shape="shield" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7z"/></svg>
+        Escudo
+      </button>
+      <button class="option-btn" data-shape="diamond" onclick="setShape(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 22,12 12,22 2,12"/></svg>
+        Rombo
+      </button>
+    </div>
+  </div>
+
+  <!-- SYMBOL -->
+  <div class="section">
+    <div class="section-label">Símbolo</div>
+    <div class="grid-4">
+      <button class="option-btn active" data-symbol="orchestrator" onclick="setSymbol(this)" title="Orquestador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="8" r="2.5"/>
+          <circle cx="5" cy="17" r="2"/>
+          <circle cx="12" cy="17" r="2"/>
+          <circle cx="19" cy="17" r="2"/>
+          <line x1="12" y1="10.5" x2="5" y2="15"/>
+          <line x1="12" y1="10.5" x2="12" y2="15"/>
+          <line x1="12" y1="10.5" x2="19" y2="15"/>
+        </svg>
+        Orch
+      </button>
+      <button class="option-btn" data-symbol="chat" onclick="setSymbol(this)" title="Chat / Agente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+        Chat
+      </button>
+      <button class="option-btn" data-symbol="bot" onclick="setSymbol(this)" title="Bot/AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="8" width="18" height="12" rx="2"/>
+          <circle cx="9" cy="14" r="1.5"/>
+          <circle cx="15" cy="14" r="1.5"/>
+          <path d="M12 3v5M10 3h4"/>
+        </svg>
+        Bot
+      </button>
+      <button class="option-btn" data-symbol="flow" onclick="setSymbol(this)" title="Flujo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="5" cy="6" r="2"/>
+          <circle cx="19" cy="6" r="2"/>
+          <circle cx="12" cy="18" r="2"/>
+          <path d="M7 6h10M13.7 16.5L19 8M10.3 16.5L5 8"/>
+        </svg>
+        Flow
+      </button>
+      <button class="option-btn" data-symbol="lightning" onclick="setSymbol(this)" title="Rápido">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M13 2L4 14h7l-1 8 9-12h-7z"/>
+        </svg>
+        Rayo
+      </button>
+      <button class="option-btn" data-symbol="layers" onclick="setSymbol(this)" title="Capas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="12,2 22,8 12,14 2,8"/>
+          <polyline points="2,12 12,18 22,12"/>
+          <polyline points="2,16 12,22 22,16"/>
+        </svg>
+        Layers
+      </button>
+      <button class="option-btn" data-symbol="cpu" onclick="setSymbol(this)" title="CPU / AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="7" y="7" width="10" height="10" rx="1"/>
+          <path d="M9 7V4M12 7V4M15 7V4M9 20v-3M12 20v-3M15 20v-3M4 9H7M4 12H7M4 15H7M17 9h3M17 12h3M17 15h3"/>
+        </svg>
+        CPU
+      </button>
+      <button class="option-btn" data-symbol="network" onclick="setSymbol(this)" title="Red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="2"/>
+          <circle cx="4" cy="6" r="1.5"/>
+          <circle cx="20" cy="6" r="1.5"/>
+          <circle cx="4" cy="18" r="1.5"/>
+          <circle cx="20" cy="18" r="1.5"/>
+          <line x1="10.3" y1="11" x2="5.5" y2="7"/>
+          <line x1="13.7" y1="11" x2="18.5" y2="7"/>
+          <line x1="10.3" y1="13" x2="5.5" y2="17"/>
+          <line x1="13.7" y1="13" x2="18.5" y2="17"/>
+        </svg>
+        Red
+      </button>
+      <button class="option-btn" data-symbol="sparkle" onclick="setSymbol(this)" title="Magia/AI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6.34 6.34L4.93 4.93M19.07 19.07l-1.41-1.41M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Spark
+      </button>
+      <button class="option-btn" data-symbol="eye" onclick="setSymbol(this)" title="Monitor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Monitor
+      </button>
+      <button class="option-btn" data-symbol="code" onclick="setSymbol(this)" title="Código">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polyline points="16,18 22,12 16,6"/>
+          <polyline points="8,6 2,12 8,18"/>
+        </svg>
+        Code
+      </button>
+      <button class="option-btn" data-symbol="settings" onclick="setSymbol(this)" title="Config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        Config
+      </button>
+    </div>
+  </div>
+
+  <!-- COLORS -->
+  <div class="section">
+    <div class="section-label">Colores</div>
+    <div class="section-label" style="font-size:10px;margin-top:-4px">Presets</div>
+    <div class="preset-grid" id="presetGrid"></div>
+    <div class="color-row">
+      <span class="color-label">Fondo</span>
+      <input type="color" class="color-input" id="bgColor" value="#6366f1" oninput="render()">
+    </div>
+    <div class="color-row">
+      <span class="color-label">Ícono</span>
+      <input type="color" class="color-input" id="iconColor" value="#ffffff" oninput="render()">
+    </div>
+  </div>
+
+  <!-- SIZE & STYLE -->
+  <div class="section">
+    <div class="section-label">Estilo</div>
+    <div class="slider-row">
+      <label>Tamaño ícono</label>
+      <input type="range" id="iconSize" min="30" max="80" value="55" oninput="updateSlider(this,'iconSizeVal');render()">
+      <span id="iconSizeVal">55%</span>
+    </div>
+    <div class="slider-row">
+      <label>Radio esquinas</label>
+      <input type="range" id="cornerRadius" min="0" max="50" value="22" oninput="updateSlider(this,'cornerRadiusVal');render()">
+      <span id="cornerRadiusVal">22</span>
+    </div>
+    <div class="slider-row">
+      <label>Grosor línea</label>
+      <input type="range" id="strokeWidth" min="5" max="30" value="14" oninput="updateSlider(this,'strokeWidthVal');render()">
+      <span id="strokeWidthVal">14</span>
+    </div>
+    <div class="slider-row">
+      <label>Gradiente</label>
+      <input type="range" id="gradient" min="0" max="100" value="0" oninput="updateSlider(this,'gradientVal');render()">
+      <span id="gradientVal">0%</span>
+    </div>
+    <div class="slider-row">
+      <label>Sombra</label>
+      <input type="range" id="shadow" min="0" max="40" value="0" oninput="updateSlider(this,'shadowVal');render()">
+      <span id="shadowVal">0</span>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="section">
+    <div class="section-label">Exportar</div>
+    <button class="export-btn" onclick="exportSVG()">Descargar SVG</button>
+    <button class="export-btn" onclick="exportPNG(512)">Descargar PNG 512px</button>
+    <button class="export-btn secondary" onclick="exportPNG(64)">Descargar PNG 64px</button>
+  </div>
+</div>
+
+<!-- CANVAS -->
+<div class="canvas-area">
+  <div class="bg-toggle">
+    <button class="active" onclick="setPreviewBg(this,'#1a1a1a')">Oscuro</button>
+    <button onclick="setPreviewBg(this,'#f5f5f5')">Claro</button>
+    <button onclick="setPreviewBg(this,'transparent')">Transparente</button>
+  </div>
+
+  <div class="canvas-bg" id="canvasBg">
+    <canvas id="mainCanvas" width="256" height="256"></canvas>
+  </div>
+
+  <div class="preview-sizes">
+    <div class="preview-item">
+      <canvas id="prev64" width="64" height="64"></canvas>
+      <span>64px</span>
+    </div>
+    <div class="preview-item">
+      <canvas id="prev128" width="128" height="128"></canvas>
+      <span>128px</span>
+    </div>
+    <div class="preview-item">
+      <canvas id="prev32" width="32" height="32"></canvas>
+      <span>32px</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// STATE
+const state = {
+  shape: 'roundedSquare',
+  symbol: 'orchestrator',
+  bgColor: '#6366f1',
+  iconColor: '#ffffff',
+  iconSize: 55,
+  cornerRadius: 22,
+  strokeWidth: 14,
+  gradient: 0,
+  shadow: 0,
+};
+
+// PRESETS
+const presets = [
+  { bg: '#6366f1', icon: '#ffffff' }, // indigo
+  { bg: '#8b5cf6', icon: '#ffffff' }, // violet
+  { bg: '#ec4899', icon: '#ffffff' }, // pink
+  { bg: '#14b8a6', icon: '#ffffff' }, // teal
+  { bg: '#f59e0b', icon: '#ffffff' }, // amber
+  { bg: '#10b981', icon: '#ffffff' }, // emerald
+  { bg: '#3b82f6', icon: '#ffffff' }, // blue
+  { bg: '#ef4444', icon: '#ffffff' }, // red
+  { bg: '#1e293b', icon: '#94a3b8' }, // dark slate
+  { bg: '#ffffff', icon: '#1e293b' }, // white
+];
+
+function initPresets() {
+  const grid = document.getElementById('presetGrid');
+  presets.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'preset-swatch' + (i === 0 ? ' active' : '');
+    el.style.background = p.bg;
+    el.style.border = '2px solid ' + (i === 0 ? 'white' : 'transparent');
+    el.onclick = () => {
+      document.querySelectorAll('.preset-swatch').forEach(s => {
+        s.style.border = '2px solid transparent';
+        s.classList.remove('active');
+      });
+      el.style.border = '2px solid white';
+      el.classList.add('active');
+      document.getElementById('bgColor').value = p.bg;
+      document.getElementById('iconColor').value = p.icon;
+      render();
+    };
+    grid.appendChild(el);
+  });
+}
+
+// SHAPE SELECTOR
+function setShape(btn) {
+  document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.shape = btn.dataset.shape;
+  render();
+}
+
+function setSymbol(btn) {
+  document.querySelectorAll('[data-symbol]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.symbol = btn.dataset.symbol;
+  render();
+}
+
+function updateSlider(el, spanId) {
+  const val = el.value;
+  state[el.id] = parseInt(val);
+  const span = document.getElementById(spanId);
+  span.textContent = el.id === 'iconSize' ? val + '%' : el.id === 'gradient' ? val + '%' : val;
+}
+
+function setPreviewBg(btn, color) {
+  document.querySelectorAll('.bg-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const bg = document.getElementById('canvasBg');
+  if (color === 'transparent') {
+    bg.style.background = 'repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 16px 16px';
+  } else {
+    bg.style.background = color;
+  }
+}
+
+// RENDER
+function drawIcon(ctx, size) {
+  const S = size;
+  const bgColor = document.getElementById('bgColor').value;
+  const iconColor = document.getElementById('iconColor').value;
+  const iconSize = state.iconSize / 100;
+  const sw = state.strokeWidth / 10;
+  const grad = state.gradient / 100;
+  const shadow = state.shadow;
+
+  ctx.clearRect(0, 0, S, S);
+
+  // Shadow
+  if (shadow > 0) {
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = shadow * (S / 256);
+    ctx.shadowOffsetY = (shadow / 3) * (S / 256);
+  }
+
+  // Background shape
+  ctx.save();
+  drawShape(ctx, S);
+
+  // Fill (gradient or solid)
+  if (grad > 0) {
+    const grd = ctx.createLinearGradient(0, 0, S, S);
+    grd.addColorStop(0, lightenColor(bgColor, grad * 0.4));
+    grd.addColorStop(1, darkenColor(bgColor, grad * 0.3));
+    ctx.fillStyle = grd;
+  } else {
+    ctx.fillStyle = bgColor;
+  }
+  ctx.fill();
+  ctx.restore();
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Draw symbol
+  ctx.save();
+  ctx.strokeStyle = iconColor;
+  ctx.fillStyle = iconColor;
+  ctx.lineWidth = sw * (S / 64);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const pad = S * (1 - iconSize) / 2;
+  const iS = S * iconSize;
+  ctx.translate(pad, pad);
+  ctx.scale(iS / 24, iS / 24);
+
+  drawSymbol(ctx);
+  ctx.restore();
+}
+
+function drawShape(ctx, S) {
+  const r = state.cornerRadius / 100 * S * 0.5;
+  ctx.beginPath();
+  switch (state.shape) {
+    case 'circle':
+      ctx.arc(S/2, S/2, S/2, 0, Math.PI * 2);
+      break;
+    case 'roundedSquare':
+      ctx.roundRect(0, 0, S, S, r);
+      break;
+    case 'squircle':
+      squirclePath(ctx, S);
+      break;
+    case 'hexagon':
+      hexPath(ctx, S);
+      break;
+    case 'shield':
+      shieldPath(ctx, S);
+      break;
+    case 'diamond':
+      diamondPath(ctx, S);
+      break;
+  }
+}
+
+function squirclePath(ctx, S) {
+  const n = 4 + state.cornerRadius / 10;
+  const r = S / 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 360; i++) {
+    const angle = (i * Math.PI) / 180;
+    const x = r + r * Math.pow(Math.abs(Math.cos(angle)), 2/n) * Math.sign(Math.cos(angle));
+    const y = r + r * Math.pow(Math.abs(Math.sin(angle)), 2/n) * Math.sign(Math.sin(angle));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+function hexPath(ctx, S) {
+  const cx = S/2, cy = S/2, r = S*0.47;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i * 60 - 30) * Math.PI / 180;
+    i === 0 ? ctx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a))
+            : ctx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  }
+  ctx.closePath();
+}
+
+function shieldPath(ctx, S) {
+  ctx.beginPath();
+  ctx.moveTo(S/2, S*0.04);
+  ctx.lineTo(S*0.9, S*0.22);
+  ctx.lineTo(S*0.9, S*0.55);
+  ctx.quadraticCurveTo(S*0.9, S*0.85, S/2, S*0.96);
+  ctx.quadraticCurveTo(S*0.1, S*0.85, S*0.1, S*0.55);
+  ctx.lineTo(S*0.1, S*0.22);
+  ctx.closePath();
+}
+
+function diamondPath(ctx, S) {
+  ctx.beginPath();
+  ctx.moveTo(S/2, S*0.04);
+  ctx.lineTo(S*0.96, S/2);
+  ctx.lineTo(S/2, S*0.96);
+  ctx.lineTo(S*0.04, S/2);
+  ctx.closePath();
+}
+
+// SYMBOLS
+function drawSymbol(ctx) {
+  const s = state.symbol;
+
+  if (s === 'orchestrator') {
+    // central node
+    circle(ctx, 12, 7.5, 2.5);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    // branches
+    circle(ctx, 5, 17, 2); ctx.fill();
+    circle(ctx, 12, 17, 2); ctx.fill();
+    circle(ctx, 19, 17, 2); ctx.fill();
+    ctx.fillStyle = ctx.strokeStyle;
+    line(ctx, 12, 10, 5, 15);
+    line(ctx, 12, 10, 12, 15);
+    line(ctx, 12, 10, 19, 15);
+  }
+  else if (s === 'chat') {
+    ctx.beginPath();
+    ctx.moveTo(21, 15);
+    ctx.quadraticCurveTo(21, 17, 19, 17);
+    ctx.lineTo(7, 17);
+    ctx.lineTo(3, 21);
+    ctx.lineTo(3, 5);
+    ctx.quadraticCurveTo(3, 3, 5, 3);
+    ctx.lineTo(19, 3);
+    ctx.quadraticCurveTo(21, 3, 21, 5);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  else if (s === 'bot') {
+    roundRect(ctx, 3, 8, 18, 12, 2); ctx.stroke();
+    circle(ctx, 9, 14, 1.5); ctx.fill();
+    circle(ctx, 15, 14, 1.5); ctx.fill();
+    line(ctx, 12, 3, 12, 8);
+    line(ctx, 10, 3, 14, 3);
+  }
+  else if (s === 'flow') {
+    circle(ctx, 5, 6, 2); ctx.fill();
+    circle(ctx, 19, 6, 2); ctx.fill();
+    circle(ctx, 12, 18, 2); ctx.fill();
+    line(ctx, 7, 6, 17, 6);
+    line(ctx, 13.7, 16.5, 18.5, 8);
+    line(ctx, 10.3, 16.5, 5.5, 8);
+  }
+  else if (s === 'lightning') {
+    ctx.beginPath();
+    ctx.moveTo(13, 2); ctx.lineTo(4, 14); ctx.lineTo(11, 14);
+    ctx.lineTo(10, 22); ctx.lineTo(20, 10); ctx.lineTo(13, 10);
+    ctx.closePath(); ctx.stroke();
+  }
+  else if (s === 'layers') {
+    polygon(ctx, [[12,2],[22,8],[12,14],[2,8]]); ctx.stroke();
+    polyline(ctx, [[2,12],[12,18],[22,12]]); ctx.stroke();
+    polyline(ctx, [[2,16],[12,22],[22,16]]); ctx.stroke();
+  }
+  else if (s === 'cpu') {
+    roundRect(ctx, 7, 7, 10, 10, 1); ctx.stroke();
+    [[9,4],[12,4],[15,4]].forEach(([x,y]) => line(ctx,x,y,x,7));
+    [[9,20],[12,20],[15,20]].forEach(([x,y]) => line(ctx,x,y,x,17));
+    [[4,9],[4,12],[4,15]].forEach(([x,y]) => line(ctx,x,y,7,y));
+    [[20,9],[20,12],[20,15]].forEach(([x,y]) => line(ctx,x,y,17,y));
+  }
+  else if (s === 'network') {
+    circle(ctx, 12, 12, 2); ctx.fill();
+    circle(ctx, 4, 6, 1.5); ctx.fill();
+    circle(ctx, 20, 6, 1.5); ctx.fill();
+    circle(ctx, 4, 18, 1.5); ctx.fill();
+    circle(ctx, 20, 18, 1.5); ctx.fill();
+    line(ctx, 10.3, 11, 5.5, 7);
+    line(ctx, 13.7, 11, 18.5, 7);
+    line(ctx, 10.3, 13, 5.5, 17);
+    line(ctx, 13.7, 13, 18.5, 17);
+  }
+  else if (s === 'sparkle') {
+    circle(ctx, 12, 12, 3); ctx.stroke();
+    [[12,2,12,6],[12,18,12,22],[2,12,6,12],[18,12,22,12],
+     [4.93,4.93,6.34,6.34],[17.66,17.66,19.07,19.07],
+     [4.93,19.07,6.34,17.66],[17.66,6.34,19.07,4.93]
+    ].forEach(([x1,y1,x2,y2]) => line(ctx,x1,y1,x2,y2));
+  }
+  else if (s === 'eye') {
+    ctx.beginPath();
+    ctx.moveTo(1,12);
+    ctx.bezierCurveTo(1,12,5,4,12,4);
+    ctx.bezierCurveTo(19,4,23,12,23,12);
+    ctx.bezierCurveTo(23,12,19,20,12,20);
+    ctx.bezierCurveTo(5,20,1,12,1,12);
+    ctx.stroke();
+    circle(ctx, 12, 12, 3); ctx.stroke();
+  }
+  else if (s === 'code') {
+    polyline(ctx, [[16,18],[22,12],[16,6]]); ctx.stroke();
+    polyline(ctx, [[8,6],[2,12],[8,18]]); ctx.stroke();
+  }
+  else if (s === 'settings') {
+    circle(ctx, 12, 12, 3); ctx.stroke();
+    // gear teeth (simplified)
+    const teeth = [[12,2,12,5],[12,19,12,22],[2,12,5,12],[19,12,22,12],
+      [4.22,4.22,6.34,6.34],[17.66,17.66,19.78,19.78],
+      [4.22,19.78,6.34,17.66],[17.66,6.34,19.78,4.22]];
+    teeth.forEach(([x1,y1,x2,y2]) => line(ctx,x1,y1,x2,y2));
+  }
+}
+
+// HELPERS
+function circle(ctx, x, y, r) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+}
+function line(ctx, x1, y1, x2, y2) {
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+}
+function polygon(ctx, pts) {
+  ctx.beginPath();
+  pts.forEach(([x,y],i) => i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+  ctx.closePath();
+}
+function polyline(ctx, pts) {
+  ctx.beginPath();
+  pts.forEach(([x,y],i) => i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+}
+
+function lightenColor(hex, amount) {
+  const r = Math.min(255, parseInt(hex.slice(1,3),16) + amount*255|0);
+  const g = Math.min(255, parseInt(hex.slice(3,5),16) + amount*255|0);
+  const b = Math.min(255, parseInt(hex.slice(5,7),16) + amount*255|0);
+  return `rgb(${r},${g},${b})`;
+}
+function darkenColor(hex, amount) {
+  const r = Math.max(0, parseInt(hex.slice(1,3),16) - amount*255|0);
+  const g = Math.max(0, parseInt(hex.slice(3,5),16) - amount*255|0);
+  const b = Math.max(0, parseInt(hex.slice(5,7),16) - amount*255|0);
+  return `rgb(${r},${g},${b})`;
+}
+
+// MAIN RENDER
+function render() {
+  state.bgColor = document.getElementById('bgColor').value;
+  state.iconColor = document.getElementById('iconColor').value;
+  state.iconSize = parseInt(document.getElementById('iconSize').value);
+  state.cornerRadius = parseInt(document.getElementById('cornerRadius').value);
+  state.strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+  state.gradient = parseInt(document.getElementById('gradient').value);
+  state.shadow = parseInt(document.getElementById('shadow').value);
+
+  const main = document.getElementById('mainCanvas');
+  drawIcon(main.getContext('2d'), 256);
+
+  ['prev64','prev128','prev32'].forEach(id => {
+    const c = document.getElementById(id);
+    drawIcon(c.getContext('2d'), c.width);
+  });
+}
+
+// EXPORT
+function exportSVG() {
+  const S = 512;
+  const bgColor = document.getElementById('bgColor').value;
+  const iconColor = document.getElementById('iconColor').value;
+  const iconSize = state.iconSize / 100;
+  const sw = (state.strokeWidth / 10) * (S / 64);
+
+  let shapePath = '';
+  switch(state.shape) {
+    case 'circle': shapePath = `<circle cx="${S/2}" cy="${S/2}" r="${S/2}" fill="${bgColor}"/>`; break;
+    case 'roundedSquare': {
+      const r = state.cornerRadius/100*S*0.5;
+      shapePath = `<rect width="${S}" height="${S}" rx="${r}" fill="${bgColor}"/>`; break;
+    }
+    case 'hexagon': {
+      const cx=S/2,cy=S/2,r=S*0.47;
+      const pts = Array.from({length:6},(_,i)=>{
+        const a=(i*60-30)*Math.PI/180;
+        return `${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;
+      }).join(' ');
+      shapePath = `<polygon points="${pts}" fill="${bgColor}"/>`; break;
+    }
+    default: {
+      const r = state.cornerRadius/100*S*0.5;
+      shapePath = `<rect width="${S}" height="${S}" rx="${r}" fill="${bgColor}"/>`;
+    }
+  }
+
+  const pad = S*(1-iconSize)/2;
+  const iS = S*iconSize;
+  const scale = iS/24;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
+  ${shapePath}
+  <g transform="translate(${pad},${pad}) scale(${scale})" stroke="${iconColor}" stroke-width="${sw/scale}" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    ${getSVGSymbol()}
+  </g>
+</svg>`;
+
+  download('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), 'icon.svg');
+}
+
+function getSVGSymbol() {
+  const s = state.symbol;
+  if (s === 'orchestrator') return `<circle cx="12" cy="7.5" r="2.5" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="2" fill="currentColor" stroke="none"/><circle cx="19" cy="17" r="2" fill="currentColor" stroke="none"/><line x1="12" y1="10" x2="5" y2="15"/><line x1="12" y1="10" x2="12" y2="15"/><line x1="12" y1="10" x2="19" y2="15"/>`;
+  if (s === 'chat') return `<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>`;
+  if (s === 'bot') return `<rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="9" cy="14" r="1.5" fill="currentColor"/><circle cx="15" cy="14" r="1.5" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="10" y1="3" x2="14" y2="3"/>`;
+  if (s === 'cpu') return `<rect x="7" y="7" width="10" height="10" rx="1"/><line x1="9" y1="4" x2="9" y2="7"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="15" y1="4" x2="15" y2="7"/><line x1="9" y1="17" x2="9" y2="20"/><line x1="12" y1="17" x2="12" y2="20"/><line x1="15" y1="17" x2="15" y2="20"/><line x1="4" y1="9" x2="7" y2="9"/><line x1="4" y1="12" x2="7" y2="12"/><line x1="4" y1="15" x2="7" y2="15"/><line x1="17" y1="9" x2="20" y2="9"/><line x1="17" y1="12" x2="20" y2="12"/><line x1="17" y1="15" x2="20" y2="15"/>`;
+  return `<text x="12" y="16" text-anchor="middle" font-size="12" fill="currentColor" stroke="none">?</text>`;
+}
+
+function exportPNG(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  drawIcon(c.getContext('2d'), size);
+  download(c.toDataURL('image/png'), `icon-${size}.png`);
+}
+
+function download(url, name) {
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+}
+
+// INIT
+initPresets();
+render();
+</script>
+</body>
+</html>
