@@ -15,7 +15,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Plus, AlertCircle, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown } from 'lucide-react'
+import { Plus, AlertCircle, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -743,6 +743,7 @@ function AdvancedEditorOverlay({
   const [color, setColor] = useState(node.data.color)
   const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
   const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
 
   useEffect(() => {
@@ -758,191 +759,426 @@ function AdvancedEditorOverlay({
     }}>
       <style>{`@keyframes wfSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      {/* Header */}
+      {/* Header — minimal: back + state name pill + actions */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 20px',
-        borderBottom: '1px solid #E2E8F0',
-        background: '#FFFFFF',
+        padding: '14px 20px',
+        background: 'transparent',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {/* Back arrow icon */}
           <button
             onClick={onClose}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '6px 12px', borderRadius: 8,
-              background: 'transparent', border: '1px solid #E2E8F0',
-              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+              width: 40, height: 40, borderRadius: 10,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              color: PRIMARY, cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
             }}
-          >← Workflow</button>
-          <span style={{ color: '#CBD5E1', flexShrink: 0 }}>/</span>
-          {/* Color swatch (decorativo) */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setColorOpen(o => !o)}
-              title="Color del estado (decorativo)"
+            title="Volver al workflow"
+          >←</button>
+          {/* State name pill (editable) */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 10,
+            background: '#FFFFFF', border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+          }}>
+            {/* Color swatch */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setColorOpen(o => !o)}
+                title="Color (decorativo)"
+                style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: color, border: 'none', cursor: 'pointer', padding: 0,
+                }}
+              />
+              {colorOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', left: -10, zIndex: 5,
+                  padding: 8, background: '#FFFFFF', borderRadius: 10,
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
+                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6,
+                }}>
+                  {COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => { setColor(c); setColorOpen(false) }}
+                      style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        background: c, border: 'none', cursor: 'pointer', padding: 0,
+                        outline: color === c ? `2px solid ${PRIMARY}` : 'none',
+                        outlineOffset: 2,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
               style={{
-                width: 18, height: 18, borderRadius: '50%',
-                background: color, border: 'none', cursor: 'pointer', padding: 0,
+                padding: 0, border: 'none', background: 'transparent', outline: 'none',
+                fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A',
+                minWidth: 120,
               }}
             />
-            {colorOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 5,
-                padding: 8, background: '#FFFFFF', borderRadius: 10,
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6,
-                minWidth: 160,
-              }}>
-                {COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => { setColor(c); setColorOpen(false) }}
-                    style={{
-                      width: 20, height: 20, borderRadius: '50%',
-                      background: c, border: 'none', cursor: 'pointer', padding: 0,
-                      outline: color === c ? `2px solid ${PRIMARY}` : 'none',
-                      outlineOffset: 2,
-                    }}
-                  />
-                ))}
-              </div>
-            )}
           </div>
-          {/* Editable name */}
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
+          {/* Settings gear (opens state settings drawer) */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Configuración del estado (datos requeridos, etc.)"
             style={{
-              padding: '6px 10px', borderRadius: 8,
-              border: '1px solid transparent',
-              fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A',
-              background: 'transparent', outline: 'none', minWidth: 200,
+              width: 40, height: 40, borderRadius: 10,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              color: '#475569', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
             }}
-            onFocus={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0' }}
-            onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}
-          />
-          {/* Avanzado pill */}
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '2px 8px', borderRadius: 100,
-            background: '#EFF0FF', color: PRIMARY,
-            fontFamily: 'Roboto, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
-            flexShrink: 0,
-          }}>
-            <Sparkles size={10} /> Avanzado
-          </span>
+          ><Settings size={16} /></button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={() => onConvertToSimple(node.id)}
             style={{
-              padding: '7px 14px', borderRadius: 8,
+              padding: '8px 14px', borderRadius: 10,
               background: '#FFFFFF', border: '1px solid #E2E8F0',
-              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
             }}
           >Volver a simple</button>
           <button style={{
-            padding: '7px 14px', borderRadius: 8,
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', borderRadius: 10,
+            background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
+            color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+          }}><Play size={13} /> Probar flujo</button>
+          {/* Search input */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 10,
             background: '#FFFFFF', border: '1px solid #E2E8F0',
-            color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-          }}>Probar</button>
-          <button style={{
-            padding: '7px 16px', borderRadius: 8,
-            background: PRIMARY, border: 'none',
-            color: '#FFFFFF', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-          }}>Guardar</button>
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+            minWidth: 180,
+          }}>
+            <Search size={14} color="#94A3B8" />
+            <input
+              placeholder="Buscar ..."
+              style={{
+                flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A',
+              }}
+            />
+          </div>
         </div>
       </header>
 
-      {/* Body: sidebar + canvas */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left sidebar — state info */}
-        <aside style={{
-          width: 320, flexShrink: 0,
-          borderRight: '1px solid #E2E8F0', background: '#FAFBFD',
-          overflow: 'auto', padding: 18,
-          display: 'flex', flexDirection: 'column', gap: 16,
+      {/* Body: canvas only */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
+        <AdvancedFlow />
+
+        {/* Right-side node palette (per Image #18) */}
+        <div style={{
+          position: 'absolute', top: 16, right: 16, zIndex: 10,
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <PaletteCard label="Instrucción" icon={<MessageSquare size={14} />} color={PRIMARY} />
+          <PaletteCard label="Condición"   icon={<GitBranch    size={14} />} color="#D97706" />
+          <PaletteCard label="Bucle"       icon={<RotateCcw    size={14} />} color="#0891B2" />
+        </div>
+
+        {/* Bottom-left: mini-map placeholder + zoom controls row */}
+        <div style={{
+          position: 'absolute', left: 16, bottom: 16, zIndex: 10,
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          {/* Mini-map */}
+          <div style={{
+            width: 180, height: 90,
+            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10,
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative',
+          }}>
+            {/* Tiny mini-map indication */}
+            <div style={{
+              position: 'absolute', left: 12, top: 32, width: 24, height: 4, borderRadius: 2,
+              background: '#CBD5E1',
+            }} />
+            <div style={{
+              position: 'absolute', left: 44, top: 30, width: 38, height: 8, borderRadius: 2,
+              background: '#C7D2FE',
+            }} />
+          </div>
+          {/* Zoom controls */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 0,
+            padding: 4, background: '#FFFFFF',
+            border: '1px solid #E2E8F0', borderRadius: 10,
+            fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#475569',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+          }}>
+            <ZoomBtn>⊕</ZoomBtn>
+            <span style={{ padding: '0 8px' }}>81%</span>
+            <ZoomBtn>⊖</ZoomBtn>
+            <span style={{ width: 1, height: 16, background: '#E2E8F0', margin: '0 4px' }} />
+            <ZoomBtn><GitBranch size={13} /></ZoomBtn>
+            <span style={{
+              padding: '4px 8px', background: PRIMARY, color: '#FFFFFF', borderRadius: 6,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}><MapIcon size={13} /></span>
+            <ZoomBtn><Maximize2 size={12} /></ZoomBtn>
+          </div>
+        </div>
+
+        {/* Bottom-center: cursor + pan + undo/redo */}
+        <div style={{
+          position: 'absolute', left: '50%', bottom: 16, transform: 'translateX(-50%)', zIndex: 10,
+          display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #E2E8F0',
+            display: 'inline-flex', gap: 0,
+            padding: 4, background: '#FFFFFF',
+            border: '1px solid #E2E8F0', borderRadius: 10,
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
           }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
-              <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
-            </div>
-            <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+            <span style={{
+              padding: '6px 12px', background: PRIMARY, color: '#FFFFFF', borderRadius: 6,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}><MousePointer2 size={14} /></span>
+            <ZoomBtn><Hand size={14} /></ZoomBtn>
           </div>
-          <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
-        </aside>
-
-        {/* Right: canvas with toolbar */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
-          {/* Floating toolbar (top of canvas) */}
           <div style={{
-            position: 'absolute', top: 16, left: 16, zIndex: 10,
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: 6,
-            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 100,
-            boxShadow: '0 4px 12px -4px rgba(15,23,42,0.12)',
+            display: 'inline-flex', gap: 0,
+            padding: 4, background: '#FFFFFF',
+            border: '1px solid #E2E8F0', borderRadius: 10,
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
           }}>
-            <NodeAddBtn label="Instrucción" color="#3B82F6" />
-            <NodeAddBtn label="Condicional" color="#F59E0B" />
-            <NodeAddBtn label="Loop" color="#9333EA" />
-            <NodeAddBtn label="MCP"        color={PRIMARY} />
-            <NodeAddBtn label="Respuesta"  color="#16A34A" />
+            <ZoomBtn><Undo2 size={14} /></ZoomBtn>
+            <ZoomBtn><Redo2 size={14} /></ZoomBtn>
           </div>
-          <AdvancedFlow />
         </div>
+
+        {/* AI sparkle FAB bottom-right */}
+        <button style={{
+          position: 'absolute', right: 16, bottom: 16, zIndex: 10,
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #304FFE, #6272FF)',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white',
+          boxShadow: '0 8px 24px -6px rgba(48,79,254,0.45)',
+        }}>
+          <Sparkles size={18} />
+        </button>
       </div>
 
-      {/* Hint bar */}
-      <div style={{
-        padding: '10px 20px', borderTop: '1px solid #E2E8F0',
-        fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#64748B',
-        background: '#FFFFFF',
-      }}>
-        Editor avanzado · Definí condicionales, MCPs, loops y todo el flujo de este estado.
-      </div>
+      {/* Settings drawer */}
+      {settingsOpen && (
+        <SettingsDrawer
+          requiresHuman={requiresHuman}
+          setRequiresHuman={setRequiresHuman}
+          requiredData={requiredData}
+          setRequiredData={setRequiredData}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   )
 }
 
-function NodeAddBtn({ label, color }: { label: string; color: string }) {
+function PaletteCard({ label, icon, color }: { label: string; icon: React.ReactNode; color: string }) {
   return (
-    <button style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      padding: '6px 12px', borderRadius: 100,
-      background: 'transparent', border: 'none',
-      fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 600, color: '#475569', cursor: 'pointer',
-    }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    <button
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '12px 16px', borderRadius: 10,
+        background: '#FFFFFF', border: '1px solid #E2E8F0',
+        cursor: 'grab',
+        fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#0F172A',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        minWidth: 150,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = '0 4px 12px -4px rgba(15,23,42,0.12)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
     >
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-      {label}
+      <span style={{ color }}>{icon}</span>
+      <span>{label}</span>
     </button>
   )
 }
 
-// Inline flow inside the overlay so we don't bring the full AutomationCanvas chrome
+function SettingsDrawer({
+  requiresHuman, setRequiresHuman, requiredData, setRequiredData, onClose,
+}: {
+  requiresHuman: boolean
+  setRequiresHuman: (v: boolean) => void
+  requiredData: RequiredField[]
+  setRequiredData: (f: RequiredField[]) => void
+  onClose: () => void
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 20,
+        background: 'rgba(15,23,42,0.32)',
+      }}
+    >
+      <aside
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0,
+          width: 420, background: '#FFFFFF',
+          borderLeft: '1px solid #E2E8F0',
+          boxShadow: '-12px 0 30px -10px rgba(15,23,42,0.18)',
+          padding: '20px 22px',
+          overflow: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 18,
+          animation: 'wfDrawer 240ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        }}
+      >
+        <style>{`@keyframes wfDrawer{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
+          <button onClick={onClose} style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          }}>✕</button>
+        </div>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+          </div>
+          <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+        </div>
+
+        <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+      </aside>
+    </div>
+  )
+}
+
+// ── Advanced flow nodes (match Image #18: Inicio pill + Instrucción rich card) ──
+
+function InicioAdvNode() {
+  return (
+    <div style={{
+      padding: '10px 22px',
+      background: '#FFFFFF',
+      border: `1.5px solid ${PRIMARY}`,
+      borderRadius: 100,
+      fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: PRIMARY,
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+      position: 'relative',
+    }}>
+      <MessageSquare size={14} />
+      Inicio
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+    </div>
+  )
+}
+
+type InstAdvData = Record<string, unknown> & { title: string; description: string; warning?: string }
+
+function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
+  return (
+    <div style={{ width: 380, position: 'relative' }}>
+      <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      {/* Floating type tab */}
+      <div style={{
+        position: 'absolute', left: 0, top: -32,
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 12px', borderRadius: 8,
+        background: 'rgba(48,79,254,0.08)', color: PRIMARY,
+        fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700,
+      }}>
+        <MessageSquare size={12} />
+        Instrucción
+        <ChevronDown size={11} />
+      </div>
+      {/* Card */}
+      <div style={{
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: 12,
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        overflow: 'hidden',
+      }}>
+        {/* Title row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px 8px',
+        }}>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+            {data.title}
+          </span>
+          <button style={{
+            width: 24, height: 24, borderRadius: 6,
+            border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          }}><MoreVertical size={14} /></button>
+        </div>
+        {/* Prompt textarea */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{
+            fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#94A3B8', lineHeight: 1.5,
+            padding: '4px 0', minHeight: 40,
+          }}>
+            {data.description || 'Escribe lo que quieres que el agente haga'}
+          </div>
+          <div style={{
+            fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8',
+            paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 4,
+          }}>
+            Escribe <strong>$</strong> o <strong>/</strong> para desplegar el menú de variables
+          </div>
+        </div>
+        {/* Warning */}
+        {data.warning && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px',
+            background: '#FFFBEB', borderTop: '1px solid #FDE68A',
+            fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#B45309',
+          }}>
+            <AlertCircle size={12} /> {data.warning}
+          </div>
+        )}
+      </div>
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none', top: 'calc(50% + 12px)' }} />
+    </div>
+  )
+}
+
 function AdvancedFlow() {
   const initialAdvancedNodes: Node[] = [
-    { id: 'a-trigger', position: { x: 80, y: 200 }, data: { label: 'Trigger del estado' }, style: nodeChip('#0F172A', '#FFFFFF') },
-    { id: 'a-cond',    position: { x: 320, y: 200 }, data: { label: '¿Cliente tiene cuenta?' }, style: nodeChip('#F59E0B', '#FFFFFF') },
-    { id: 'a-mcp',     position: { x: 600, y: 120 }, data: { label: 'MCP: HubSpot · Lookup contact' }, style: nodeChip(PRIMARY, '#FFFFFF') },
-    { id: 'a-respond', position: { x: 600, y: 280 }, data: { label: 'Responder: pedir email' }, style: nodeChip('#16A34A', '#FFFFFF') },
-    { id: 'a-finish',  position: { x: 900, y: 200 }, data: { label: 'Fin del estado' }, style: nodeChip('#0F172A', '#FFFFFF') },
+    { id: 'a-start', type: 'inicioAdv', position: { x: 80, y: 240 }, data: {} },
+    {
+      id: 'a-inst1', type: 'instAdv', position: { x: 260, y: 200 },
+      data: { title: 'Datos del usuario', description: '', warning: 'Mejoras pendientes' },
+    },
   ]
   const initialAdvancedEdges: Edge[] = [
-    { id: 'ae-1', source: 'a-trigger', target: 'a-cond', type: 'smoothstep' },
-    { id: 'ae-2', source: 'a-cond',    target: 'a-mcp',     type: 'smoothstep', label: 'sí' },
-    { id: 'ae-3', source: 'a-cond',    target: 'a-respond', type: 'smoothstep', label: 'no' },
-    { id: 'ae-4', source: 'a-mcp',     target: 'a-finish',  type: 'smoothstep' },
-    { id: 'ae-5', source: 'a-respond', target: 'a-finish',  type: 'smoothstep' },
+    { id: 'ae-1', source: 'a-start', target: 'a-inst1', type: 'smoothstep' },
   ]
+  const advNodeTypes = useMemo(() => ({
+    inicioAdv: InicioAdvNode,
+    instAdv: InstructionAdvNode,
+  }), [])
   const [n, , onN] = useNodesState(initialAdvancedNodes)
   const [e, setE, onE] = useEdgesState(initialAdvancedEdges)
   const onConnect = useCallback((p: Connection) => setE(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setE])
@@ -950,26 +1186,18 @@ function AdvancedFlow() {
     <ReactFlow
       nodes={n}
       edges={e}
+      nodeTypes={advNodeTypes}
       onNodesChange={onN}
       onEdgesChange={onE}
       onConnect={onConnect}
+      defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
       fitView
-      fitViewOptions={{ padding: 0.25 }}
+      fitViewOptions={{ padding: 0.3 }}
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
     </ReactFlow>
   )
-}
-
-function nodeChip(border: string, bg: string): React.CSSProperties {
-  return {
-    padding: '10px 14px', borderRadius: 8,
-    background: bg, border: `1.5px solid ${border}`,
-    fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600,
-    color: '#0F172A',
-    boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-  }
 }
 
 function ToolbarBtn({ children, icon, primary, square, onClick }: {
