@@ -18,7 +18,7 @@ type Tab = 'perfil' | 'estados' | 'subagentes' | 'bases' | 'mcps' | 'apps' | 'co
 const TABS: { id: Tab; label: string; icon: string; isMcp?: boolean }[] = [
   { id: 'perfil',           label: 'Perfil',                icon: 'ai-agent'     },
   { id: 'estados',          label: 'Workflows',             icon: 'view_kanban' },
-  { id: 'subagentes',       label: 'Lógicas',               icon: 'route'        },
+  // { id: 'subagentes',    label: 'Lógicas', icon: 'route' },  // removed: ahora viven dentro de Workflows como estados avanzados
   { id: 'bases',            label: 'Bases',                 icon: 'description'  },
   { id: 'mcps',             label: 'MCP',                   icon: '',            isMcp: true },
   { id: 'apps',             label: 'Aplicaciones externas', icon: 'apps'        },

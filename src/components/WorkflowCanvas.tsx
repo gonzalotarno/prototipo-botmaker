@@ -25,9 +25,11 @@ type StateNodeData = Record<string, unknown> & {
   color: string
   requiresHuman: boolean
   requiredData: string[]
+  kind: 'simple' | 'complex'
   isDisconnected?: boolean
   onEdit: (id: string) => void
   onAddNext: (id: string) => void
+  onOpenAdvanced?: (id: string) => void
 }
 type StartNodeData = Record<string, unknown> & { onAddNext: (id: string) => void }
 type AddNodeData = Record<string, unknown> & { fromId: string; onAdd: (fromId: string) => void }
@@ -55,9 +57,9 @@ const PRIMARY = '#304FFE'
 
 const INITIAL_NODES: AnyNode[] = [
   { id: 'start',  type: 'startNode',  position: { x: 80,  y: 200 }, data: { onAddNext: () => {} } as any },
-  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 175 }, data: { name: 'Todo',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_doing',type: 'stateNode',  position: { x: 580, y: 175 }, data: { name: 'Doing', description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_done', type: 'stateNode',  position: { x: 880, y: 175 }, data: { name: 'Done',  description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 175 }, data: { name: 'Todo',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_doing',type: 'stateNode',  position: { x: 580, y: 175 }, data: { name: 'Doing', description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_done', type: 'stateNode',  position: { x: 880, y: 175 }, data: { name: 'Done',  description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
 const INITIAL_EDGES: Edge[] = [
@@ -89,7 +91,8 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, requiresHuman, onEdit } = data
+  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit, onOpenAdvanced } = data
+  const isComplex = kind === 'complex'
   return (
     <div
       onClick={() => onEdit(id)}
@@ -97,7 +100,7 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
         width: 320,
         padding: '14px 16px',
         background: '#FFFFFF',
-        border: `1.5px solid ${isDisconnected ? '#F59E0B' : '#E2E8F0'}`,
+        border: `1.5px solid ${isDisconnected ? '#F59E0B' : isComplex ? PRIMARY : '#E2E8F0'}`,
         borderRadius: 10,
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
         cursor: 'pointer',
@@ -118,14 +121,42 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
             <AlertCircle size={11} />
           </span>
         )}
+        {isComplex && (
+          <span title="Estado avanzado" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '2px 7px', borderRadius: 100,
+            background: '#EFF0FF', color: PRIMARY,
+            fontFamily: 'Roboto, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+            flexShrink: 0,
+          }}>
+            <Sparkles size={9} /> Avanzado
+          </span>
+        )}
       </div>
-      {/* Description */}
-      {description && (
+      {/* Description (simple only) */}
+      {!isComplex && description && (
         <p style={{
           margin: '6px 0 0',
           fontFamily: 'Roboto, sans-serif', fontSize: 12, lineHeight: 1.45, color: '#64748B',
           display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{description}</p>
+      )}
+      {/* Complex: "Abrir editor" button */}
+      {isComplex && (
+        <button
+          onClick={e => { e.stopPropagation(); onOpenAdvanced?.(id) }}
+          style={{
+            marginTop: 10, width: '100%',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 8,
+            background: '#EFF0FF', border: `1px solid #C7D2FE`,
+            color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#DBEAFE')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#EFF0FF')}
+        >
+          Abrir editor avanzado →
+        </button>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
@@ -161,27 +192,41 @@ const edgeDefaults = {
 // ─── Edit Modal ────────────────────────────────────────────────────────────────
 
 function EditStateModal({
-  node, onClose, onSave, onDelete,
+  node, onClose, onSave, onDelete, onOpenAdvanced,
 }: {
   node: Node<StateNodeData>
   onClose: () => void
   onSave: (id: string, patch: Partial<StateNodeData>) => void
   onDelete: (id: string) => void
+  onOpenAdvanced: (id: string) => void
 }) {
   const [name, setName] = useState(node.data.name)
   const [description, setDescription] = useState(node.data.description)
   const [color, setColor] = useState(node.data.color)
   const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
   const [requiredData, setRequiredData] = useState<string[]>(node.data.requiredData ?? [])
+  const [kind, setKind] = useState<'simple' | 'complex'>(node.data.kind)
+
+  const isComplex = kind === 'complex'
+  // Heuristic: suggest upgrade when description gets meaningfully long
+  const shouldSuggestUpgrade = !isComplex && description.length > 90
 
   const save = () => {
-    onSave(node.id, { name, description, color, requiresHuman, requiredData })
+    onSave(node.id, { name, description, color, requiresHuman, requiredData, kind })
     onClose()
   }
-  // Auto-save on field change (debounced via useEffect would be cleaner; for proto we just save on close + on certain fields)
+  // Auto-save on field change
   useEffect(() => {
-    onSave(node.id, { name, description, color, requiresHuman, requiredData })
-  }, [name, description, color, requiresHuman, requiredData.length])  // eslint-disable-line
+    onSave(node.id, { name, description, color, requiresHuman, requiredData, kind })
+  }, [name, description, color, requiresHuman, requiredData.length, kind])  // eslint-disable-line
+
+  const handleConvertToComplex = () => {
+    setKind('complex')
+    // Wipe description since complex states don't have one
+    setDescription('')
+    setRequiredData([])
+  }
+  const handleConvertToSimple = () => setKind('simple')
 
   return (
     <div
@@ -205,6 +250,20 @@ function EditStateModal({
       >
         {/* Body */}
         <div style={{ padding: '24px 24px 0', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Kind chip */}
+          {isComplex && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 10px', borderRadius: 100,
+              background: '#EFF0FF', border: `1px solid #C7D2FE`,
+              color: PRIMARY, fontFamily: 'Roboto, sans-serif',
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+              alignSelf: 'flex-start',
+            }}>
+              <Sparkles size={11} /> Estado avanzado
+            </div>
+          )}
+
           {/* Name */}
           <Field label="Nombre del estado">
             <input
@@ -214,16 +273,60 @@ function EditStateModal({
               style={inputStyle}
             />
           </Field>
-          {/* Description */}
-          <Field label="Descripción del estado">
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Agrega una descripción"
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
-            />
-          </Field>
+
+          {/* Description — simple only */}
+          {!isComplex && (
+            <Field label="Descripción del estado">
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Agrega una descripción"
+                rows={3}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
+              />
+              {shouldSuggestUpgrade && (
+                <div style={{
+                  marginTop: 8,
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                  padding: '10px 12px', borderRadius: 10,
+                  background: '#EFF0FF', border: `1px solid #C7D2FE`,
+                }}>
+                  <Sparkles size={14} color={PRIMARY} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ flex: 1, fontSize: 12.5, color: '#1E1B4B', lineHeight: 1.45 }}>
+                    Si lo que necesitás incluye <strong>condicionales, MCPs o flujos</strong>, este estado puede ser avanzado.
+                    <button
+                      onClick={handleConvertToComplex}
+                      style={{
+                        marginLeft: 6, padding: 0, border: 'none', background: 'transparent',
+                        color: PRIMARY, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline',
+                      }}
+                    >Convertir →</button>
+                  </div>
+                </div>
+              )}
+            </Field>
+          )}
+
+          {/* Complex: open editor button */}
+          {isComplex && (
+            <button
+              onClick={() => onOpenAdvanced(node.id)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                padding: '14px 18px', borderRadius: 12,
+                background: PRIMARY, border: 'none',
+                color: '#FFFFFF', fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 8px 20px -6px rgba(48,79,254,0.45)',
+              }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={16} />
+                Abrir editor avanzado
+              </span>
+              <span>→</span>
+            </button>
+          )}
+
           {/* Requires human */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -235,6 +338,7 @@ function EditStateModal({
             </div>
             <Toggle on={requiresHuman} onChange={setRequiresHuman} />
           </div>
+
           {/* Color */}
           <Field label="Color">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -252,40 +356,78 @@ function EditStateModal({
               ))}
             </div>
           </Field>
-          {/* Required data */}
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Datos requeridos en este estado</div>
-            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>Estos datos deben completarse durante este workflow</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {requiredData.map((field, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8,
-                }}>
-                  <input
-                    value={field}
-                    onChange={e => setRequiredData(prev => prev.map((f, j) => j === i ? e.target.value : f))}
-                    placeholder="Nombre del dato"
-                    style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13 }}
-                  />
-                  <button
-                    onClick={() => setRequiredData(prev => prev.filter((_, j) => j !== i))}
-                    style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', display: 'flex' }}
-                  ><X size={14} /></button>
-                </div>
-              ))}
-              <button
-                onClick={() => setRequiredData(prev => [...prev, ''])}
-                style={{
-                  padding: '12px 16px', borderRadius: 10,
-                  background: 'transparent', border: '1.5px dashed #CBD5E1',
-                  color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >+ Agregar dato</button>
+
+          {/* Required data — simple only */}
+          {!isComplex && (
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Datos requeridos en este estado</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>Estos datos deben completarse durante este workflow</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {requiredData.map((field, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8,
+                  }}>
+                    <input
+                      value={field}
+                      onChange={e => setRequiredData(prev => prev.map((f, j) => j === i ? e.target.value : f))}
+                      placeholder="Nombre del dato"
+                      style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13 }}
+                    />
+                    <button
+                      onClick={() => setRequiredData(prev => prev.filter((_, j) => j !== i))}
+                      style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', display: 'flex' }}
+                    ><X size={14} /></button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setRequiredData(prev => [...prev, ''])}
+                  style={{
+                    padding: '12px 16px', borderRadius: 10,
+                    background: 'transparent', border: '1.5px dashed #CBD5E1',
+                    color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >+ Agregar dato</button>
+              </div>
             </div>
+          )}
+
+          {/* Convert toggle (always available, subtle) */}
+          <div style={{
+            paddingTop: 12, borderTop: '1px dashed #E2E8F0',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          }}>
+            <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.45 }}>
+              {isComplex
+                ? 'Este estado tiene lógica avanzada (condicionales, MCPs).'
+                : '¿Necesitás condicionales, MCPs o flujos?'}
+            </div>
+            {isComplex ? (
+              <button
+                onClick={handleConvertToSimple}
+                style={{
+                  padding: '6px 12px', borderRadius: 100,
+                  background: 'transparent', border: '1px solid #E2E8F0',
+                  color: '#475569', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >Volver a simple</button>
+            ) : (
+              <button
+                onClick={handleConvertToComplex}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '6px 12px', borderRadius: 100,
+                  background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
+                  color: PRIMARY, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              ><Sparkles size={12} /> Convertir a avanzado</button>
+            )}
           </div>
         </div>
+
         {/* Footer */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -317,7 +459,7 @@ function EditStateModal({
 
 const inputStyle: React.CSSProperties = {
   width: '100%', boxSizing: 'border-box',
-  padding: '10px 14px', borderRadius: 100,
+  padding: 8, borderRadius: 8,
   background: '#FFFFFF', border: '1px solid #E2E8F0',
   fontFamily: 'inherit', fontSize: 14, color: '#0F172A',
   outline: 'none',
@@ -357,6 +499,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [advancedId, setAdvancedId] = useState<string | null>(null)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
 
@@ -379,7 +522,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
       const isDisconnected = !reachable.has(n.id)
       return {
         ...n,
-        data: { ...n.data, isDisconnected, onEdit: setEditingId, onAddNext: handleAddNext },
+        data: { ...n.data, isDisconnected, onEdit: setEditingId, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
       }
     }
     return n
@@ -401,7 +544,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
     const newNode: AnyNode = {
       id: newId, type: 'stateNode',
       position: { x: (src.position.x ?? 0) + 380, y: (src.position.y ?? 0) },
-      data: { name: 'Nuevo estado', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], onEdit: () => {}, onAddNext: () => {} } as any,
+      data: { name: 'Nuevo estado', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any,
     }
     setNodes(ns => [...ns, newNode])
     setEdges(es => [...es, { id: `e-${fromId}-${newId}`, source: fromId, target: newId, ...edgeDefaults }])
@@ -496,10 +639,145 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
           onClose={() => setEditingId(null)}
           onSave={updateState}
           onDelete={deleteState}
+          onOpenAdvanced={(id) => { setEditingId(null); setAdvancedId(id) }}
         />
       )}
+
+      {/* Advanced editor overlay */}
+      {advancedId && (() => {
+        const adv = decoratedNodes.find(n => n.id === advancedId) as Node<StateNodeData> | undefined
+        if (!adv) return null
+        return (
+          <AdvancedEditorOverlay
+            stateName={adv.data.name}
+            stateColor={adv.data.color}
+            onClose={() => setAdvancedId(null)}
+          />
+        )
+      })()}
     </div>
   )
+}
+
+// ─── Advanced Editor Overlay (Lógica editor) ───────────────────────────────────
+
+function AdvancedEditorOverlay({ stateName, stateColor, onClose }: {
+  stateName: string
+  stateColor: string
+  onClose: () => void
+}) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 50,
+      background: '#FFFFFF',
+      display: 'flex', flexDirection: 'column',
+      animation: 'wfSlide 220ms cubic-bezier(0.16, 1, 0.3, 1) both',
+    }}>
+      <style>{`@keyframes wfSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {/* Header */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 24px',
+        borderBottom: '1px solid #E2E8F0',
+        background: '#FFFFFF',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={onClose}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 8,
+              background: 'transparent', border: '1px solid #E2E8F0',
+              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >← Workflow</button>
+          <span style={{ color: '#CBD5E1' }}>/</span>
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: stateColor, display: 'inline-block' }} />
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{stateName}</span>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 8px', borderRadius: 100,
+            background: '#EFF0FF', color: PRIMARY,
+            fontFamily: 'Roboto, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+          }}>
+            <Sparkles size={10} /> Lógica
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button style={{
+            padding: '7px 14px', borderRadius: 8,
+            background: '#FFFFFF', border: '1px solid #E2E8F0',
+            color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+          }}>Probar lógica</button>
+          <button style={{
+            padding: '7px 16px', borderRadius: 8,
+            background: PRIMARY, border: 'none',
+            color: '#FFFFFF', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+          }}>Guardar</button>
+        </div>
+      </header>
+
+      {/* Canvas — embebido AutomationCanvas */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <AdvancedFlow />
+      </div>
+
+      {/* Hint bar */}
+      <div style={{
+        padding: '10px 24px', borderTop: '1px solid #E2E8F0',
+        fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#64748B',
+        background: '#FAFBFD',
+      }}>
+        Editor avanzado · Acá podés definir condicionales, MCPs, loops y todo el flujo de este estado complejo.
+      </div>
+    </div>
+  )
+}
+
+// Inline flow inside the overlay so we don't bring the full AutomationCanvas chrome
+function AdvancedFlow() {
+  const initialAdvancedNodes: Node[] = [
+    { id: 'a-trigger', position: { x: 80, y: 200 }, data: { label: 'Trigger del estado' }, style: nodeChip('#0F172A', '#FFFFFF') },
+    { id: 'a-cond',    position: { x: 320, y: 200 }, data: { label: '¿Cliente tiene cuenta?' }, style: nodeChip('#F59E0B', '#FFFFFF') },
+    { id: 'a-mcp',     position: { x: 600, y: 120 }, data: { label: 'MCP: HubSpot · Lookup contact' }, style: nodeChip(PRIMARY, '#FFFFFF') },
+    { id: 'a-respond', position: { x: 600, y: 280 }, data: { label: 'Responder: pedir email' }, style: nodeChip('#16A34A', '#FFFFFF') },
+    { id: 'a-finish',  position: { x: 900, y: 200 }, data: { label: 'Fin del estado' }, style: nodeChip('#0F172A', '#FFFFFF') },
+  ]
+  const initialAdvancedEdges: Edge[] = [
+    { id: 'ae-1', source: 'a-trigger', target: 'a-cond', type: 'smoothstep' },
+    { id: 'ae-2', source: 'a-cond',    target: 'a-mcp',     type: 'smoothstep', label: 'sí' },
+    { id: 'ae-3', source: 'a-cond',    target: 'a-respond', type: 'smoothstep', label: 'no' },
+    { id: 'ae-4', source: 'a-mcp',     target: 'a-finish',  type: 'smoothstep' },
+    { id: 'ae-5', source: 'a-respond', target: 'a-finish',  type: 'smoothstep' },
+  ]
+  const [n, , onN] = useNodesState(initialAdvancedNodes)
+  const [e, setE, onE] = useEdgesState(initialAdvancedEdges)
+  const onConnect = useCallback((p: Connection) => setE(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setE])
+  return (
+    <ReactFlow
+      nodes={n}
+      edges={e}
+      onNodesChange={onN}
+      onEdgesChange={onE}
+      onConnect={onConnect}
+      fitView
+      fitViewOptions={{ padding: 0.25 }}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
+    </ReactFlow>
+  )
+}
+
+function nodeChip(border: string, bg: string): React.CSSProperties {
+  return {
+    padding: '10px 14px', borderRadius: 8,
+    background: bg, border: `1.5px solid ${border}`,
+    fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600,
+    color: '#0F172A',
+    boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+  }
 }
 
 function ToolbarBtn({ children, icon, primary, square, onClick }: {
