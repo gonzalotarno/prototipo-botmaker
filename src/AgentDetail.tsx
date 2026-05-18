@@ -7,6 +7,7 @@ import AgentsTopBar from './components/AgentsTopBar'
 import LogicTestChat from './components/LogicTestChat'
 import { DrawerProvider } from './context/DrawerContext'
 import AutomationCanvas from './components/AutomationCanvas'
+import WorkflowCanvas from './components/WorkflowCanvas'
 import Icon from './Icon'
 import { color, spacing, radius, font, shadow, text } from './ds'
 
@@ -7780,8 +7781,15 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
           )}
         </div>
       ) : (
-        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 36px 80px' }}>
-          {(activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
+        <main style={{
+          flex: 1, overflow: activeTab === 'estados' ? 'hidden' : 'auto',
+          padding: activeTab === 'estados' ? 0 : '28px 36px 80px',
+          background: activeTab === 'estados' ? '#F8FAFC' : 'transparent',
+          position: 'relative',
+        }}>
+          {activeTab === 'estados' ? (
+            <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} />
+          ) : (activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
             <>
               {activeTab === 'mcps'             && <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>{variant === 'v2' ? <MCPListV2 /> : <ResourceListTab kind="mcp"  />}</div>}
               {activeTab === 'apps'             && <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>{variant === 'v2' ? <ResourceListTabV2 kind="app"  /> : <ResourceListTab kind="app"  />}</div>}
@@ -7793,7 +7801,6 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
           ) : (
             <div style={{ maxWidth: 780, margin: '0 auto' }}>
               {activeTab === 'perfil' && <ConfiguracionTab agent={agentConfig} onChange={patch => setAgentConfig(prev => ({ ...prev, ...patch }))} />}
-              {activeTab === 'estados' && <EstadosTab />}
             </div>
           )}
         </main>
