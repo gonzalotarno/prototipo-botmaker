@@ -15,16 +15,22 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Plus, AlertCircle, X, Trash2, Settings, LayoutGrid, Maximize2, Sparkles } from 'lucide-react'
+import { Plus, AlertCircle, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
+
+interface RequiredField {
+  id: string
+  name: string
+  description: string
+}
 
 type StateNodeData = Record<string, unknown> & {
   name: string
   description: string
   color: string
   requiresHuman: boolean
-  requiredData: string[]
+  requiredData: RequiredField[]
   kind: 'simple' | 'complex'
   isDisconnected?: boolean
   onEdit: (id: string) => void
@@ -93,9 +99,11 @@ function StartNode() {
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
   const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit, onOpenAdvanced } = data
   const isComplex = kind === 'complex'
+  // For complex states: click opens advanced editor directly (no modal in between)
+  const handleClick = () => isComplex ? onOpenAdvanced?.(id) : onEdit(id)
   return (
     <div
-      onClick={() => onEdit(id)}
+      onClick={handleClick}
       style={{
         width: 320,
         padding: '14px 16px',
@@ -112,6 +120,19 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
     >
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
 
+      {/* Sparkle accent on complex (top-right corner mini glow) */}
+      {isComplex && (
+        <span aria-hidden style={{
+          position: 'absolute', top: -7, right: -7,
+          width: 20, height: 20, borderRadius: '50%',
+          background: PRIMARY, color: '#FFFFFF',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 10px -2px rgba(48,79,254,0.45), 0 0 0 3px #FFFFFF',
+        }}>
+          <Sparkles size={11} />
+        </span>
+      )}
+
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ width: 9, height: 9, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
@@ -121,18 +142,8 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
             <AlertCircle size={11} />
           </span>
         )}
-        {isComplex && (
-          <span title="Estado avanzado" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-            padding: '2px 7px', borderRadius: 100,
-            background: '#EFF0FF', color: PRIMARY,
-            fontFamily: 'Roboto, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
-            flexShrink: 0,
-          }}>
-            <Sparkles size={9} /> Avanzado
-          </span>
-        )}
       </div>
+
       {/* Description (simple only) */}
       {!isComplex && description && (
         <p style={{
@@ -141,22 +152,20 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
           display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{description}</p>
       )}
-      {/* Complex: "Abrir editor" button */}
+
+      {/* Complex: single subtle "Editar flujo" hint at bottom */}
       {isComplex && (
-        <button
+        <div
           onClick={e => { e.stopPropagation(); onOpenAdvanced?.(id) }}
           style={{
-            marginTop: 10, width: '100%',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 8,
-            background: '#EFF0FF', border: `1px solid #C7D2FE`,
-            color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: PRIMARY, fontWeight: 600,
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#DBEAFE')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#EFF0FF')}
         >
-          Abrir editor avanzado →
-        </button>
+          <span>Editar flujo</span>
+          <span>→</span>
+        </div>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
@@ -204,29 +213,18 @@ function EditStateModal({
   const [description, setDescription] = useState(node.data.description)
   const [color, setColor] = useState(node.data.color)
   const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
-  const [requiredData, setRequiredData] = useState<string[]>(node.data.requiredData ?? [])
-  const [kind, setKind] = useState<'simple' | 'complex'>(node.data.kind)
+  const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
+  const [colorOpen, setColorOpen] = useState(false)
 
-  const isComplex = kind === 'complex'
-  // Heuristic: suggest upgrade when description gets meaningfully long
-  const shouldSuggestUpgrade = !isComplex && description.length > 90
-
-  const save = () => {
-    onSave(node.id, { name, description, color, requiresHuman, requiredData, kind })
-    onClose()
-  }
-  // Auto-save on field change
   useEffect(() => {
-    onSave(node.id, { name, description, color, requiresHuman, requiredData, kind })
-  }, [name, description, color, requiresHuman, requiredData.length, kind])  // eslint-disable-line
+    onSave(node.id, { name, description, color, requiresHuman, requiredData })
+  }, [name, description, color, requiresHuman, requiredData.length]) // eslint-disable-line
 
-  const handleConvertToComplex = () => {
-    setKind('complex')
-    // Wipe description since complex states don't have one
-    setDescription('')
-    setRequiredData([])
+  const handleConvertToAdvanced = () => {
+    // Persist current basics + flip kind, then open the advanced editor
+    onSave(node.id, { name, description: '', color, requiresHuman, requiredData, kind: 'complex' })
+    onOpenAdvanced(node.id)
   }
-  const handleConvertToSimple = () => setKind('simple')
 
   return (
     <div
@@ -241,7 +239,7 @@ function EditStateModal({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 460, maxHeight: '90vh', overflow: 'auto',
+          width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto',
           background: '#FFFFFF',
           borderRadius: 16,
           boxShadow: '0 24px 60px -12px rgba(15,23,42,0.25)',
@@ -249,83 +247,102 @@ function EditStateModal({
         }}
       >
         {/* Body */}
-        <div style={{ padding: '24px 24px 0', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* Kind chip */}
-          {isComplex && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 10px', borderRadius: 100,
-              background: '#EFF0FF', border: `1px solid #C7D2FE`,
-              color: PRIMARY, fontFamily: 'Roboto, sans-serif',
-              fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
-              alignSelf: 'flex-start',
-            }}>
-              <Sparkles size={11} /> Estado avanzado
-            </div>
-          )}
-
-          {/* Name */}
+        <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Name with inline color swatch */}
           <Field label="Nombre del estado">
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              autoFocus
-              style={inputStyle}
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
+              {/* Color swatch (small, secondary) */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setColorOpen(o => !o)}
+                  title="Color visual del estado (decorativo)"
+                  style={{
+                    height: '100%', minHeight: 38,
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '0 10px', borderRadius: 8,
+                    background: '#FFFFFF', border: '1px solid #E2E8F0',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: color }} />
+                  <ChevronDown size={12} color="#94A3B8" />
+                </button>
+                {colorOpen && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 5,
+                    padding: 10, background: '#FFFFFF', borderRadius: 10,
+                    border: '1px solid #E2E8F0',
+                    boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
+                    display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8,
+                    minWidth: 180,
+                  }}>
+                    {COLORS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => { setColor(c); setColorOpen(false) }}
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: c, border: 'none', cursor: 'pointer', padding: 0,
+                          outline: color === c ? `2px solid ${PRIMARY}` : 'none',
+                          outlineOffset: 2,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* Name input */}
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                autoFocus
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
+          </Field>
+
+          {/* Description */}
+          <Field label="Descripción del estado">
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Agrega una descripción"
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
             />
           </Field>
 
-          {/* Description — simple only */}
-          {!isComplex && (
-            <Field label="Descripción del estado">
-              <textarea
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="Agrega una descripción"
-                rows={3}
-                style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
-              />
-              {shouldSuggestUpgrade && (
-                <div style={{
-                  marginTop: 8,
-                  display: 'flex', alignItems: 'flex-start', gap: 8,
-                  padding: '10px 12px', borderRadius: 10,
-                  background: '#EFF0FF', border: `1px solid #C7D2FE`,
-                }}>
-                  <Sparkles size={14} color={PRIMARY} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <div style={{ flex: 1, fontSize: 12.5, color: '#1E1B4B', lineHeight: 1.45 }}>
-                    Si lo que necesitás incluye <strong>condicionales, MCPs o flujos</strong>, este estado puede ser avanzado.
-                    <button
-                      onClick={handleConvertToComplex}
-                      style={{
-                        marginLeft: 6, padding: 0, border: 'none', background: 'transparent',
-                        color: PRIMARY, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline',
-                      }}
-                    >Convertir →</button>
-                  </div>
-                </div>
-              )}
-            </Field>
-          )}
-
-          {/* Complex: open editor button */}
-          {isComplex && (
-            <button
-              onClick={() => onOpenAdvanced(node.id)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-                padding: '14px 18px', borderRadius: 12,
-                background: PRIMARY, border: 'none',
-                color: '#FFFFFF', fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                boxShadow: '0 8px 20px -6px rgba(48,79,254,0.45)',
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={16} />
-                Abrir editor avanzado
+          {/* Convert to advanced — prominent, single CTA */}
+          <button
+            onClick={handleConvertToAdvanced}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 14px', borderRadius: 12,
+              background: '#EFF0FF', border: `1px solid #C7D2FE`,
+              cursor: 'pointer', textAlign: 'left', width: '100%',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#DDE2FF')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#EFF0FF')}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: PRIMARY, color: '#FFFFFF',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Sparkles size={14} />
               </span>
-              <span>→</span>
-            </button>
-          )}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13.5, fontWeight: 700, color: '#1E1B4B' }}>
+                  Convertir a estado avanzado
+                </span>
+                <span style={{ fontSize: 11.5, color: '#4338CA', marginTop: 2 }}>
+                  Para condicionales, MCPs, loops o flujos personalizados
+                </span>
+              </div>
+            </div>
+            <span style={{ color: PRIMARY, fontSize: 18, fontWeight: 700, marginLeft: 8 }}>→</span>
+          </button>
 
           {/* Requires human */}
           <div style={{
@@ -339,99 +356,17 @@ function EditStateModal({
             <Toggle on={requiresHuman} onChange={setRequiresHuman} />
           </div>
 
-          {/* Color */}
-          <Field label="Color">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {COLORS.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: c, border: 'none', cursor: 'pointer', padding: 0,
-                    outline: color === c ? `2px solid ${PRIMARY}` : 'none',
-                    outlineOffset: 2,
-                  }}
-                />
-              ))}
-            </div>
-          </Field>
-
-          {/* Required data — simple only */}
-          {!isComplex && (
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Datos requeridos en este estado</div>
-              <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>Estos datos deben completarse durante este workflow</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {requiredData.map((field, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8,
-                  }}>
-                    <input
-                      value={field}
-                      onChange={e => setRequiredData(prev => prev.map((f, j) => j === i ? e.target.value : f))}
-                      placeholder="Nombre del dato"
-                      style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13 }}
-                    />
-                    <button
-                      onClick={() => setRequiredData(prev => prev.filter((_, j) => j !== i))}
-                      style={{ border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer', display: 'flex' }}
-                    ><X size={14} /></button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => setRequiredData(prev => [...prev, ''])}
-                  style={{
-                    padding: '12px 16px', borderRadius: 10,
-                    background: 'transparent', border: '1.5px dashed #CBD5E1',
-                    color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >+ Agregar dato</button>
-              </div>
-            </div>
-          )}
-
-          {/* Convert toggle (always available, subtle) */}
-          <div style={{
-            paddingTop: 12, borderTop: '1px dashed #E2E8F0',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          }}>
-            <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.45 }}>
-              {isComplex
-                ? 'Este estado tiene lógica avanzada (condicionales, MCPs).'
-                : '¿Necesitás condicionales, MCPs o flujos?'}
-            </div>
-            {isComplex ? (
-              <button
-                onClick={handleConvertToSimple}
-                style={{
-                  padding: '6px 12px', borderRadius: 100,
-                  background: 'transparent', border: '1px solid #E2E8F0',
-                  color: '#475569', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >Volver a simple</button>
-            ) : (
-              <button
-                onClick={handleConvertToComplex}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  padding: '6px 12px', borderRadius: 100,
-                  background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
-                  color: PRIMARY, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              ><Sparkles size={12} /> Convertir a avanzado</button>
-            )}
-          </div>
+          {/* Required data */}
+          <RequiredDataSection
+            fields={requiredData}
+            onChange={setRequiredData}
+          />
         </div>
 
         {/* Footer */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: 20, marginTop: 20, borderTop: '1px solid #E2E8F0', background: '#FAFBFD',
+          padding: 18, marginTop: 18, borderTop: '1px solid #E2E8F0', background: '#FAFBFD',
           borderBottomLeftRadius: 16, borderBottomRightRadius: 16,
         }}>
           <button
@@ -444,7 +379,7 @@ function EditStateModal({
             }}
           ><Trash2 size={14} /> Eliminar</button>
           <button
-            onClick={save}
+            onClick={onClose}
             style={{
               padding: '8px 22px', borderRadius: 100,
               background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
@@ -455,6 +390,137 @@ function EditStateModal({
       </div>
     </div>
   )
+}
+
+// ─── Required Data — card-based (per CEO image #17) ────────────────────────────
+
+function RequiredDataSection({
+  fields, onChange,
+}: {
+  fields: RequiredField[]
+  onChange: (fields: RequiredField[]) => void
+}) {
+  const add = () => onChange([...fields, { id: `f_${Date.now()}`, name: 'Nuevo dato', description: '' }])
+  const update = (id: string, patch: Partial<RequiredField>) =>
+    onChange(fields.map(f => f.id === id ? { ...f, ...patch } : f))
+  const remove = (id: string) => onChange(fields.filter(f => f.id !== id))
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Datos requeridos en este estado</div>
+      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12 }}>Estos datos deben completarse durante este workflow</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {fields.map(field => (
+          <RequiredDataCard key={field.id} field={field} onUpdate={update} onRemove={remove} />
+        ))}
+        <button
+          onClick={add}
+          style={{
+            padding: '12px 16px', borderRadius: 10,
+            background: 'transparent', border: '1.5px dashed #CBD5E1',
+            color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >+ Agregar dato</button>
+      </div>
+    </div>
+  )
+}
+
+function RequiredDataCard({
+  field, onUpdate, onRemove,
+}: {
+  field: RequiredField
+  onUpdate: (id: string, patch: Partial<RequiredField>) => void
+  onRemove: (id: string) => void
+}) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const insertVariable = () => {
+    onUpdate(field.id, { description: (field.description || '') + ' {{variable}}' })
+  }
+  return (
+    <div style={{
+      padding: '12px 14px', borderRadius: 10,
+      background: '#FFFFFF', border: '1px solid #E2E8F0',
+      position: 'relative',
+    }}>
+      {/* Top row: name + obligatorio + menu */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          value={field.name}
+          onChange={e => onUpdate(field.id, { name: e.target.value })}
+          placeholder="Nombre del dato"
+          style={{
+            flex: 1, border: 'none', background: 'transparent', outline: 'none',
+            fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#0F172A',
+            padding: 0,
+          }}
+        />
+        <span style={{
+          padding: '3px 9px', borderRadius: 5,
+          background: '#EEF0FF', color: '#5B49D6',
+          fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
+        }}>Obligatorio</span>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              width: 22, height: 22, borderRadius: 6,
+              border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          ><MoreVertical size={14} /></button>
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 5,
+              minWidth: 160, padding: 4,
+              background: '#FFFFFF', borderRadius: 10,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
+            }}>
+              <button onClick={() => { onRemove(field.id); setMenuOpen(false) }} style={menuItem}>Eliminar</button>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Description textarea */}
+      <textarea
+        value={field.description}
+        onChange={e => onUpdate(field.id, { description: e.target.value })}
+        placeholder="Describe el dato que IA interpretará"
+        rows={2}
+        style={{
+          width: '100%', boxSizing: 'border-box', marginTop: 6,
+          padding: 0, border: 'none', background: 'transparent', outline: 'none', resize: 'vertical',
+          fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45, color: '#475569',
+          minHeight: 36,
+        }}
+      />
+      {/* Variable insertion button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+        <button
+          onClick={insertVariable}
+          title="Insertar variable"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '3px 8px', borderRadius: 6,
+            background: '#F1F5F9', border: 'none',
+            color: '#475569', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#E2E8F0' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#F1F5F9' }}
+        ><Braces size={11} /> Insertar variable</button>
+      </div>
+    </div>
+  )
+}
+
+const menuItem: React.CSSProperties = {
+  display: 'block', width: '100%', textAlign: 'left',
+  padding: '7px 12px', borderRadius: 6,
+  border: 'none', background: 'transparent', cursor: 'pointer',
+  fontFamily: 'inherit', fontSize: 13, color: '#0F172A',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -649,9 +715,13 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         if (!adv) return null
         return (
           <AdvancedEditorOverlay
-            stateName={adv.data.name}
-            stateColor={adv.data.color}
+            node={adv}
             onClose={() => setAdvancedId(null)}
+            onSave={updateState}
+            onConvertToSimple={(id) => {
+              updateState(id, { kind: 'simple' })
+              setAdvancedId(null)
+            }}
           />
         )
       })()}
@@ -661,11 +731,24 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
 
 // ─── Advanced Editor Overlay (Lógica editor) ───────────────────────────────────
 
-function AdvancedEditorOverlay({ stateName, stateColor, onClose }: {
-  stateName: string
-  stateColor: string
+function AdvancedEditorOverlay({
+  node, onClose, onSave, onConvertToSimple,
+}: {
+  node: Node<StateNodeData>
   onClose: () => void
+  onSave: (id: string, patch: Partial<StateNodeData>) => void
+  onConvertToSimple: (id: string) => void
 }) {
+  const [name, setName] = useState(node.data.name)
+  const [color, setColor] = useState(node.data.color)
+  const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
+  const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
+  const [colorOpen, setColorOpen] = useState(false)
+
+  useEffect(() => {
+    onSave(node.id, { name, color, requiresHuman, requiredData })
+  }, [name, color, requiresHuman, requiredData.length]) // eslint-disable-line
+
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 50,
@@ -678,38 +761,93 @@ function AdvancedEditorOverlay({ stateName, stateColor, onClose }: {
       {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 24px',
+        padding: '12px 20px',
         borderBottom: '1px solid #E2E8F0',
         background: '#FFFFFF',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <button
             onClick={onClose}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 12px', borderRadius: 8,
               background: 'transparent', border: '1px solid #E2E8F0',
-              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
             }}
           >← Workflow</button>
-          <span style={{ color: '#CBD5E1' }}>/</span>
-          <span style={{ width: 9, height: 9, borderRadius: '50%', background: stateColor, display: 'inline-block' }} />
-          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{stateName}</span>
+          <span style={{ color: '#CBD5E1', flexShrink: 0 }}>/</span>
+          {/* Color swatch (decorativo) */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setColorOpen(o => !o)}
+              title="Color del estado (decorativo)"
+              style={{
+                width: 18, height: 18, borderRadius: '50%',
+                background: color, border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            />
+            {colorOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 5,
+                padding: 8, background: '#FFFFFF', borderRadius: 10,
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
+                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6,
+                minWidth: 160,
+              }}>
+                {COLORS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => { setColor(c); setColorOpen(false) }}
+                    style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: c, border: 'none', cursor: 'pointer', padding: 0,
+                      outline: color === c ? `2px solid ${PRIMARY}` : 'none',
+                      outlineOffset: 2,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Editable name */}
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            style={{
+              padding: '6px 10px', borderRadius: 8,
+              border: '1px solid transparent',
+              fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A',
+              background: 'transparent', outline: 'none', minWidth: 200,
+            }}
+            onFocus={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0' }}
+            onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}
+          />
+          {/* Avanzado pill */}
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
             padding: '2px 8px', borderRadius: 100,
             background: '#EFF0FF', color: PRIMARY,
             fontFamily: 'Roboto, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+            flexShrink: 0,
           }}>
-            <Sparkles size={10} /> Lógica
+            <Sparkles size={10} /> Avanzado
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => onConvertToSimple(node.id)}
+            style={{
+              padding: '7px 14px', borderRadius: 8,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            }}
+          >Volver a simple</button>
           <button style={{
             padding: '7px 14px', borderRadius: 8,
             background: '#FFFFFF', border: '1px solid #E2E8F0',
             color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-          }}>Probar lógica</button>
+          }}>Probar</button>
           <button style={{
             padding: '7px 16px', borderRadius: 8,
             background: PRIMARY, border: 'none',
@@ -718,20 +856,74 @@ function AdvancedEditorOverlay({ stateName, stateColor, onClose }: {
         </div>
       </header>
 
-      {/* Canvas — embebido AutomationCanvas */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <AdvancedFlow />
+      {/* Body: sidebar + canvas */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Left sidebar — state info */}
+        <aside style={{
+          width: 320, flexShrink: 0,
+          borderRight: '1px solid #E2E8F0', background: '#FAFBFD',
+          overflow: 'auto', padding: 18,
+          display: 'flex', flexDirection: 'column', gap: 16,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', borderRadius: 12, background: '#FFFFFF', border: '1px solid #E2E8F0',
+          }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
+              <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+            </div>
+            <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+          </div>
+          <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+        </aside>
+
+        {/* Right: canvas with toolbar */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
+          {/* Floating toolbar (top of canvas) */}
+          <div style={{
+            position: 'absolute', top: 16, left: 16, zIndex: 10,
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: 6,
+            background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 100,
+            boxShadow: '0 4px 12px -4px rgba(15,23,42,0.12)',
+          }}>
+            <NodeAddBtn label="Instrucción" color="#3B82F6" />
+            <NodeAddBtn label="Condicional" color="#F59E0B" />
+            <NodeAddBtn label="Loop" color="#9333EA" />
+            <NodeAddBtn label="MCP"        color={PRIMARY} />
+            <NodeAddBtn label="Respuesta"  color="#16A34A" />
+          </div>
+          <AdvancedFlow />
+        </div>
       </div>
 
       {/* Hint bar */}
       <div style={{
-        padding: '10px 24px', borderTop: '1px solid #E2E8F0',
+        padding: '10px 20px', borderTop: '1px solid #E2E8F0',
         fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#64748B',
-        background: '#FAFBFD',
+        background: '#FFFFFF',
       }}>
-        Editor avanzado · Acá podés definir condicionales, MCPs, loops y todo el flujo de este estado complejo.
+        Editor avanzado · Definí condicionales, MCPs, loops y todo el flujo de este estado.
       </div>
     </div>
+  )
+}
+
+function NodeAddBtn({ label, color }: { label: string; color: string }) {
+  return (
+    <button style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '6px 12px', borderRadius: 100,
+      background: 'transparent', border: 'none',
+      fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 600, color: '#475569', cursor: 'pointer',
+    }}
+      onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    >
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      {label}
+    </button>
   )
 }
 
