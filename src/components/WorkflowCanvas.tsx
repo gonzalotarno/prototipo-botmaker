@@ -1225,7 +1225,7 @@ function AdvancedEditorOverlay({
       {/* Body: canvas (and optionally a permanent right-side settings panel) */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
-        <AdvancedFlow />
+        <AdvancedFlow stateName={name} />
 
         {/* Right-side node palette (per Image #18) */}
         <div style={{
@@ -1452,20 +1452,24 @@ function SettingsDrawer({
 
 // ── Advanced flow nodes (match Image #18: Inicio pill + Instrucción rich card) ──
 
-function InicioAdvNode() {
+type InicioAdvData = Record<string, unknown> & { stateName?: string }
+
+function InicioAdvNode({ data }: NodeProps<Node<InicioAdvData>>) {
+  const label = data.stateName ? `Al entrar a "${data.stateName}"` : 'Inicio del estado'
   return (
     <div style={{
-      padding: '10px 22px',
+      padding: '10px 18px',
       background: '#FFFFFF',
       border: `1.5px solid ${PRIMARY}`,
       borderRadius: 100,
-      fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: PRIMARY,
+      fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, color: PRIMARY,
       display: 'inline-flex', alignItems: 'center', gap: 8,
       boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
       position: 'relative',
+      whiteSpace: 'nowrap',
     }}>
-      <MessageSquare size={14} />
-      Inicio
+      <MessageSquare size={13} />
+      {label}
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
     </div>
   )
@@ -1543,9 +1547,9 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
   )
 }
 
-function AdvancedFlow() {
+function AdvancedFlow({ stateName }: { stateName?: string }) {
   const initialAdvancedNodes: Node[] = [
-    { id: 'a-start', type: 'inicioAdv', position: { x: 80, y: 240 }, data: {} },
+    { id: 'a-start', type: 'inicioAdv', position: { x: 80, y: 240 }, data: { stateName } },
     {
       id: 'a-inst1', type: 'instAdv', position: { x: 260, y: 200 },
       data: { title: 'Datos del usuario', description: '', warning: 'Mejoras pendientes' },
