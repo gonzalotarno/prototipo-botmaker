@@ -11,7 +11,10 @@ import HomeOptions from './HomeOptions'
 import Metrics from './Metrics'
 import AgentesFirstTime from './AgentesFirstTime'
 import ThemesIndex from './ThemesIndex'
+import EstadosOptions from './EstadosOptions'
 import BackToLandingButton from './components/BackToLandingButton'
+import WorkflowCanvas from './components/WorkflowCanvas'
+import WorkflowList from './components/WorkflowList'
 
 // Support `?path=/agents&embed=1` for iframe embedding (portfolio).
 const params = new URLSearchParams(window.location.search)
@@ -61,6 +64,25 @@ function App() {
   // `/dev` queda como landing de devs para comparar versiones A vs B del flow.
   // Las superficies internas siguen accesibles por path directo.
   if (path === '/') return <ThemesIndex />
+  if (path === '/estados') return <><EstadosOptions /><BackToLandingButton /></>
+  if (path === '/estados-a') return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#fff', borderBottom: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', flexShrink: 0 }}>
+        <a href="/estados" style={{ color: '#304FFE', fontWeight: 600, textDecoration: 'none' }}>← Propuestas</a>
+        <span>·</span><span style={{ fontWeight: 600, color: '#0F172A' }}>A — Canvas visual</span>
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden' }}><WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} /></div>
+    </div>
+  )
+  if (path === '/estados-b') return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#fff', borderBottom: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', flexShrink: 0 }}>
+        <a href="/estados" style={{ color: '#304FFE', fontWeight: 600, textDecoration: 'none' }}>← Propuestas</a>
+        <span>·</span><span style={{ fontWeight: 600, color: '#0F172A' }}>B — Lista de pasos</span>
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden' }}><WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} /></div>
+    </div>
+  )
   if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
