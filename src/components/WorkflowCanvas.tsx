@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -8,6 +8,7 @@ import {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   addEdge,
   EdgeLabelRenderer,
   BaseEdge,
@@ -53,6 +54,7 @@ type StateNodeData = Record<string, unknown> & {
   requiredData: RequiredField[]
   kind: 'simple' | 'complex' | 'final'
   isDisconnected?: boolean
+  isJustConverted?: boolean
   onEdit: (id: string) => void
   onAddNext: (id: string) => void
   onOpenAdvanced?: (id: string) => void
@@ -261,7 +263,7 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit, onOpenAdvanced } = data
+  const { name, description, color: dotColor, isDisconnected, isJustConverted, requiresHuman, kind, onEdit, onOpenAdvanced } = data
   const isComplex = kind === 'complex'
   const isFinal = kind === 'final'
 
@@ -307,14 +309,18 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
         background: '#FFFFFF',
         border: `1.5px solid ${isDisconnected ? '#F59E0B' : isComplex ? PRIMARY : '#E2E8F0'}`,
         borderRadius: 10,
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        boxShadow: isJustConverted
+          ? '0 0 0 4px rgba(48,79,254,0.22), 0 12px 28px -8px rgba(48,79,254,0.32)'
+          : '0 1px 2px rgba(15,23,42,0.04)',
         cursor: 'pointer',
         position: 'relative',
-        transition: 'border-color 140ms ease-out, box-shadow 140ms ease-out',
+        transition: 'border-color 140ms ease-out, box-shadow 320ms ease-out',
+        animation: isJustConverted ? 'bmConverted 2.4s ease-out 1 both' : undefined,
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
+      onMouseEnter={e => { if (!isJustConverted) e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)' }}
+      onMouseLeave={e => { if (!isJustConverted) e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
     >
+      <style>{`@keyframes bmConverted{0%{box-shadow:0 0 0 6px rgba(48,79,254,0.28),0 18px 36px -8px rgba(48,79,254,0.45)}100%{box-shadow:0 0 0 0 rgba(48,79,254,0),0 1px 2px rgba(15,23,42,0.04)}}`}</style>
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
 
       {/* Sparkle accent on complex (top-right corner mini glow) */}
@@ -939,15 +945,34 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [advancedId, setAdvancedId] = useState<string | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [justConvertedId, setJustConvertedId] = useState<string | null>(null)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
+  const { fitView } = useReactFlow()
 
   const applyTemplate = (tpl: Template) => {
     const { nodes: tNodes, edges: tEdges } = tpl.build()
     setNodes(tNodes)
     setEdges(tEdges)
     setTemplatesOpen(false)
+    // After applying a template, re-center the canvas
+    setTimeout(() => fitView({ padding: 0.2, duration: 280 }), 60)
   }
+
+  // When closing the advanced overlay, force the workflow canvas to re-fit + highlight
+  // the converted state briefly so the user sees what changed.
+  const prevAdvancedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (prevAdvancedRef.current && advancedId === null) {
+      const id = prevAdvancedRef.current
+      // Re-fit so the canvas reappears properly after the overlay unmounts
+      setTimeout(() => fitView({ padding: 0.25, duration: 320 }), 80)
+      // Brief highlight on the just-converted state
+      setJustConvertedId(id)
+      setTimeout(() => setJustConvertedId(curr => curr === id ? null : curr), 2400)
+    }
+    prevAdvancedRef.current = advancedId
+  }, [advancedId, fitView])
 
   // Compute reachability from start to mark disconnected state nodes
   const reachable = useMemo(() => {
@@ -966,14 +991,15 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
   const decoratedNodes = useMemo(() => nodes.map(n => {
     if (n.type === 'stateNode') {
       const isDisconnected = !reachable.has(n.id)
+      const isJustConverted = n.id === justConvertedId
       return {
         ...n,
-        data: { ...n.data, isDisconnected, onEdit: setEditingId, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
+        data: { ...n.data, isDisconnected, isJustConverted, onEdit: setEditingId, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
       }
     }
     return n
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [nodes, reachable])
+  }), [nodes, reachable, justConvertedId])
 
   const nodeTypes = useMemo(() => ({
     startNode: StartNode,
