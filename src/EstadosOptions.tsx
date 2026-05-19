@@ -121,7 +121,7 @@ interface Proposal {
 
 const PROPOSALS: Proposal[] = [
   {
-    id: 'a', href: '/estados-a', label: 'A',
+    id: 'a', href: '/agente/estados', label: 'A',
     tag: 'Canvas visual',
     title: 'Editor de flujo con nodos',
     blurb: 'Los estados son nodos arrastrables en un canvas. Se conectan con edges, soportan ramas y flujos paralelos. Los estados avanzados tienen su propio sub-flow embebido.',
