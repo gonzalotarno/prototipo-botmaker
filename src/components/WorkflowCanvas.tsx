@@ -262,62 +262,26 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, variant, requiresHuman, kind, onEdit, onOpenAdvanced } = data
-  const isUnified = variant === 'unified'
-  // In unified mode, all non-final states look like simple cards visually
-  const isComplex = !isUnified && kind === 'complex'
+  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit } = data
+  const hasFlow = kind === 'complex'
   const isFinal = kind === 'final'
 
-  // Final states render as a compact pill (rounded both ends, smaller)
-  if (isFinal) {
-    return (
-      <div
-        onClick={() => onEdit(id)}
-        style={{
-          padding: '10px 22px',
-          background: '#FFFFFF',
-          border: '1.5px solid #16A34A',
-          borderRadius: 100,
-          fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#15803D',
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-          cursor: 'pointer',
-          position: 'relative',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(22,163,74,0.18)' }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
-      >
-        <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A' }} />
-        {name || 'Final'}
-        <span style={{
-          padding: '2px 7px', borderRadius: 5,
-          background: '#DCFCE7', color: '#15803D',
-          fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-        }}>Final</span>
-      </div>
-    )
-  }
-
-  // Classic complex: click opens advanced editor directly.
-  // Unified: click is routed to advanced editor via onEdit (the canvas wires that up).
-  const handleClick = () => isComplex ? onOpenAdvanced?.(id) : onEdit(id)
   return (
     <div
-      onClick={handleClick}
+      onClick={() => onEdit(id)}
       style={{
-        width: 320,
-        padding: '14px 16px',
+        width: 300,
+        padding: '12px 16px',
         background: '#FFFFFF',
-        border: `1.5px solid ${isDisconnected ? '#F59E0B' : isComplex ? PRIMARY : '#E2E8F0'}`,
+        border: `1.5px solid ${isDisconnected ? '#F59E0B' : '#E2E8F0'}`,
         borderRadius: 10,
         boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
         cursor: 'pointer',
         position: 'relative',
         transition: 'border-color 140ms ease-out, box-shadow 320ms ease-out',
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)'; e.currentTarget.style.borderColor = isDisconnected ? '#F59E0B' : '#C7D2FE' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; e.currentTarget.style.borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0' }}
     >
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
 
@@ -330,47 +294,23 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
             <AlertCircle size={11} />
           </span>
         )}
-        {isComplex && (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '2px 7px', borderRadius: 5,
-            background: '#EEF0FF', color: PRIMARY,
-            fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
-            flexShrink: 0,
-          }}><Sparkles size={9} /> Avanzado</span>
+        {hasFlow && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', borderRadius: 4, background: '#EEF0FF', color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
+            <GitBranch size={8} /> Flujo
+          </span>
+        )}
+        {isFinal && (
+          <span style={{ padding: '2px 6px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
+            🏁 Final
+          </span>
         )}
       </div>
 
-      {/* Description (simple only) */}
-      {!isComplex && description && (
-        <p style={{
-          margin: '6px 0 0',
-          fontFamily: 'Roboto, sans-serif', fontSize: 12, lineHeight: 1.45, color: '#64748B',
-          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-        }}>{description}</p>
-      )}
-
-      {/* Complex: mini flow preview + footer */}
-      {isComplex && (
-        <>
-          <div style={{
-            marginTop: 10, padding: '10px 8px',
-            background: '#FAFBFD', borderRadius: 8, border: '1px dashed #E2E8F0',
-          }}>
-            <MiniFlowPreview />
-          </div>
-          <div
-            onClick={e => { e.stopPropagation(); onOpenAdvanced?.(id) }}
-            style={{
-              marginTop: 8, paddingTop: 6,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: PRIMARY, fontWeight: 700,
-            }}
-          >
-            <span>Editar flujo</span>
-            <span>→</span>
-          </div>
-        </>
+      {/* Instructions preview */}
+      {description && (
+        <p style={{ margin: '6px 0 0', fontFamily: 'Roboto, sans-serif', fontSize: 12, lineHeight: 1.45, color: '#64748B', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
+          {description}
+        </p>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
@@ -471,8 +411,12 @@ function EditStateDrawer({
     onSave(node.id, { name, description, color, requiresHuman, requiredData })
   }, [name, description, color, requiresHuman, requiredData.length]) // eslint-disable-line
 
-  const handleConvertToAdvanced = () => {
-    onSave(node.id, { name, description: '', color, requiresHuman, requiredData, kind: 'complex' })
+  const hasFlow = node.data.kind === 'complex'
+
+  const handleFlowAction = () => {
+    if (!hasFlow) {
+      onSave(node.id, { name, description, color, requiresHuman, requiredData, kind: 'complex' })
+    }
     onOpenAdvanced(node.id)
   }
 
@@ -566,47 +510,49 @@ function EditStateDrawer({
             </div>
           </Field>
 
-          {/* Description */}
-          <Field label="Descripción del estado">
+          {/* Instructions */}
+          <Field label="Instrucciones del estado">
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Agrega una descripción"
+              placeholder="Describí cómo el agente debe comportarse en este estado"
               rows={3}
               style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
             />
           </Field>
 
-          {/* Convert to advanced — prominent, single CTA */}
+          {/* Add / Edit flow CTA */}
           <button
-            onClick={handleConvertToAdvanced}
+            onClick={handleFlowAction}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 14px', borderRadius: 12,
-              background: '#EFF0FF', border: `1px solid #C7D2FE`,
+              background: hasFlow ? '#EFF0FF' : '#FAFBFD',
+              border: `1px solid ${hasFlow ? '#C7D2FE' : '#E2E8F0'}`,
               cursor: 'pointer', textAlign: 'left', width: '100%',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#DDE2FF')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#EFF0FF')}
+            onMouseEnter={e => { e.currentTarget.style.background = '#EFF0FF'; e.currentTarget.style.borderColor = '#C7D2FE' }}
+            onMouseLeave={e => { e.currentTarget.style.background = hasFlow ? '#EFF0FF' : '#FAFBFD'; e.currentTarget.style.borderColor = hasFlow ? '#C7D2FE' : '#E2E8F0' }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{
                 width: 28, height: 28, borderRadius: 8,
-                background: PRIMARY, color: '#FFFFFF',
+                background: hasFlow ? PRIMARY : '#E2E8F0', color: hasFlow ? '#FFFFFF' : '#64748B',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                transition: 'background 150ms',
               }}>
-                <Sparkles size={14} />
+                <GitBranch size={14} />
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13.5, fontWeight: 700, color: '#1E1B4B' }}>
-                  Convertir a estado avanzado
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>
+                  {hasFlow ? 'Editar flujo del estado' : 'Agregar flujo al estado'}
                 </span>
-                <span style={{ fontSize: 11.5, color: '#4338CA', marginTop: 2 }}>
-                  Para condicionales, MCPs, loops o flujos personalizados
+                <span style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                  {hasFlow ? 'Este estado tiene un flujo configurado' : 'Condicionales, pasos y llamadas dentro del estado'}
                 </span>
               </div>
             </div>
-            <span style={{ color: PRIMARY, fontSize: 18, fontWeight: 700, marginLeft: 8 }}>→</span>
+            <span style={{ color: hasFlow ? PRIMARY : '#94A3B8', fontSize: 18, fontWeight: 700, marginLeft: 8 }}>→</span>
           </button>
 
           {/* Requires human */}
@@ -958,21 +904,19 @@ function WorkflowCanvasInner({
     return set
   }, [edges])
 
-  // Inject handlers + disconnected flag + variant into node data
+  // Inject handlers + disconnected flag into node data
+  // All states open the drawer first — "Agregar/Editar flujo" inside the drawer opens the advanced editor
   const decoratedNodes = useMemo(() => nodes.map(n => {
     if (n.type === 'stateNode') {
       const isDisconnected = !reachable.has(n.id)
-      const handleClick = variant === 'unified' && (n.data as StateNodeData).kind !== 'final'
-        ? (id: string) => setAdvancedId(id)
-        : setEditingId
       return {
         ...n,
-        data: { ...n.data, isDisconnected, variant, onEdit: handleClick, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
+        data: { ...n.data, isDisconnected, onEdit: setEditingId, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
       }
     }
     return n
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [nodes, reachable, variant])
+  }), [nodes, reachable])
 
   const nodeTypes = useMemo(() => ({
     startNode: StartNode,
