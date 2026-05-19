@@ -7790,7 +7790,7 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
         }}>
           {activeTab === 'estados' ? (
             variant === 'v2'
-              ? <WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} />
+              ? <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} initialVariant="unified" />
               : <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} />
           ) : (activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
             <>

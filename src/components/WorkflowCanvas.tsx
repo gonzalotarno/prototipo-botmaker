@@ -1843,14 +1843,14 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
 
 // ─── Exported wrapper ──────────────────────────────────────────────────────────
 
-export default function WorkflowCanvas({ onOpenKanban }: { onOpenKanban?: () => void }) {
-  const [variant, setVariant] = useState<'classic' | 'unified' | null>(null)
+export default function WorkflowCanvas({ onOpenKanban, initialVariant }: { onOpenKanban?: () => void; initialVariant?: 'classic' | 'unified' }) {
+  const [variant, setVariant] = useState<'classic' | 'unified' | null>(initialVariant ?? null)
   if (!variant) return <VariantChooser onPick={setVariant} />
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner
         variant={variant}
-        onChangeVariant={() => setVariant(null)}
+        onChangeVariant={initialVariant ? () => {} : () => setVariant(null)}
         onOpenKanban={onOpenKanban}
       />
     </ReactFlowProvider>
