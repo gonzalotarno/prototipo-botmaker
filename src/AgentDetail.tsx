@@ -8,6 +8,7 @@ import LogicTestChat from './components/LogicTestChat'
 import { DrawerProvider } from './context/DrawerContext'
 import AutomationCanvas from './components/AutomationCanvas'
 import WorkflowCanvas from './components/WorkflowCanvas'
+import WorkflowList from './components/WorkflowList'
 import Icon from './Icon'
 import { color, spacing, radius, font, shadow, text } from './ds'
 
@@ -7788,7 +7789,9 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
           position: 'relative',
         }}>
           {activeTab === 'estados' ? (
-            <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} />
+            variant === 'v2'
+              ? <WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} />
+              : <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} />
           ) : (activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
             <>
               {activeTab === 'mcps'             && <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>{variant === 'v2' ? <MCPListV2 /> : <ResourceListTab kind="mcp"  />}</div>}
