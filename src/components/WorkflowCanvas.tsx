@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -8,9 +8,7 @@ import {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
-  useReactFlow,
   addEdge,
-  EdgeLabelRenderer,
   BaseEdge,
   getSmoothStepPath,
   type Connection,
@@ -54,7 +52,7 @@ type StateNodeData = Record<string, unknown> & {
   requiredData: RequiredField[]
   kind: 'simple' | 'complex' | 'final'
   isDisconnected?: boolean
-  isJustConverted?: boolean
+  variant?: 'classic' | 'unified'
   onEdit: (id: string) => void
   onAddNext: (id: string) => void
   onOpenAdvanced?: (id: string) => void
@@ -84,10 +82,10 @@ const PRIMARY = '#304FFE'
 // ─── Initial data ──────────────────────────────────────────────────────────────
 
 const INITIAL_NODES: AnyNode[] = [
-  { id: 'start',  type: 'startNode',  position: { x: 80,  y: 200 }, data: { onAddNext: () => {} } as any },
-  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 175 }, data: { name: 'Todo',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_doing',type: 'stateNode',  position: { x: 580, y: 175 }, data: { name: 'Doing', description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_done', type: 'stateNode',  position: { x: 900, y: 200 }, data: { name: 'Done',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], kind: 'final',   onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 'start',  type: 'startNode',  position: { x: 80,  y: 220 }, data: { onAddNext: () => {} } as any },
+  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 195 }, data: { name: 'Evaluación inicial', description: 'Recopila los datos básicos del cliente antes de avanzar al triage.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_doing',type: 'stateNode',  position: { x: 700, y: 195 }, data: { name: 'Atención avanzada', description: '', color: '#3B82F6', requiresHuman: true,  requiredData: [], kind: 'complex', onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_done', type: 'stateNode',  position: { x: 1120, y: 220 }, data: { name: 'Resuelto', description: '', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'final',  onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
 // ─── Workflow Templates ────────────────────────────────────────────────────────
@@ -106,8 +104,8 @@ function mkState(id: string, name: string, x: number, color: string, kind: 'simp
     data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, onEdit: () => {}, onAddNext: () => {} } as any,
   }
 }
-function mkEdge(source: string, target: string, condition?: string): Edge {
-  return { id: `e-${source}-${target}`, source, target, type: 'conditionEdge', data: { condition: condition || '' } as EdgeData }
+function mkEdge(source: string, target: string): Edge {
+  return { id: `e-${source}-${target}`, source, target, type: 'conditionEdge' }
 }
 
 const START_NODE: AnyNode = { id: 'start', type: 'startNode', position: { x: 80, y: 220 }, data: { onAddNext: () => {} } as any }
@@ -135,14 +133,14 @@ const TEMPLATES: Template[] = [
         mkState('atendido', 'Atendido', 1180, '#EC4899', 'final'),
       ],
       edges: [
-        mkEdge('start', 'eval', 'Al iniciar la conversación'),
-        mkEdge('eval', 'triage', 'Cuando se recopilan los síntomas'),
-        mkEdge('triage', 'baja', 'Si la severidad es leve'),
-        mkEdge('triage', 'media', 'Si requiere atención en 24-48h'),
-        mkEdge('triage', 'alta', 'Si es urgente o crítico'),
-        mkEdge('baja', 'atendido', 'Cuando se resuelve'),
-        mkEdge('media', 'atendido', 'Cuando se resuelve'),
-        mkEdge('alta', 'atendido', 'Cuando se resuelve'),
+        mkEdge('start', 'eval'),
+        mkEdge('eval', 'triage'),
+        mkEdge('triage', 'baja'),
+        mkEdge('triage', 'media'),
+        mkEdge('triage', 'alta'),
+        mkEdge('baja', 'atendido'),
+        mkEdge('media', 'atendido'),
+        mkEdge('alta', 'atendido'),
       ],
     }),
   },
@@ -160,12 +158,12 @@ const TEMPLATES: Template[] = [
         mkState('lost', 'Perdido', 1480, '#DC2626', 'final'),
       ],
       edges: [
-        mkEdge('start', 'lead', 'Al captar un lead'),
-        mkEdge('lead', 'qual', 'Cuando responde el formulario de calificación'),
-        mkEdge('qual', 'demo', 'Cuando agenda una demo'),
-        mkEdge('demo', 'prop', 'Después de la demo'),
-        mkEdge('prop', 'won', 'Si firma la propuesta'),
-        mkEdge('prop', 'lost', 'Si rechaza o no responde en 7 días'),
+        mkEdge('start', 'lead'),
+        mkEdge('lead', 'qual'),
+        mkEdge('qual', 'demo'),
+        mkEdge('demo', 'prop'),
+        mkEdge('prop', 'won'),
+        mkEdge('prop', 'lost'),
       ],
     }),
   },
@@ -182,11 +180,11 @@ const TEMPLATES: Template[] = [
         mkState('pagado', 'Pagado', 1480, '#16A34A', 'final'),
       ],
       edges: [
-        mkEdge('start', 'aviso', 'Cuando se detecta una deuda nueva'),
-        mkEdge('aviso', 'r1', 'A los 7 días sin pago'),
-        mkEdge('r1', 'r2', 'A los 14 días sin pago'),
-        mkEdge('r2', 'plan', 'Cuando el cliente acepta negociar'),
-        mkEdge('plan', 'pagado', 'Cuando se confirma el pago'),
+        mkEdge('start', 'aviso'),
+        mkEdge('aviso', 'r1'),
+        mkEdge('r1', 'r2'),
+        mkEdge('r2', 'plan'),
+        mkEdge('plan', 'pagado'),
       ],
     }),
   },
@@ -203,11 +201,11 @@ const TEMPLATES: Template[] = [
         mkState('ent', 'Entregado', 1480, '#16A34A', 'final'),
       ],
       edges: [
-        mkEdge('start', 'orden', 'Cuando el cliente confirma el pedido'),
-        mkEdge('orden', 'pago', 'Cuando se aprueba el pago'),
-        mkEdge('pago', 'coc', 'Cuando cocina recibe la orden'),
-        mkEdge('coc', 'cam', 'Cuando sale del local'),
-        mkEdge('cam', 'ent', 'Cuando el cliente recibe el pedido'),
+        mkEdge('start', 'orden'),
+        mkEdge('orden', 'pago'),
+        mkEdge('pago', 'coc'),
+        mkEdge('coc', 'cam'),
+        mkEdge('cam', 'ent'),
       ],
     }),
   },
@@ -223,20 +221,21 @@ const TEMPLATES: Template[] = [
         mkState('act', 'Cliente activado', 1180, '#16A34A', 'final'),
       ],
       edges: [
-        mkEdge('start', 'bien', 'Al crearse la cuenta'),
-        mkEdge('bien', 'setup', 'Cuando el cliente completa el form de bienvenida'),
-        mkEdge('setup', 'valor', 'Cuando termina la configuración inicial'),
-        mkEdge('valor', 'act', 'Cuando usa la feature core por primera vez'),
+        mkEdge('start', 'bien'),
+        mkEdge('bien', 'setup'),
+        mkEdge('setup', 'valor'),
+        mkEdge('valor', 'act'),
       ],
     }),
   },
 ]
 
-type EdgeData = { condition?: string }
+type EdgeData = Record<string, unknown>
 
 const INITIAL_EDGES: Edge[] = [
-  { id: 'e-start-todo', source: 'start', target: 's_todo', type: 'conditionEdge', data: { condition: 'Al iniciar la conversación' } as EdgeData },
-  // intentionally NOT connecting doing & done to show "disconnected" warning style
+  { id: 'e-start-todo',  source: 'start',   target: 's_todo',  type: 'conditionEdge' },
+  { id: 'e-todo-doing',  source: 's_todo',  target: 's_doing', type: 'conditionEdge' },
+  { id: 'e-doing-done',  source: 's_doing', target: 's_done',  type: 'conditionEdge' },
 ]
 
 // ─── Start Node ────────────────────────────────────────────────────────────────
@@ -263,8 +262,10 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, isJustConverted, requiresHuman, kind, onEdit, onOpenAdvanced } = data
-  const isComplex = kind === 'complex'
+  const { name, description, color: dotColor, isDisconnected, variant, requiresHuman, kind, onEdit, onOpenAdvanced } = data
+  const isUnified = variant === 'unified'
+  // In unified mode, all non-final states look like simple cards visually
+  const isComplex = !isUnified && kind === 'complex'
   const isFinal = kind === 'final'
 
   // Final states render as a compact pill (rounded both ends, smaller)
@@ -298,7 +299,8 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
     )
   }
 
-  // For complex states: click opens advanced editor directly
+  // Classic complex: click opens advanced editor directly.
+  // Unified: click is routed to advanced editor via onEdit (the canvas wires that up).
   const handleClick = () => isComplex ? onOpenAdvanced?.(id) : onEdit(id)
   return (
     <div
@@ -309,32 +311,15 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
         background: '#FFFFFF',
         border: `1.5px solid ${isDisconnected ? '#F59E0B' : isComplex ? PRIMARY : '#E2E8F0'}`,
         borderRadius: 10,
-        boxShadow: isJustConverted
-          ? '0 0 0 4px rgba(48,79,254,0.22), 0 12px 28px -8px rgba(48,79,254,0.32)'
-          : '0 1px 2px rgba(15,23,42,0.04)',
+        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
         cursor: 'pointer',
         position: 'relative',
         transition: 'border-color 140ms ease-out, box-shadow 320ms ease-out',
-        animation: isJustConverted ? 'bmConverted 2.4s ease-out 1 both' : undefined,
       }}
-      onMouseEnter={e => { if (!isJustConverted) e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)' }}
-      onMouseLeave={e => { if (!isJustConverted) e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
     >
-      <style>{`@keyframes bmConverted{0%{box-shadow:0 0 0 6px rgba(48,79,254,0.28),0 18px 36px -8px rgba(48,79,254,0.45)}100%{box-shadow:0 0 0 0 rgba(48,79,254,0),0 1px 2px rgba(15,23,42,0.04)}}`}</style>
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
-
-      {/* Sparkle accent on complex (top-right corner mini glow) */}
-      {isComplex && (
-        <span aria-hidden style={{
-          position: 'absolute', top: -7, right: -7,
-          width: 20, height: 20, borderRadius: '50%',
-          background: PRIMARY, color: '#FFFFFF',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 10px -2px rgba(48,79,254,0.45), 0 0 0 3px #FFFFFF',
-        }}>
-          <Sparkles size={11} />
-        </span>
-      )}
 
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -344,6 +329,15 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
           <span title="Requiere confirmación humana" style={{ width: 16, height: 16, borderRadius: '50%', background: '#FEF3C7', color: '#B45309', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <AlertCircle size={11} />
           </span>
+        )}
+        {isComplex && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 7px', borderRadius: 5,
+            background: '#EEF0FF', color: PRIMARY,
+            fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
+            flexShrink: 0,
+          }}><Sparkles size={9} /> Avanzado</span>
         )}
       </div>
 
@@ -356,19 +350,27 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
         }}>{description}</p>
       )}
 
-      {/* Complex: single subtle "Editar flujo" hint at bottom */}
+      {/* Complex: mini flow preview + footer */}
       {isComplex && (
-        <div
-          onClick={e => { e.stopPropagation(); onOpenAdvanced?.(id) }}
-          style={{
-            marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: PRIMARY, fontWeight: 600,
-          }}
-        >
-          <span>Editar flujo</span>
-          <span>→</span>
-        </div>
+        <>
+          <div style={{
+            marginTop: 10, padding: '10px 8px',
+            background: '#FAFBFD', borderRadius: 8, border: '1px dashed #E2E8F0',
+          }}>
+            <MiniFlowPreview />
+          </div>
+          <div
+            onClick={e => { e.stopPropagation(); onOpenAdvanced?.(id) }}
+            style={{
+              marginTop: 8, paddingTop: 6,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: PRIMARY, fontWeight: 700,
+            }}
+          >
+            <span>Editar flujo</span>
+            <span>→</span>
+          </div>
+        </>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
@@ -401,57 +403,39 @@ const edgeDefaults = {
   style: { stroke: '#94A3B8', strokeWidth: 1.5 },
 }
 
-// ─── Custom Condition Edge ─────────────────────────────────────────────────────
-// Shows the transition condition inline as a clickable chip on the edge midpoint.
+// ─── Mini Flow Preview (used in complex state cards) ───────────────────────────
 
-function ConditionEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd }: EdgeProps<Edge<EdgeData>>) {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+function MiniFlowPreview() {
+  return (
+    <svg viewBox="0 0 280 56" width="100%" height="44" aria-hidden style={{ display: 'block' }}>
+      {/* Edges */}
+      <path d="M 24 28 H 70" stroke="#94A3B8" strokeWidth="1.2" fill="none" />
+      <path d="M 110 28 H 156" stroke="#94A3B8" strokeWidth="1.2" fill="none" />
+      <path d="M 196 28 H 232" stroke="#94A3B8" strokeWidth="1.2" fill="none" />
+      <path d="M 175 28 V 12 H 232" stroke="#94A3B8" strokeWidth="1.2" fill="none" strokeDasharray="2 3" />
+      {/* Nodes */}
+      <rect x="4"   y="20" width="20" height="16" rx="4" fill="#FFFFFF" stroke="#3B82F6" strokeWidth="1.2" />
+      <rect x="70"  y="20" width="40" height="16" rx="4" fill="#FFFFFF" stroke={PRIMARY} strokeWidth="1.2" />
+      <rect x="156" y="20" width="40" height="16" rx="4" fill="#FFFFFF" stroke="#F59E0B" strokeWidth="1.2" />
+      <rect x="232" y="4"  width="44" height="16" rx="4" fill="#FFFFFF" stroke="#16A34A" strokeWidth="1.2" />
+      <rect x="232" y="36" width="44" height="16" rx="4" fill="#FFFFFF" stroke="#16A34A" strokeWidth="1.2" />
+      {/* Tiny dots inside nodes */}
+      <circle cx="14"  cy="28" r="1.8" fill="#3B82F6" />
+      <circle cx="90"  cy="28" r="1.8" fill={PRIMARY} />
+      <circle cx="176" cy="28" r="1.8" fill="#F59E0B" />
+      <circle cx="254" cy="12" r="1.8" fill="#16A34A" />
+      <circle cx="254" cy="44" r="1.8" fill="#16A34A" />
+    </svg>
+  )
+}
+
+// ─── Custom edge (no label, just a smooth-step line) ───────────────────────────
+
+function ConditionEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd }: EdgeProps<Edge<EdgeData>>) {
+  const [edgePath] = getSmoothStepPath({
     sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 8,
   })
-  const condition = (data as EdgeData | undefined)?.condition || ''
-  const hasCondition = condition.trim().length > 0
-
-  // Dispatch a custom event for the canvas to handle (opens floating editor)
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    window.dispatchEvent(new CustomEvent('bm-edit-edge', { detail: { id } }))
-  }
-
-  return (
-    <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: '#94A3B8', strokeWidth: 1.5 }} />
-      <EdgeLabelRenderer>
-        <div
-          onClick={handleClick}
-          style={{
-            position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-            pointerEvents: 'all',
-            padding: '4px 10px',
-            borderRadius: 100,
-            background: hasCondition ? '#FFFFFF' : '#F8FAFC',
-            border: `1px solid ${hasCondition ? '#C7D2FE' : '#E2E8F0'}`,
-            boxShadow: '0 1px 2px rgba(15,23,42,0.06)',
-            fontFamily: 'Roboto, sans-serif',
-            fontSize: 11.5,
-            fontWeight: 500,
-            color: hasCondition ? PRIMARY : '#94A3B8',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            maxWidth: 200,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-          title={hasCondition ? condition : 'Click para definir condición'}
-        >
-          {hasCondition ? condition : '+ Cuando…'}
-        </div>
-      </EdgeLabelRenderer>
-    </>
-  )
+  return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: '#94A3B8', strokeWidth: 1.5 }} />
 }
 
 // ─── Edit Modal ────────────────────────────────────────────────────────────────
@@ -941,38 +925,25 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 // ─── Main Canvas component ─────────────────────────────────────────────────────
 
-function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
+function WorkflowCanvasInner({
+  variant, onOpenKanban, onChangeVariant,
+}: {
+  variant: 'classic' | 'unified'
+  onOpenKanban?: () => void
+  onChangeVariant: () => void
+}) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [advancedId, setAdvancedId] = useState<string | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
-  const [justConvertedId, setJustConvertedId] = useState<string | null>(null)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
-  const { fitView } = useReactFlow()
 
   const applyTemplate = (tpl: Template) => {
     const { nodes: tNodes, edges: tEdges } = tpl.build()
     setNodes(tNodes)
     setEdges(tEdges)
     setTemplatesOpen(false)
-    // After applying a template, re-center the canvas
-    setTimeout(() => fitView({ padding: 0.2, duration: 280 }), 60)
   }
-
-  // When closing the advanced overlay, force the workflow canvas to re-fit + highlight
-  // the converted state briefly so the user sees what changed.
-  const prevAdvancedRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (prevAdvancedRef.current && advancedId === null) {
-      const id = prevAdvancedRef.current
-      // Re-fit so the canvas reappears properly after the overlay unmounts
-      setTimeout(() => fitView({ padding: 0.25, duration: 320 }), 80)
-      // Brief highlight on the just-converted state
-      setJustConvertedId(id)
-      setTimeout(() => setJustConvertedId(curr => curr === id ? null : curr), 2400)
-    }
-    prevAdvancedRef.current = advancedId
-  }, [advancedId, fitView])
 
   // Compute reachability from start to mark disconnected state nodes
   const reachable = useMemo(() => {
@@ -987,19 +958,21 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
     return set
   }, [edges])
 
-  // Inject handlers + disconnected flag into node data
+  // Inject handlers + disconnected flag + variant into node data
   const decoratedNodes = useMemo(() => nodes.map(n => {
     if (n.type === 'stateNode') {
       const isDisconnected = !reachable.has(n.id)
-      const isJustConverted = n.id === justConvertedId
+      const handleClick = variant === 'unified' && (n.data as StateNodeData).kind !== 'final'
+        ? (id: string) => setAdvancedId(id)
+        : setEditingId
       return {
         ...n,
-        data: { ...n.data, isDisconnected, isJustConverted, onEdit: setEditingId, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
+        data: { ...n.data, isDisconnected, variant, onEdit: handleClick, onAddNext: handleAddNext, onOpenAdvanced: setAdvancedId },
       }
     }
     return n
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [nodes, reachable, justConvertedId])
+  }), [nodes, reachable, variant])
 
   const nodeTypes = useMemo(() => ({
     startNode: StartNode,
@@ -1011,27 +984,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
   }), [])
 
   const onConnect = useCallback((params: Connection) =>
-    setEdges(eds => addEdge({ ...params, ...edgeDefaults, data: { condition: '' } }, eds)), [setEdges])
-
-  // Edge condition editor — listens for the custom event from edge labels
-  const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const id = (e as CustomEvent<{ id: string }>).detail?.id
-      if (id) setEditingEdgeId(id)
-    }
-    window.addEventListener('bm-edit-edge', handler)
-    return () => window.removeEventListener('bm-edit-edge', handler)
-  }, [])
-
-  const editingEdge = useMemo(() => editingEdgeId ? edges.find(e => e.id === editingEdgeId) : undefined, [editingEdgeId, edges])
-  const updateEdgeCondition = (id: string, condition: string) => {
-    setEdges(es => es.map(e => e.id === id ? { ...e, data: { ...(e.data as EdgeData), condition } } : e))
-  }
-  const deleteEdge = (id: string) => {
-    setEdges(es => es.filter(e => e.id !== id))
-    setEditingEdgeId(null)
-  }
+    setEdges(eds => addEdge({ ...params, ...edgeDefaults }, eds)), [setEdges])
 
   function handleAddNext(fromId: string) {
     const src = nodes.find(n => n.id === fromId)
@@ -1069,6 +1022,9 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
       }}>
         <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Plantillas</ToolbarBtn>
         <ToolbarBtn icon={<Settings size={14} />}>Ajustes del workflow</ToolbarBtn>
+        <ToolbarBtn icon={<LayoutGrid size={14} />} onClick={onChangeVariant}>
+          {variant === 'unified' ? 'Vista: Unificada' : 'Vista: Clásica'}
+        </ToolbarBtn>
         <ToolbarBtn icon={<LayoutGrid size={14} />} primary onClick={onOpenKanban}>Ver tablero</ToolbarBtn>
         <ToolbarBtn icon={<Maximize2 size={14} />} square />
       </div>
@@ -1143,16 +1099,6 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         />
       )}
 
-      {/* Edge condition editor (centered modal) */}
-      {editingEdge && (
-        <EditEdgeModal
-          edge={editingEdge}
-          onClose={() => setEditingEdgeId(null)}
-          onSave={updateEdgeCondition}
-          onDelete={deleteEdge}
-        />
-      )}
-
       {/* Templates picker */}
       {templatesOpen && (
         <TemplatesModal onClose={() => setTemplatesOpen(false)} onPick={applyTemplate} />
@@ -1165,6 +1111,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         return (
           <AdvancedEditorOverlay
             node={adv}
+            pinSettings={variant === 'unified'}
             onClose={() => setAdvancedId(null)}
             onSave={updateState}
             onConvertToSimple={(id) => {
@@ -1181,12 +1128,13 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
 // ─── Advanced Editor Overlay (Lógica editor) ───────────────────────────────────
 
 function AdvancedEditorOverlay({
-  node, onClose, onSave, onConvertToSimple,
+  node, onClose, onSave, onConvertToSimple, pinSettings,
 }: {
   node: Node<StateNodeData>
   onClose: () => void
   onSave: (id: string, patch: Partial<StateNodeData>) => void
   onConvertToSimple: (id: string) => void
+  pinSettings?: boolean
 }) {
   const [name, setName] = useState(node.data.name)
   const [color, setColor] = useState(node.data.color)
@@ -1278,18 +1226,20 @@ function AdvancedEditorOverlay({
               }}
             />
           </div>
-          {/* Settings gear (opens state settings drawer) */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            title="Configuración del estado (datos requeridos, etc.)"
-            style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: '#FFFFFF', border: '1px solid #E2E8F0',
-              color: '#475569', cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-            }}
-          ><Settings size={16} /></button>
+          {/* Settings gear — only when the panel is not already pinned to the side */}
+          {!pinSettings && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              title="Configuración del estado (datos requeridos, etc.)"
+              style={{
+                width: 40, height: 40, borderRadius: 10,
+                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                color: '#475569', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+              }}
+            ><Settings size={16} /></button>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
@@ -1328,7 +1278,8 @@ function AdvancedEditorOverlay({
         </div>
       </header>
 
-      {/* Body: canvas only */}
+      {/* Body: canvas (and optionally a permanent right-side settings panel) */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
         <AdvancedFlow />
 
@@ -1428,8 +1379,43 @@ function AdvancedEditorOverlay({
         </button>
       </div>
 
-      {/* Settings drawer */}
-      {settingsOpen && (
+        {/* Permanent right-side settings panel (Unified mode) */}
+        {pinSettings && (
+          <aside style={{
+            width: 380, flexShrink: 0,
+            background: '#FFFFFF',
+            borderLeft: '1px solid #E2E8F0',
+            padding: '20px 22px',
+            overflow: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 18,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
+              <span style={{
+                padding: '2px 7px', borderRadius: 5,
+                background: '#EEF0FF', color: PRIMARY,
+                fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              }}>Unificado</span>
+            </div>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+              </div>
+              <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+            </div>
+
+            <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+          </aside>
+        )}
+      </div>
+
+      {/* Settings drawer (Classic only — pinSettings renders the inline panel instead) */}
+      {settingsOpen && !pinSettings && (
         <SettingsDrawer
           requiresHuman={requiresHuman}
           setRequiresHuman={setRequiresHuman}
@@ -1649,110 +1635,6 @@ function AdvancedFlow() {
   )
 }
 
-// ─── Edge condition editor ────────────────────────────────────────────────────
-
-function EditEdgeModal({
-  edge, onClose, onSave, onDelete,
-}: {
-  edge: Edge
-  onClose: () => void
-  onSave: (id: string, condition: string) => void
-  onDelete: (id: string) => void
-}) {
-  const [condition, setCondition] = useState((edge.data as EdgeData | undefined)?.condition ?? '')
-  useEffect(() => { onSave(edge.id, condition) }, [condition]) // eslint-disable-line
-
-  const examples = [
-    'Cuando el cliente confirma el pedido',
-    'Si el monto supera $1000',
-    'Después de 24h sin respuesta',
-    'Cuando se recibe un pago aprobado',
-  ]
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(15,23,42,0.32)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 460,
-          background: '#FFFFFF',
-          borderRadius: 14,
-          boxShadow: '0 24px 60px -12px rgba(15,23,42,0.25)',
-          fontFamily: 'Roboto, sans-serif',
-          padding: 22,
-          display: 'flex', flexDirection: 'column', gap: 16,
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>
-            Condición de transición
-          </h3>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>
-            Cuándo el agente debe pasar al siguiente estado. Escribilo en lenguaje natural — la IA lo va a interpretar.
-          </p>
-        </div>
-        <Field label="Cuando…">
-          <textarea
-            value={condition}
-            onChange={e => setCondition(e.target.value)}
-            placeholder="Ej: cuando el cliente confirma el pedido"
-            rows={3}
-            autoFocus
-            style={{ ...inputStyle, resize: 'vertical', minHeight: 78, lineHeight: 1.5, fontFamily: 'inherit' }}
-          />
-        </Field>
-        {/* Examples */}
-        <div>
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Ejemplos</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {examples.map(ex => (
-              <button
-                key={ex}
-                onClick={() => setCondition(ex)}
-                style={{
-                  padding: '5px 10px', borderRadius: 100,
-                  background: '#F8FAFC', border: '1px solid #E2E8F0',
-                  fontFamily: 'inherit', fontSize: 11.5, color: '#475569', cursor: 'pointer',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#EFF0FF'; e.currentTarget.style.borderColor = '#C7D2FE'; e.currentTarget.style.color = PRIMARY }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' }}
-              >{ex}</button>
-            ))}
-          </div>
-        </div>
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid #E2E8F0' }}>
-          <button
-            onClick={() => { onDelete(edge.id); onClose() }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '7px 14px', borderRadius: 100,
-              background: '#FFFFFF', border: '1px solid #FECACA',
-              color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-            }}
-          ><Trash2 size={13} /> Borrar conexión</button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '7px 18px', borderRadius: 100,
-              background: PRIMARY, border: 'none',
-              color: '#FFFFFF', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
-            }}
-          >Cerrar</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Templates Modal ──────────────────────────────────────────────────────────
 
 function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl: Template) => void }) {
@@ -1866,12 +1748,167 @@ function ZoomBtn({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Variant chooser ───────────────────────────────────────────────────────────
+
+function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void }) {
+  return (
+    <div style={{
+      width: '100%', minHeight: 600, height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 40, background: '#F8FAFC',
+      fontFamily: 'Roboto, sans-serif',
+    }}>
+      <div style={{ maxWidth: 980, width: '100%' }}>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0F172A' }}>Elegí cómo querés ver el workflow</h2>
+        <p style={{ margin: '6px 0 28px', fontSize: 14, color: '#64748B', maxWidth: 640 }}>
+          Dos vistas distintas del mismo agente. Probalas y quedate con la que sume más al equipo.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {/* Classic */}
+          <button
+            onClick={() => onPick('classic')}
+            style={{
+              textAlign: 'left', cursor: 'pointer',
+              padding: 22, borderRadius: 14,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+              transition: 'border-color 140ms, box-shadow 240ms, transform 140ms',
+              display: 'flex', flexDirection: 'column', gap: 14,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.boxShadow = '0 12px 30px -10px rgba(48,79,254,0.20)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; e.currentTarget.style.transform = 'translateY(0)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                padding: '2px 7px', borderRadius: 5,
+                background: '#F1F5F9', color: '#475569',
+                fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              }}>Opción 1</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Vista clásica</span>
+            </div>
+            {/* Visual preview */}
+            <div style={{
+              padding: 14, background: '#F8FAFC', borderRadius: 10,
+              border: '1px dashed #E2E8F0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+            }}>
+              <div style={{
+                width: 78, padding: '8px 10px', background: '#FFFFFF', borderRadius: 6,
+                border: '1px solid #E2E8F0', fontSize: 10, fontWeight: 700, color: '#0F172A',
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', marginBottom: 4 }} />
+                Simple
+              </div>
+              <span style={{ color: '#94A3B8' }}>→</span>
+              <div style={{
+                width: 92, padding: '8px 10px', background: '#FFFFFF', borderRadius: 6,
+                border: `1.5px solid ${PRIMARY}`, fontSize: 10, fontWeight: 700, color: '#0F172A',
+                position: 'relative',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6' }} />
+                  <span style={{
+                    padding: '1px 4px', borderRadius: 3,
+                    background: '#EEF0FF', color: PRIMARY,
+                    fontSize: 7.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+                  }}>Avz</span>
+                </div>
+                <div style={{ marginTop: 4 }}>Avanzado</div>
+              </div>
+              <span style={{ color: '#94A3B8' }}>→</span>
+              <div style={{
+                padding: '6px 12px', background: '#FFFFFF', borderRadius: 100,
+                border: '1.5px solid #16A34A', fontSize: 10, fontWeight: 700, color: '#15803D',
+              }}>Final</div>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: '#475569' }}>
+              Estados <strong>simples</strong> y <strong>avanzados</strong> conviven y se ven distinto. Los avanzados muestran un mini-flujo y abren el editor de lógica.
+            </p>
+            <div style={{
+              alignSelf: 'flex-start',
+              padding: '8px 14px', borderRadius: 8,
+              background: PRIMARY, color: '#FFFFFF',
+              fontSize: 13, fontWeight: 700,
+            }}>Usar vista clásica →</div>
+          </button>
+
+          {/* Unified */}
+          <button
+            onClick={() => onPick('unified')}
+            style={{
+              textAlign: 'left', cursor: 'pointer',
+              padding: 22, borderRadius: 14,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+              transition: 'border-color 140ms, box-shadow 240ms, transform 140ms',
+              display: 'flex', flexDirection: 'column', gap: 14,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.boxShadow = '0 12px 30px -10px rgba(48,79,254,0.20)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; e.currentTarget.style.transform = 'translateY(0)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{
+                padding: '2px 7px', borderRadius: 5,
+                background: '#F1F5F9', color: '#475569',
+                fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              }}>Opción 2</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Vista unificada</span>
+            </div>
+            {/* Visual preview */}
+            <div style={{
+              padding: 14, background: '#F8FAFC', borderRadius: 10,
+              border: '1px dashed #E2E8F0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+            }}>
+              <div style={{
+                width: 78, padding: '8px 10px', background: '#FFFFFF', borderRadius: 6,
+                border: '1px solid #E2E8F0', fontSize: 10, fontWeight: 700, color: '#0F172A',
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', marginBottom: 4 }} />
+                Estado
+              </div>
+              <span style={{ color: '#94A3B8' }}>→</span>
+              <div style={{
+                width: 78, padding: '8px 10px', background: '#FFFFFF', borderRadius: 6,
+                border: '1px solid #E2E8F0', fontSize: 10, fontWeight: 700, color: '#0F172A',
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6', marginBottom: 4 }} />
+                Estado
+              </div>
+              <span style={{ color: '#94A3B8' }}>→</span>
+              <div style={{
+                padding: '6px 12px', background: '#FFFFFF', borderRadius: 100,
+                border: '1.5px solid #16A34A', fontSize: 10, fontWeight: 700, color: '#15803D',
+              }}>Final</div>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: '#475569' }}>
+              Todos los estados se ven <strong>iguales</strong>. Al entrar, ves la lógica del estado y el panel de configuración fijo a la derecha.
+            </p>
+            <div style={{
+              alignSelf: 'flex-start',
+              padding: '8px 14px', borderRadius: 8,
+              background: PRIMARY, color: '#FFFFFF',
+              fontSize: 13, fontWeight: 700,
+            }}>Usar vista unificada →</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Exported wrapper ──────────────────────────────────────────────────────────
 
 export default function WorkflowCanvas({ onOpenKanban }: { onOpenKanban?: () => void }) {
+  const [variant, setVariant] = useState<'classic' | 'unified' | null>(null)
+  if (!variant) return <VariantChooser onPick={setVariant} />
   return (
     <ReactFlowProvider>
-      <WorkflowCanvasInner onOpenKanban={onOpenKanban} />
+      <WorkflowCanvasInner
+        variant={variant}
+        onChangeVariant={() => setVariant(null)}
+        onOpenKanban={onOpenKanban}
+      />
     </ReactFlowProvider>
   )
 }

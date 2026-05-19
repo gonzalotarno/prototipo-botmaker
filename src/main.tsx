@@ -10,6 +10,7 @@ import Home from './Home'
 import HomeOptions from './HomeOptions'
 import Metrics from './Metrics'
 import AgentesFirstTime from './AgentesFirstTime'
+import ThemesIndex from './ThemesIndex'
 import BackToLandingButton from './components/BackToLandingButton'
 
 // Support `?path=/agents&embed=1` for iframe embedding (portfolio).
@@ -54,11 +55,13 @@ const initialTab = agentTabMatch ? agentTabMatch[1] : undefined
 const isV2 = path.startsWith('/agente-v2')
 
 function App() {
-  // `/` es la landing de opciones (A vs B) para revisar con el CEO.
-  // `/home-a` y `/home-b` son las dos versiones de la Home.
+  // `/` es el índice de temas en evaluación (Home, Workflows, …).
+  // `/home` es la landing de variantes A/B/C/D de la Home (la antigua "/").
+  // `/home-a` … `/home-d` son las variantes individuales.
   // `/dev` queda como landing de devs para comparar versiones A vs B del flow.
   // Las superficies internas siguen accesibles por path directo.
-  if (path === '/') return <HomeOptions />
+  if (path === '/') return <ThemesIndex />
+  if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
   if (path === '/home-c') return <><Home variant="c" /><BackToLandingButton /></>
