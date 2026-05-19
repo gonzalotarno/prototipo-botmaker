@@ -9,8 +9,12 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  EdgeLabelRenderer,
+  BaseEdge,
+  getSmoothStepPath,
   type Connection,
   type Edge,
+  type EdgeProps,
   type Node,
   type NodeProps,
 } from '@xyflow/react'
@@ -19,11 +23,27 @@ import { Plus, AlertCircle, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, M
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
+type FieldType = 'text' | 'email' | 'number' | 'date' | 'phone' | 'url' | 'enum'
+
 interface RequiredField {
   id: string
   name: string
   description: string
+  type?: FieldType
+  maxLength?: number
+  pattern?: string
+  enumValues?: string[]
 }
+
+const FIELD_TYPES: { id: FieldType; label: string }[] = [
+  { id: 'text',   label: 'Texto' },
+  { id: 'email',  label: 'Email' },
+  { id: 'number', label: 'Número' },
+  { id: 'date',   label: 'Fecha' },
+  { id: 'phone',  label: 'Teléfono' },
+  { id: 'url',    label: 'URL' },
+  { id: 'enum',   label: 'Lista de opciones' },
+]
 
 type StateNodeData = Record<string, unknown> & {
   name: string
@@ -31,7 +51,7 @@ type StateNodeData = Record<string, unknown> & {
   color: string
   requiresHuman: boolean
   requiredData: RequiredField[]
-  kind: 'simple' | 'complex'
+  kind: 'simple' | 'complex' | 'final'
   isDisconnected?: boolean
   onEdit: (id: string) => void
   onAddNext: (id: string) => void
@@ -65,11 +85,155 @@ const INITIAL_NODES: AnyNode[] = [
   { id: 'start',  type: 'startNode',  position: { x: 80,  y: 200 }, data: { onAddNext: () => {} } as any },
   { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 175 }, data: { name: 'Todo',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
   { id: 's_doing',type: 'stateNode',  position: { x: 580, y: 175 }, data: { name: 'Doing', description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_done', type: 'stateNode',  position: { x: 880, y: 175 }, data: { name: 'Done',  description: '', color: COLORS[0], requiresHuman: true,  requiredData: [], kind: 'simple',  onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_done', type: 'stateNode',  position: { x: 900, y: 200 }, data: { name: 'Done',  description: '', color: COLORS[0], requiresHuman: false, requiredData: [], kind: 'final',   onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
+// ─── Workflow Templates ────────────────────────────────────────────────────────
+
+interface Template {
+  id: string
+  name: string
+  emoji: string
+  description: string
+  build: () => { nodes: AnyNode[]; edges: Edge[] }
+}
+
+function mkState(id: string, name: string, x: number, color: string, kind: 'simple' | 'complex' | 'final' = 'simple'): AnyNode {
+  return {
+    id, type: 'stateNode', position: { x, y: 200 },
+    data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, onEdit: () => {}, onAddNext: () => {} } as any,
+  }
+}
+function mkEdge(source: string, target: string, condition?: string): Edge {
+  return { id: `e-${source}-${target}`, source, target, type: 'conditionEdge', data: { condition: condition || '' } as EdgeData }
+}
+
+const START_NODE: AnyNode = { id: 'start', type: 'startNode', position: { x: 80, y: 220 }, data: { onAddNext: () => {} } as any }
+
+const TEMPLATES: Template[] = [
+  {
+    id: 'blank', name: 'Empezar de cero', emoji: '✨',
+    description: 'Un workflow vacío con Inicio + Todo + Done',
+    build: () => ({
+      nodes: [START_NODE, mkState('s1', 'Todo', 280, '#3B82F6'), mkState('s2', 'Done', 580, '#16A34A', 'final')],
+      edges: [mkEdge('start', 's1'), mkEdge('s1', 's2')],
+    }),
+  },
+  {
+    id: 'soporte', name: 'Triage de soporte', emoji: '🎧',
+    description: 'Evaluación inicial → triage → atención por prioridad',
+    build: () => ({
+      nodes: [
+        START_NODE,
+        mkState('eval', 'Evaluación inicial', 280, '#16A34A'),
+        mkState('triage', 'Triage en proceso', 580, '#3B82F6'),
+        mkState('baja', 'Urgencia baja', 880, '#EAB308'),
+        mkState('media', 'Urgencia media', 880, '#9333EA'),
+        mkState('alta', 'Urgencia alta', 880, '#0F766E'),
+        mkState('atendido', 'Atendido', 1180, '#EC4899', 'final'),
+      ],
+      edges: [
+        mkEdge('start', 'eval', 'Al iniciar la conversación'),
+        mkEdge('eval', 'triage', 'Cuando se recopilan los síntomas'),
+        mkEdge('triage', 'baja', 'Si la severidad es leve'),
+        mkEdge('triage', 'media', 'Si requiere atención en 24-48h'),
+        mkEdge('triage', 'alta', 'Si es urgente o crítico'),
+        mkEdge('baja', 'atendido', 'Cuando se resuelve'),
+        mkEdge('media', 'atendido', 'Cuando se resuelve'),
+        mkEdge('alta', 'atendido', 'Cuando se resuelve'),
+      ],
+    }),
+  },
+  {
+    id: 'ventas', name: 'Funnel de ventas', emoji: '💼',
+    description: 'Lead → calificado → demo → propuesta → cierre',
+    build: () => ({
+      nodes: [
+        START_NODE,
+        mkState('lead', 'Lead nuevo', 280, '#3B82F6'),
+        mkState('qual', 'Calificado', 580, '#EAB308'),
+        mkState('demo', 'Demo agendada', 880, '#9333EA'),
+        mkState('prop', 'Propuesta enviada', 1180, '#0F766E'),
+        mkState('won', 'Ganado', 1480, '#16A34A', 'final'),
+        mkState('lost', 'Perdido', 1480, '#DC2626', 'final'),
+      ],
+      edges: [
+        mkEdge('start', 'lead', 'Al captar un lead'),
+        mkEdge('lead', 'qual', 'Cuando responde el formulario de calificación'),
+        mkEdge('qual', 'demo', 'Cuando agenda una demo'),
+        mkEdge('demo', 'prop', 'Después de la demo'),
+        mkEdge('prop', 'won', 'Si firma la propuesta'),
+        mkEdge('prop', 'lost', 'Si rechaza o no responde en 7 días'),
+      ],
+    }),
+  },
+  {
+    id: 'cobranzas', name: 'Cobranzas', emoji: '💳',
+    description: 'Recordatorios escalonados hasta acuerdo de pago',
+    build: () => ({
+      nodes: [
+        START_NODE,
+        mkState('aviso', 'Aviso amistoso', 280, '#3B82F6'),
+        mkState('r1', 'Recordatorio 1', 580, '#EAB308'),
+        mkState('r2', 'Recordatorio 2', 880, '#F59E0B'),
+        mkState('plan', 'Plan de pago', 1180, '#9333EA'),
+        mkState('pagado', 'Pagado', 1480, '#16A34A', 'final'),
+      ],
+      edges: [
+        mkEdge('start', 'aviso', 'Cuando se detecta una deuda nueva'),
+        mkEdge('aviso', 'r1', 'A los 7 días sin pago'),
+        mkEdge('r1', 'r2', 'A los 14 días sin pago'),
+        mkEdge('r2', 'plan', 'Cuando el cliente acepta negociar'),
+        mkEdge('plan', 'pagado', 'Cuando se confirma el pago'),
+      ],
+    }),
+  },
+  {
+    id: 'pedidos', name: 'Toma de pedidos', emoji: '🍕',
+    description: 'Pedido → confirmación → preparación → entrega',
+    build: () => ({
+      nodes: [
+        START_NODE,
+        mkState('orden', 'Pedido tomado', 280, '#3B82F6'),
+        mkState('pago', 'Pago confirmado', 580, '#EAB308'),
+        mkState('coc', 'En preparación', 880, '#F59E0B'),
+        mkState('cam', 'En camino', 1180, '#9333EA'),
+        mkState('ent', 'Entregado', 1480, '#16A34A', 'final'),
+      ],
+      edges: [
+        mkEdge('start', 'orden', 'Cuando el cliente confirma el pedido'),
+        mkEdge('orden', 'pago', 'Cuando se aprueba el pago'),
+        mkEdge('pago', 'coc', 'Cuando cocina recibe la orden'),
+        mkEdge('coc', 'cam', 'Cuando sale del local'),
+        mkEdge('cam', 'ent', 'Cuando el cliente recibe el pedido'),
+      ],
+    }),
+  },
+  {
+    id: 'onboarding', name: 'Onboarding de clientes', emoji: '🎯',
+    description: 'Bienvenida → setup → primer valor → activado',
+    build: () => ({
+      nodes: [
+        START_NODE,
+        mkState('bien', 'Bienvenida', 280, '#3B82F6'),
+        mkState('setup', 'Setup inicial', 580, '#EAB308'),
+        mkState('valor', 'Primer valor', 880, '#9333EA'),
+        mkState('act', 'Cliente activado', 1180, '#16A34A', 'final'),
+      ],
+      edges: [
+        mkEdge('start', 'bien', 'Al crearse la cuenta'),
+        mkEdge('bien', 'setup', 'Cuando el cliente completa el form de bienvenida'),
+        mkEdge('setup', 'valor', 'Cuando termina la configuración inicial'),
+        mkEdge('valor', 'act', 'Cuando usa la feature core por primera vez'),
+      ],
+    }),
+  },
+]
+
+type EdgeData = { condition?: string }
+
 const INITIAL_EDGES: Edge[] = [
-  { id: 'e-start-todo', source: 'start',   target: 's_todo', type: 'smoothstep' },
+  { id: 'e-start-todo', source: 'start', target: 's_todo', type: 'conditionEdge', data: { condition: 'Al iniciar la conversación' } as EdgeData },
   // intentionally NOT connecting doing & done to show "disconnected" warning style
 ]
 
@@ -99,7 +263,40 @@ function StartNode() {
 function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
   const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit, onOpenAdvanced } = data
   const isComplex = kind === 'complex'
-  // For complex states: click opens advanced editor directly (no modal in between)
+  const isFinal = kind === 'final'
+
+  // Final states render as a compact pill (rounded both ends, smaller)
+  if (isFinal) {
+    return (
+      <div
+        onClick={() => onEdit(id)}
+        style={{
+          padding: '10px 22px',
+          background: '#FFFFFF',
+          border: '1.5px solid #16A34A',
+          borderRadius: 100,
+          fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#15803D',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(22,163,74,0.18)' }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
+      >
+        <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A' }} />
+        {name || 'Final'}
+        <span style={{
+          padding: '2px 7px', borderRadius: 5,
+          background: '#DCFCE7', color: '#15803D',
+          fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+        }}>Final</span>
+      </div>
+    )
+  }
+
+  // For complex states: click opens advanced editor directly
   const handleClick = () => isComplex ? onOpenAdvanced?.(id) : onEdit(id)
   return (
     <div
@@ -194,21 +391,76 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
 // ─── Custom edge defaults ──────────────────────────────────────────────────────
 
 const edgeDefaults = {
-  type: 'smoothstep',
+  type: 'conditionEdge',
   style: { stroke: '#94A3B8', strokeWidth: 1.5 },
+}
+
+// ─── Custom Condition Edge ─────────────────────────────────────────────────────
+// Shows the transition condition inline as a clickable chip on the edge midpoint.
+
+function ConditionEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd }: EdgeProps<Edge<EdgeData>>) {
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
+    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 8,
+  })
+  const condition = (data as EdgeData | undefined)?.condition || ''
+  const hasCondition = condition.trim().length > 0
+
+  // Dispatch a custom event for the canvas to handle (opens floating editor)
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    window.dispatchEvent(new CustomEvent('bm-edit-edge', { detail: { id } }))
+  }
+
+  return (
+    <>
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: '#94A3B8', strokeWidth: 1.5 }} />
+      <EdgeLabelRenderer>
+        <div
+          onClick={handleClick}
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            pointerEvents: 'all',
+            padding: '4px 10px',
+            borderRadius: 100,
+            background: hasCondition ? '#FFFFFF' : '#F8FAFC',
+            border: `1px solid ${hasCondition ? '#C7D2FE' : '#E2E8F0'}`,
+            boxShadow: '0 1px 2px rgba(15,23,42,0.06)',
+            fontFamily: 'Roboto, sans-serif',
+            fontSize: 11.5,
+            fontWeight: 500,
+            color: hasCondition ? PRIMARY : '#94A3B8',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            maxWidth: 200,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+          title={hasCondition ? condition : 'Click para definir condición'}
+        >
+          {hasCondition ? condition : '+ Cuando…'}
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  )
 }
 
 // ─── Edit Modal ────────────────────────────────────────────────────────────────
 
-function EditStateModal({
-  node, onClose, onSave, onDelete, onOpenAdvanced,
+function EditStateDrawer({
+  node, onClose, onSave, onDelete, onOpenAdvanced, onMakeFinal,
 }: {
   node: Node<StateNodeData>
   onClose: () => void
   onSave: (id: string, patch: Partial<StateNodeData>) => void
   onDelete: (id: string) => void
   onOpenAdvanced: (id: string) => void
+  onMakeFinal: (id: string) => void
 }) {
+  // Reset state when the node id changes (switching between cards keeps the drawer open)
   const [name, setName] = useState(node.data.name)
   const [description, setDescription] = useState(node.data.description)
   const [color, setColor] = useState(node.data.color)
@@ -216,36 +468,59 @@ function EditStateModal({
   const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
   const [colorOpen, setColorOpen] = useState(false)
 
+  // Sync state with new node when user clicks a different one
+  useEffect(() => {
+    setName(node.data.name)
+    setDescription(node.data.description)
+    setColor(node.data.color)
+    setRequiresHuman(node.data.requiresHuman)
+    setRequiredData(node.data.requiredData ?? [])
+  }, [node.id]) // eslint-disable-line
+
   useEffect(() => {
     onSave(node.id, { name, description, color, requiresHuman, requiredData })
   }, [name, description, color, requiresHuman, requiredData.length]) // eslint-disable-line
 
   const handleConvertToAdvanced = () => {
-    // Persist current basics + flip kind, then open the advanced editor
     onSave(node.id, { name, description: '', color, requiresHuman, requiredData, kind: 'complex' })
     onOpenAdvanced(node.id)
   }
 
   return (
-    <div
-      onClick={onClose}
+    <aside
+      onClick={e => e.stopPropagation()}
       style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        background: 'rgba(15,23,42,0.32)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20,
+        position: 'absolute', top: 16, right: 16, bottom: 16, zIndex: 30,
+        width: 420,
+        background: '#FFFFFF',
+        borderRadius: 14,
+        border: '1px solid #E2E8F0',
+        boxShadow: '0 24px 60px -12px rgba(15,23,42,0.18)',
+        fontFamily: 'Roboto, sans-serif',
+        display: 'flex', flexDirection: 'column',
+        animation: 'wfDrawerSlide 220ms cubic-bezier(0.16, 1, 0.3, 1) both',
       }}
     >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto',
-          background: '#FFFFFF',
-          borderRadius: 16,
-          boxShadow: '0 24px 60px -12px rgba(15,23,42,0.25)',
-          fontFamily: 'Roboto, sans-serif',
+      <style>{`@keyframes wfDrawerSlide{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      {/* Drawer header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 18px', borderBottom: '1px solid #E2E8F0',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || 'Estado sin nombre'}</span>
+        </div>
+        <button onClick={onClose} title="Cerrar (Esc)" style={{
+          width: 28, height: 28, borderRadius: 8,
+          background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
         }}
-      >
+          onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >✕</button>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Body */}
         <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Name with inline color swatch */}
@@ -361,34 +636,48 @@ function EditStateModal({
             fields={requiredData}
             onChange={setRequiredData}
           />
+
+          {/* Mark as final state */}
+          <button
+            onClick={() => { onMakeFinal(node.id); onClose() }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 14px', borderRadius: 10,
+              background: 'transparent', border: '1.5px dashed #CBD5E1',
+              color: '#475569', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              alignSelf: 'flex-start',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#16A34A'; e.currentTarget.style.color = '#15803D' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#475569' }}
+          >🏁 Marcar como estado final</button>
         </div>
+        </div>{/* end scrollable */}
 
         {/* Footer */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: 18, marginTop: 18, borderTop: '1px solid #E2E8F0', background: '#FAFBFD',
-          borderBottomLeftRadius: 16, borderBottomRightRadius: 16,
+          padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD',
+          borderBottomLeftRadius: 14, borderBottomRightRadius: 14,
         }}>
           <button
             onClick={() => { onDelete(node.id); onClose() }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '8px 18px', borderRadius: 100,
+              padding: '7px 14px', borderRadius: 100,
               background: '#FFFFFF', border: '1px solid #FECACA',
-              color: '#DC2626', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
             }}
           ><Trash2 size={14} /> Eliminar</button>
           <button
             onClick={onClose}
             style={{
-              padding: '8px 22px', borderRadius: 100,
+              padding: '7px 16px', borderRadius: 100,
               background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
-              color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              color: PRIMARY, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
             }}
           >Cerrar</button>
         </div>
-      </div>
-    </div>
+    </aside>
   )
 }
 
@@ -434,9 +723,12 @@ function RequiredDataCard({
   onRemove: (id: string) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [validationOpen, setValidationOpen] = useState(false)
+  const type = field.type ?? 'text'
   const insertVariable = () => {
     onUpdate(field.id, { description: (field.description || '') + ' {{variable}}' })
   }
+  const hasValidation = field.maxLength != null || (field.pattern && field.pattern.length > 0) || (field.enumValues && field.enumValues.length > 0)
   return (
     <div style={{
       padding: '12px 14px', borderRadius: 10,
@@ -497,21 +789,101 @@ function RequiredDataCard({
           minHeight: 36,
         }}
       />
-      {/* Variable insertion button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+      {/* Type selector + validation + variable */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {/* Tipo selector — native select keeps it small */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 8px', borderRadius: 6,
+            background: '#F8FAFC', border: '1px solid #E2E8F0',
+            fontFamily: 'inherit', fontSize: 11, color: '#475569', fontWeight: 600,
+          }}>
+            Tipo:
+            <select
+              value={type}
+              onChange={e => onUpdate(field.id, { type: e.target.value as FieldType })}
+              style={{
+                border: 'none', background: 'transparent', outline: 'none',
+                fontFamily: 'inherit', fontSize: 11, color: '#0F172A', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              {FIELD_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+          <button
+            onClick={() => setValidationOpen(o => !o)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '4px 8px', borderRadius: 6,
+              background: hasValidation ? '#EFF0FF' : 'transparent', border: 'none',
+              color: hasValidation ? PRIMARY : '#64748B', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Settings size={10} /> Validación{hasValidation ? ' ●' : ''} {validationOpen ? '▴' : '▾'}
+          </button>
+        </div>
         <button
           onClick={insertVariable}
           title="Insertar variable"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '3px 8px', borderRadius: 6,
+            padding: '4px 8px', borderRadius: 6,
             background: '#F1F5F9', border: 'none',
             color: '#475569', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = '#E2E8F0' }}
           onMouseLeave={e => { e.currentTarget.style.background = '#F1F5F9' }}
-        ><Braces size={11} /> Insertar variable</button>
+        ><Braces size={11} /> Variable</button>
       </div>
+      {/* Validation panel */}
+      {validationOpen && (
+        <div style={{
+          marginTop: 8, padding: 12, borderRadius: 8,
+          background: '#FAFBFD', border: '1px solid #E2E8F0',
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          {type === 'enum' ? (
+            <div>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Opciones permitidas (una por línea)</label>
+              <textarea
+                value={(field.enumValues ?? []).join('\n')}
+                onChange={e => onUpdate(field.id, { enumValues: e.target.value.split('\n').filter(Boolean) })}
+                placeholder={'Alto\nMedio\nBajo'}
+                rows={3}
+                style={{ ...inputStyle, padding: 8, fontFamily: 'inherit', fontSize: 12.5, minHeight: 64, resize: 'vertical' }}
+              />
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Largo máximo</label>
+                  <input
+                    type="number"
+                    value={field.maxLength ?? ''}
+                    onChange={e => onUpdate(field.id, { maxLength: e.target.value ? Number(e.target.value) : undefined })}
+                    placeholder="Sin límite"
+                    style={{ ...inputStyle, padding: 8, fontSize: 12.5 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Patrón (regex)</label>
+                  <input
+                    value={field.pattern ?? ''}
+                    onChange={e => onUpdate(field.id, { pattern: e.target.value })}
+                    placeholder="^[A-Z]{3}$"
+                    style={{ ...inputStyle, padding: 8, fontSize: 12.5, fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: '#94A3B8', lineHeight: 1.4 }}>
+                El tipo "<strong>{FIELD_TYPES.find(t => t.id === type)?.label}</strong>" ya valida el formato base. Usá patrón regex solo si necesitás una restricción extra.
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -566,8 +938,16 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [advancedId, setAdvancedId] = useState<string | null>(null)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
+
+  const applyTemplate = (tpl: Template) => {
+    const { nodes: tNodes, edges: tEdges } = tpl.build()
+    setNodes(tNodes)
+    setEdges(tEdges)
+    setTemplatesOpen(false)
+  }
 
   // Compute reachability from start to mark disconnected state nodes
   const reachable = useMemo(() => {
@@ -600,8 +980,32 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
     stateNode: StateNode,
   }), [])
 
+  const edgeTypes = useMemo(() => ({
+    conditionEdge: ConditionEdge,
+  }), [])
+
   const onConnect = useCallback((params: Connection) =>
-    setEdges(eds => addEdge({ ...params, ...edgeDefaults }, eds)), [setEdges])
+    setEdges(eds => addEdge({ ...params, ...edgeDefaults, data: { condition: '' } }, eds)), [setEdges])
+
+  // Edge condition editor — listens for the custom event from edge labels
+  const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<{ id: string }>).detail?.id
+      if (id) setEditingEdgeId(id)
+    }
+    window.addEventListener('bm-edit-edge', handler)
+    return () => window.removeEventListener('bm-edit-edge', handler)
+  }, [])
+
+  const editingEdge = useMemo(() => editingEdgeId ? edges.find(e => e.id === editingEdgeId) : undefined, [editingEdgeId, edges])
+  const updateEdgeCondition = (id: string, condition: string) => {
+    setEdges(es => es.map(e => e.id === id ? { ...e, data: { ...(e.data as EdgeData), condition } } : e))
+  }
+  const deleteEdge = (id: string) => {
+    setEdges(es => es.filter(e => e.id !== id))
+    setEditingEdgeId(null)
+  }
 
   function handleAddNext(fromId: string) {
     const src = nodes.find(n => n.id === fromId)
@@ -637,6 +1041,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         position: 'absolute', top: 16, right: 16, zIndex: 10,
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
+        <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Plantillas</ToolbarBtn>
         <ToolbarBtn icon={<Settings size={14} />}>Ajustes del workflow</ToolbarBtn>
         <ToolbarBtn icon={<LayoutGrid size={14} />} primary onClick={onOpenKanban}>Ver tablero</ToolbarBtn>
         <ToolbarBtn icon={<Maximize2 size={14} />} square />
@@ -658,6 +1063,7 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         defaultEdgeOptions={edgeDefaults}
         fitView
         fitViewOptions={{ padding: 0.2 }}
@@ -698,15 +1104,32 @@ function WorkflowCanvasInner({ onOpenKanban }: { onOpenKanban?: () => void }) {
         <Sparkles size={18} />
       </button>
 
-      {/* Edit modal */}
+      {/* Edit drawer */}
       {editingNode && (
-        <EditStateModal
+        <EditStateDrawer
+          key={editingNode.id}
           node={editingNode}
           onClose={() => setEditingId(null)}
           onSave={updateState}
           onDelete={deleteState}
+          onMakeFinal={(id) => updateState(id, { kind: 'final' })}
           onOpenAdvanced={(id) => { setEditingId(null); setAdvancedId(id) }}
         />
+      )}
+
+      {/* Edge condition editor (centered modal) */}
+      {editingEdge && (
+        <EditEdgeModal
+          edge={editingEdge}
+          onClose={() => setEditingEdgeId(null)}
+          onSave={updateEdgeCondition}
+          onDelete={deleteEdge}
+        />
+      )}
+
+      {/* Templates picker */}
+      {templatesOpen && (
+        <TemplatesModal onClose={() => setTemplatesOpen(false)} onPick={applyTemplate} />
       )}
 
       {/* Advanced editor overlay */}
@@ -1197,6 +1620,187 @@ function AdvancedFlow() {
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
     </ReactFlow>
+  )
+}
+
+// ─── Edge condition editor ────────────────────────────────────────────────────
+
+function EditEdgeModal({
+  edge, onClose, onSave, onDelete,
+}: {
+  edge: Edge
+  onClose: () => void
+  onSave: (id: string, condition: string) => void
+  onDelete: (id: string) => void
+}) {
+  const [condition, setCondition] = useState((edge.data as EdgeData | undefined)?.condition ?? '')
+  useEffect(() => { onSave(edge.id, condition) }, [condition]) // eslint-disable-line
+
+  const examples = [
+    'Cuando el cliente confirma el pedido',
+    'Si el monto supera $1000',
+    'Después de 24h sin respuesta',
+    'Cuando se recibe un pago aprobado',
+  ]
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(15,23,42,0.32)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 460,
+          background: '#FFFFFF',
+          borderRadius: 14,
+          boxShadow: '0 24px 60px -12px rgba(15,23,42,0.25)',
+          fontFamily: 'Roboto, sans-serif',
+          padding: 22,
+          display: 'flex', flexDirection: 'column', gap: 16,
+        }}
+      >
+        <div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>
+            Condición de transición
+          </h3>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>
+            Cuándo el agente debe pasar al siguiente estado. Escribilo en lenguaje natural — la IA lo va a interpretar.
+          </p>
+        </div>
+        <Field label="Cuando…">
+          <textarea
+            value={condition}
+            onChange={e => setCondition(e.target.value)}
+            placeholder="Ej: cuando el cliente confirma el pedido"
+            rows={3}
+            autoFocus
+            style={{ ...inputStyle, resize: 'vertical', minHeight: 78, lineHeight: 1.5, fontFamily: 'inherit' }}
+          />
+        </Field>
+        {/* Examples */}
+        <div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Ejemplos</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {examples.map(ex => (
+              <button
+                key={ex}
+                onClick={() => setCondition(ex)}
+                style={{
+                  padding: '5px 10px', borderRadius: 100,
+                  background: '#F8FAFC', border: '1px solid #E2E8F0',
+                  fontFamily: 'inherit', fontSize: 11.5, color: '#475569', cursor: 'pointer',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#EFF0FF'; e.currentTarget.style.borderColor = '#C7D2FE'; e.currentTarget.style.color = PRIMARY }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' }}
+              >{ex}</button>
+            ))}
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid #E2E8F0' }}>
+          <button
+            onClick={() => { onDelete(edge.id); onClose() }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 100,
+              background: '#FFFFFF', border: '1px solid #FECACA',
+              color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+            }}
+          ><Trash2 size={13} /> Borrar conexión</button>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '7px 18px', borderRadius: 100,
+              background: PRIMARY, border: 'none',
+              color: '#FFFFFF', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer',
+            }}
+          >Cerrar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Templates Modal ──────────────────────────────────────────────────────────
+
+function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl: Template) => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(15,23,42,0.32)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 760, maxHeight: '90vh', overflow: 'auto',
+          background: '#FFFFFF',
+          borderRadius: 16,
+          boxShadow: '0 24px 60px -12px rgba(15,23,42,0.25)',
+          fontFamily: 'Roboto, sans-serif',
+          padding: '24px 26px',
+          display: 'flex', flexDirection: 'column', gap: 18,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+              Plantillas de workflow
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5, maxWidth: 520 }}>
+              Empezá con una estructura común y adaptala a tu caso. Reemplaza el workflow actual.
+            </p>
+          </div>
+          <button onClick={onClose} title="Cerrar" style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >✕</button>
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12,
+        }}>
+          {TEMPLATES.map(tpl => (
+            <button
+              key={tpl.id}
+              onClick={() => onPick(tpl)}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 14,
+                padding: '16px 18px', borderRadius: 12,
+                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                cursor: 'pointer', textAlign: 'left',
+                transition: 'border-color 140ms ease-out, background 140ms ease-out, transform 140ms ease-out',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = '#FAFBFD'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{tpl.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{tpl.name}</div>
+                <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2, lineHeight: 1.45 }}>{tpl.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <p style={{ margin: 0, fontSize: 11.5, color: '#94A3B8', lineHeight: 1.5 }}>
+          Las plantillas son un punto de partida — siempre podés agregar, modificar o eliminar estados después.
+        </p>
+      </div>
+    </div>
   )
 }
 
