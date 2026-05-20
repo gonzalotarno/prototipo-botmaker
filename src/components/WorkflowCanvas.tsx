@@ -1042,6 +1042,7 @@ function AdvancedEditorOverlay({
 }) {
   const [name, setName] = useState(node.data.name)
   const [color, setColor] = useState(node.data.color)
+  const [description, setDescription] = useState(node.data.description ?? '')
   const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
   const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -1049,8 +1050,8 @@ function AdvancedEditorOverlay({
   const [panelOpen, setPanelOpen] = useState(true)
 
   useEffect(() => {
-    onSave(node.id, { name, color, requiresHuman, requiredData })
-  }, [name, color, requiresHuman, requiredData.length]) // eslint-disable-line
+    onSave(node.id, { name, color, description, requiresHuman, requiredData })
+  }, [name, color, description, requiresHuman, requiredData.length]) // eslint-disable-line
 
   return (
     <div style={{
@@ -1166,6 +1167,26 @@ function AdvancedEditorOverlay({
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
         <AdvancedFlow stateName={name} />
 
+        {/* Re-open config panel tab (when panel is collapsed) */}
+        {pinSettings && !panelOpen && (
+          <button
+            onClick={() => setPanelOpen(true)}
+            title="Mostrar configuración"
+            style={{
+              position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
+              zIndex: 11, width: 18, height: 56,
+              borderRadius: '8px 0 0 8px',
+              background: '#FFFFFF', border: '1px solid #E2E8F0', borderRight: 'none',
+              cursor: 'pointer', color: '#64748B',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              writingMode: 'vertical-rl', fontSize: 9, fontWeight: 700, fontFamily: 'Roboto, sans-serif',
+              letterSpacing: 0.4, textTransform: 'uppercase',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = PRIMARY }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
+          >Config</button>
+        )}
+
         {/* Right-side node palette (per Image #18) */}
         <div style={{
           position: 'absolute', top: 16, right: 16, zIndex: 10,
@@ -1265,52 +1286,69 @@ function AdvancedEditorOverlay({
         {/* Permanent right-side settings panel (Unified mode) */}
         {pinSettings && (
           <aside style={{
-            width: panelOpen ? 380 : 0, flexShrink: 0,
+            width: panelOpen ? 340 : 0, flexShrink: 0,
             background: '#FFFFFF',
-            borderLeft: panelOpen ? '1px solid #E2E8F0' : 'none',
+            borderLeft: '1px solid #E2E8F0',
             overflow: 'hidden',
             display: 'flex', flexDirection: 'column',
             transition: 'width 200ms ease',
-            position: 'relative',
           }}>
-            {/* Collapse toggle tab — sits on the left edge of the panel */}
-            <button
-              onClick={() => setPanelOpen(o => !o)}
-              title={panelOpen ? 'Ocultar panel' : 'Mostrar panel'}
-              style={{
-                position: 'absolute', left: -18, top: '50%', transform: 'translateY(-50%)',
-                zIndex: 20,
-                width: 18, height: 40, borderRadius: '8px 0 0 8px',
-                background: '#FFFFFF', border: '1px solid #E2E8F0', borderRight: 'none',
-                cursor: 'pointer', color: '#94A3B8',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11,
-              }}
-            >{panelOpen ? '›' : '‹'}</button>
-
             {panelOpen && (
-              <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18, overflow: 'auto', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
-                  <span style={{
-                    padding: '2px 7px', borderRadius: 5,
-                    background: '#EEF0FF', color: PRIMARY,
-                    fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-                  }}>Unificado</span>
-                </div>
-
+              <div style={{ width: 340, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                {/* Panel header with collapse button */}
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
+                  padding: '14px 18px', borderBottom: '1px solid #E2E8F0', flexShrink: 0,
                 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
-                    <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+                  <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ padding: '2px 7px', borderRadius: 5, background: '#EEF0FF', color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>Unificado</span>
+                    <button
+                      onClick={() => setPanelOpen(false)}
+                      title="Ocultar panel"
+                      style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #E2E8F0', background: 'transparent', cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                    >›</button>
                   </div>
-                  <Toggle on={requiresHuman} onChange={setRequiresHuman} />
                 </div>
 
-                <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+                {/* Scrollable content */}
+                <div style={{ flex: 1, overflow: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Name */}
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>Nombre del estado</div>
+                    <input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#0F172A', outline: 'none', background: '#FAFBFD' }}
+                    />
+                  </div>
+
+                  {/* Instructions */}
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>Instrucciones del estado</div>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="¿Qué debe hacer el agente en este estado?"
+                      rows={3}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#475569', outline: 'none', resize: 'vertical', background: '#FAFBFD', lineHeight: 1.5 }}
+                    />
+                  </div>
+
+                  {/* Requires human */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Confirmación humana</div>
+                      <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+                    </div>
+                    <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+                  </div>
+
+                  {/* Required data */}
+                  <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+                </div>
               </div>
             )}
           </aside>
