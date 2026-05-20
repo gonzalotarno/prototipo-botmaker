@@ -1167,24 +1167,21 @@ function AdvancedEditorOverlay({
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
         <AdvancedFlow stateName={name} />
 
-        {/* Re-open config panel tab (when panel is collapsed) */}
+        {/* Re-open config panel button (when panel is collapsed) */}
         {pinSettings && !panelOpen && (
           <button
             onClick={() => setPanelOpen(true)}
-            title="Mostrar configuración"
             style={{
-              position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-              zIndex: 11, width: 18, height: 56,
-              borderRadius: '8px 0 0 8px',
-              background: '#FFFFFF', border: '1px solid #E2E8F0', borderRight: 'none',
-              cursor: 'pointer', color: '#64748B',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              writingMode: 'vertical-rl', fontSize: 9, fontWeight: 700, fontFamily: 'Roboto, sans-serif',
-              letterSpacing: 0.4, textTransform: 'uppercase',
+              position: 'absolute', top: 16, right: 16, zIndex: 11,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px', borderRadius: 8,
+              background: '#FFFFFF', border: '1px solid #E2E8F0',
+              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(15,23,42,0.08)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = PRIMARY }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#64748B' }}
-          >Config</button>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' }}
+          ><Settings size={13} /> Configuración</button>
         )}
 
         {/* Right-side node palette (per Image #18) */}
