@@ -685,7 +685,7 @@ function RequiredDataCard({
         />
         <span style={{
           padding: '3px 9px', borderRadius: 5,
-          background: '#EEF0FF', color: '#5B49D6',
+          background: '#EEF0FF', color: PRIMARY,
           fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
         }}>Obligatorio</span>
         <div style={{ position: 'relative' }}>
@@ -917,7 +917,7 @@ function WorkflowCanvasInner({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
-      <style>{`.react-flow__node:focus,.react-flow__node:focus-visible{outline:none!important}.react-flow__node.selected>div{outline:none!important}`}</style>
+      <style>{`.react-flow__node:focus,.react-flow__node:focus-visible,.react-flow__node.selected{outline:none!important}.react-flow__node.selected>div{outline:none!important}`}</style>
       {/* Top-right toolbar */}
       <div style={{
         position: 'absolute', top: 16, right: 16, zIndex: 10,
@@ -955,7 +955,7 @@ function WorkflowCanvasInner({
         proOptions={{ hideAttribution: true }}
         nodesDraggable
         nodesConnectable
-        elementsSelectable
+        elementsSelectable={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
       </ReactFlow>
