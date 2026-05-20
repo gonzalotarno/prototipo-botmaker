@@ -1045,6 +1045,7 @@ function AdvancedEditorOverlay({
   const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(true)
 
   useEffect(() => {
     onSave(node.id, { name, color, requiresHuman, requiredData })
@@ -1285,34 +1286,54 @@ function AdvancedEditorOverlay({
         {/* Permanent right-side settings panel (Unified mode) */}
         {pinSettings && (
           <aside style={{
-            width: 380, flexShrink: 0,
+            width: panelOpen ? 380 : 0, flexShrink: 0,
             background: '#FFFFFF',
-            borderLeft: '1px solid #E2E8F0',
-            padding: '20px 22px',
-            overflow: 'auto',
-            display: 'flex', flexDirection: 'column', gap: 18,
+            borderLeft: panelOpen ? '1px solid #E2E8F0' : 'none',
+            overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+            transition: 'width 200ms ease',
+            position: 'relative',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
-              <span style={{
-                padding: '2px 7px', borderRadius: 5,
-                background: '#EEF0FF', color: PRIMARY,
-                fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-              }}>Unificado</span>
-            </div>
+            {/* Collapse toggle tab — sits on the left edge of the panel */}
+            <button
+              onClick={() => setPanelOpen(o => !o)}
+              title={panelOpen ? 'Ocultar panel' : 'Mostrar panel'}
+              style={{
+                position: 'absolute', left: -18, top: '50%', transform: 'translateY(-50%)',
+                zIndex: 20,
+                width: 18, height: 40, borderRadius: '8px 0 0 8px',
+                background: '#FFFFFF', border: '1px solid #E2E8F0', borderRight: 'none',
+                cursor: 'pointer', color: '#94A3B8',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11,
+              }}
+            >{panelOpen ? '›' : '‹'}</button>
 
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
-            }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
-                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+            {panelOpen && (
+              <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18, overflow: 'auto', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
+                  <span style={{
+                    padding: '2px 7px', borderRadius: 5,
+                    background: '#EEF0FF', color: PRIMARY,
+                    fontFamily: 'Roboto, sans-serif', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                  }}>Unificado</span>
+                </div>
+
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
+                    <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+                  </div>
+                  <Toggle on={requiresHuman} onChange={setRequiresHuman} />
+                </div>
+
+                <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
               </div>
-              <Toggle on={requiresHuman} onChange={setRequiresHuman} />
-            </div>
-
-            <RequiredDataSection fields={requiredData} onChange={setRequiredData} />
+            )}
           </aside>
         )}
       </div>
@@ -1508,9 +1529,9 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
 
 function AdvancedFlow({ stateName }: { stateName?: string }) {
   const initialAdvancedNodes: Node[] = [
-    { id: 'a-start', type: 'inicioAdv', position: { x: 80, y: 240 }, data: { stateName } },
+    { id: 'a-start', type: 'inicioAdv', position: { x: 60, y: 240 }, data: { stateName } },
     {
-      id: 'a-inst1', type: 'instAdv', position: { x: 260, y: 200 },
+      id: 'a-inst1', type: 'instAdv', position: { x: 400, y: 200 },
       data: { title: 'Datos del usuario', description: '', warning: 'Mejoras pendientes' },
     },
   ]
