@@ -924,7 +924,7 @@ function WorkflowCanvasInner({
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Plantillas</ToolbarBtn>
-        <ToolbarBtn icon={<Settings size={14} />}>Ajustes del workflow</ToolbarBtn>
+        <ToolbarBtn icon={<Settings size={14} />}>Ajustes</ToolbarBtn>
         <ToolbarBtn icon={<LayoutGrid size={14} />} onClick={onChangeVariant}>
           {variant === 'unified' ? 'Vista: Unificada' : 'Vista: Clásica'}
         </ToolbarBtn>
