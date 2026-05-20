@@ -297,11 +297,6 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
             <AlertCircle size={11} />
           </span>
         )}
-        {hasFlow && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 6px', borderRadius: 4, background: '#EEF0FF', color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
-            <GitBranch size={8} /> Flujo
-          </span>
-        )}
         {isFinal && (
           <span style={{ padding: '2px 6px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
             🏁 Final
@@ -830,11 +825,13 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 // ─── Main Canvas component ─────────────────────────────────────────────────────
 
 function WorkflowCanvasInner({
-  variant, onOpenKanban, onChangeVariant,
+  variant, onOpenKanban, onChangeVariant, onToggleSidebar, agentName,
 }: {
   variant: 'classic' | 'unified'
   onOpenKanban?: () => void
   onChangeVariant: () => void
+  onToggleSidebar?: () => void
+  agentName?: string
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [advancedId, setAdvancedId] = useState<string | null>(null)
@@ -1021,6 +1018,8 @@ function WorkflowCanvasInner({
               updateState(id, { kind: 'simple' })
               setAdvancedId(null)
             }}
+            onToggleSidebar={onToggleSidebar}
+            agentName={agentName}
           />
         )
       })()}
@@ -1031,13 +1030,15 @@ function WorkflowCanvasInner({
 // ─── Advanced Editor Overlay (Lógica editor) ───────────────────────────────────
 
 function AdvancedEditorOverlay({
-  node, onClose, onSave, onConvertToSimple, pinSettings,
+  node, onClose, onSave, onConvertToSimple, pinSettings, onToggleSidebar, agentName,
 }: {
   node: Node<StateNodeData>
   onClose: () => void
   onSave: (id: string, patch: Partial<StateNodeData>) => void
   onConvertToSimple: (id: string) => void
   pinSettings?: boolean
+  onToggleSidebar?: () => void
+  agentName?: string
 }) {
   const [name, setName] = useState(node.data.name)
   const [color, setColor] = useState(node.data.color)
@@ -1060,75 +1061,52 @@ function AdvancedEditorOverlay({
     }}>
       <style>{`@keyframes wfSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      {/* Header — minimal: back + state name pill + actions */}
+      {/* Header */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 20px',
-        background: 'transparent',
+        padding: '10px 20px',
+        background: '#FFFFFF',
+        borderBottom: '1px solid #E2E8F0',
+        flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {/* Collapse left sidebar button */}
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              title="Ocultar/mostrar panel izquierdo"
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: 'transparent', border: '1px solid #E2E8F0',
+                color: '#94A3B8', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >☰</button>
+          )}
           {/* Back arrow icon */}
           <button
             onClick={onClose}
             style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: '#FFFFFF', border: '1px solid #E2E8F0',
-              color: PRIMARY, cursor: 'pointer',
+              width: 32, height: 32, borderRadius: 8,
+              background: 'transparent', border: '1px solid #E2E8F0',
+              color: '#475569', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
             }}
             title="Volver al workflow"
+            onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
           >←</button>
-          {/* State name pill (editable) */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '8px 14px', borderRadius: 10,
-            background: '#FFFFFF', border: '1px solid #E2E8F0',
-            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-          }}>
-            {/* Color swatch */}
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setColorOpen(o => !o)}
-                title="Color (decorativo)"
-                style={{
-                  width: 14, height: 14, borderRadius: '50%',
-                  background: color, border: 'none', cursor: 'pointer', padding: 0,
-                }}
-              />
-              {colorOpen && (
-                <div style={{
-                  position: 'absolute', top: 'calc(100% + 8px)', left: -10, zIndex: 5,
-                  padding: 8, background: '#FFFFFF', borderRadius: 10,
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
-                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6,
-                }}>
-                  {COLORS.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => { setColor(c); setColorOpen(false) }}
-                      style={{
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: c, border: 'none', cursor: 'pointer', padding: 0,
-                        outline: color === c ? `2px solid ${PRIMARY}` : 'none',
-                        outlineOffset: 2,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              style={{
-                padding: 0, border: 'none', background: 'transparent', outline: 'none',
-                fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A',
-                minWidth: 120,
-              }}
-            />
+          {/* Breadcrumb context */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Roboto, sans-serif', fontSize: 12.5, color: '#94A3B8' }}>
+            {agentName && <span style={{ fontWeight: 500 }}>{agentName}</span>}
+            {agentName && <span>/</span>}
+            <span style={{ fontWeight: 500 }}>Workflows</span>
+            <span>/</span>
+            <span style={{ fontWeight: 700, color: '#0F172A' }}>Flujo de {name || node.data.name}</span>
           </div>
           {/* Settings gear — only when the panel is not already pinned to the side */}
           {!pinSettings && (
@@ -1136,13 +1114,14 @@ function AdvancedEditorOverlay({
               onClick={() => setSettingsOpen(true)}
               title="Configuración del estado (datos requeridos, etc.)"
               style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                width: 32, height: 32, borderRadius: 8,
+                background: 'transparent', border: '1px solid #E2E8F0',
                 color: '#475569', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
               }}
-            ><Settings size={16} /></button>
+              onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            ><Settings size={14} /></button>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1827,7 +1806,7 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
 
 // ─── Exported wrapper ──────────────────────────────────────────────────────────
 
-export default function WorkflowCanvas({ onOpenKanban, initialVariant }: { onOpenKanban?: () => void; initialVariant?: 'classic' | 'unified' }) {
+export default function WorkflowCanvas({ onOpenKanban, initialVariant, onToggleSidebar, agentName }: { onOpenKanban?: () => void; initialVariant?: 'classic' | 'unified'; onToggleSidebar?: () => void; agentName?: string }) {
   const [variant, setVariant] = useState<'classic' | 'unified' | null>(initialVariant ?? null)
   if (!variant) return <VariantChooser onPick={setVariant} />
   return (
@@ -1836,6 +1815,8 @@ export default function WorkflowCanvas({ onOpenKanban, initialVariant }: { onOpe
         variant={variant}
         onChangeVariant={initialVariant ? () => {} : () => setVariant(null)}
         onOpenKanban={onOpenKanban}
+        onToggleSidebar={onToggleSidebar}
+        agentName={agentName}
       />
     </ReactFlowProvider>
   )

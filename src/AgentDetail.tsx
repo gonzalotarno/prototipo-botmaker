@@ -7790,8 +7790,8 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
         }}>
           {activeTab === 'estados' ? (
             variant === 'v2'
-              ? <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} initialVariant="unified" />
-              : <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} />
+              ? <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} initialVariant="unified" onToggleSidebar={() => setShowSidebar(s => !s)} agentName={agentConfig.name} />
+              : <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} onToggleSidebar={() => setShowSidebar(s => !s)} agentName={agentConfig.name} />
           ) : (activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
             <>
               {activeTab === 'mcps'             && <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>{variant === 'v2' ? <MCPListV2 /> : <ResourceListTab kind="mcp"  />}</div>}
