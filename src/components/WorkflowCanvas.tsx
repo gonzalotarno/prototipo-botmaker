@@ -261,10 +261,11 @@ function StartNode() {
 
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
-function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
+function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
   const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit } = data
   const hasFlow = kind === 'complex'
   const isFinal = kind === 'final'
+  const borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0'
 
   return (
     <div
@@ -273,15 +274,17 @@ function StateNode({ id, data }: NodeProps<Node<StateNodeData>>) {
         width: 300,
         padding: '12px 16px',
         background: '#FFFFFF',
-        border: `1.5px solid ${isDisconnected ? '#F59E0B' : '#E2E8F0'}`,
+        border: `1.5px solid ${borderColor}`,
         borderRadius: 10,
-        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+        boxShadow: selected
+          ? '0 16px 40px -8px rgba(15,23,42,0.20), 0 4px 12px -4px rgba(15,23,42,0.10)'
+          : '0 1px 2px rgba(15,23,42,0.04)',
         cursor: 'pointer',
         position: 'relative',
-        transition: 'border-color 140ms ease-out, box-shadow 320ms ease-out',
+        transition: 'box-shadow 200ms ease-out',
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(48,79,254,0.18)'; e.currentTarget.style.borderColor = isDisconnected ? '#F59E0B' : '#C7D2FE' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; e.currentTarget.style.borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0' }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(15,23,42,0.14)' }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
     >
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
 
@@ -573,19 +576,6 @@ function EditStateDrawer({
             onChange={setRequiredData}
           />
 
-          {/* Mark as final state */}
-          <button
-            onClick={() => { onMakeFinal(node.id); onClose() }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '10px 14px', borderRadius: 10,
-              background: 'transparent', border: '1.5px dashed #CBD5E1',
-              color: '#475569', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-              alignSelf: 'flex-start',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#16A34A'; e.currentTarget.style.color = '#15803D' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#475569' }}
-          >🏁 Marcar como estado final</button>
         </div>
         </div>{/* end scrollable */}
 
@@ -651,6 +641,15 @@ function RequiredDataSection({
   )
 }
 
+const SAMPLE_VARIABLES = [
+  { label: 'nombre', description: 'Nombre del usuario' },
+  { label: 'email', description: 'Email de contacto' },
+  { label: 'telefono', description: 'Teléfono del usuario' },
+  { label: 'empresa', description: 'Empresa del contacto' },
+  { label: 'producto', description: 'Producto consultado' },
+  { label: 'ticket_id', description: 'ID del ticket' },
+]
+
 function RequiredDataCard({
   field, onUpdate, onRemove,
 }: {
@@ -659,12 +658,13 @@ function RequiredDataCard({
   onRemove: (id: string) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [validationOpen, setValidationOpen] = useState(false)
-  const type = field.type ?? 'text'
-  const insertVariable = () => {
-    onUpdate(field.id, { description: (field.description || '') + ' {{variable}}' })
+  const [varMenuOpen, setVarMenuOpen] = useState(false)
+
+  const insertVariable = (varLabel: string) => {
+    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` {{${varLabel}}}` })
+    setVarMenuOpen(false)
   }
-  const hasValidation = field.maxLength != null || (field.pattern && field.pattern.length > 0) || (field.enumValues && field.enumValues.length > 0)
+
   return (
     <div style={{
       padding: '12px 14px', borderRadius: 10,
@@ -712,6 +712,7 @@ function RequiredDataCard({
           )}
         </div>
       </div>
+
       {/* Description textarea */}
       <textarea
         value={field.description}
@@ -725,101 +726,58 @@ function RequiredDataCard({
           minHeight: 36,
         }}
       />
-      {/* Type selector + validation + variable */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          {/* Tipo selector — native select keeps it small */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '4px 8px', borderRadius: 6,
-            background: '#F8FAFC', border: '1px solid #E2E8F0',
-            fontFamily: 'inherit', fontSize: 11, color: '#475569', fontWeight: 600,
-          }}>
-            Tipo:
-            <select
-              value={type}
-              onChange={e => onUpdate(field.id, { type: e.target.value as FieldType })}
-              style={{
-                border: 'none', background: 'transparent', outline: 'none',
-                fontFamily: 'inherit', fontSize: 11, color: '#0F172A', fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              {FIELD_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-            </select>
-          </div>
-          <button
-            onClick={() => setValidationOpen(o => !o)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '4px 8px', borderRadius: 6,
-              background: hasValidation ? '#EFF0FF' : 'transparent', border: 'none',
-              color: hasValidation ? PRIMARY : '#64748B', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            <Settings size={10} /> Validación{hasValidation ? ' ●' : ''} {validationOpen ? '▴' : '▾'}
-          </button>
-        </div>
+
+      {/* Footer: variable button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0', position: 'relative' }}>
         <button
-          onClick={insertVariable}
-          title="Insertar variable"
+          onClick={() => setVarMenuOpen(o => !o)}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '4px 8px', borderRadius: 6,
-            background: '#F1F5F9', border: 'none',
-            color: '#475569', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '5px 10px', borderRadius: 6,
+            background: varMenuOpen ? '#EEF0FF' : '#F8FAFC',
+            border: `1px solid ${varMenuOpen ? '#C7CEFF' : '#E2E8F0'}`,
+            color: varMenuOpen ? PRIMARY : '#475569',
+            fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+            transition: 'all 120ms',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#E2E8F0' }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#F1F5F9' }}
-        ><Braces size={11} /> Variable</button>
-      </div>
-      {/* Validation panel */}
-      {validationOpen && (
-        <div style={{
-          marginTop: 8, padding: 12, borderRadius: 8,
-          background: '#FAFBFD', border: '1px solid #E2E8F0',
-          display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          {type === 'enum' ? (
-            <div>
-              <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Opciones permitidas (una por línea)</label>
-              <textarea
-                value={(field.enumValues ?? []).join('\n')}
-                onChange={e => onUpdate(field.id, { enumValues: e.target.value.split('\n').filter(Boolean) })}
-                placeholder={'Alto\nMedio\nBajo'}
-                rows={3}
-                style={{ ...inputStyle, padding: 8, fontFamily: 'inherit', fontSize: 12.5, minHeight: 64, resize: 'vertical' }}
-              />
+          onMouseEnter={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#EEF0FF'; e.currentTarget.style.borderColor = '#C7CEFF'; e.currentTarget.style.color = PRIMARY } }}
+          onMouseLeave={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' } }}
+        >
+          <Braces size={12} /> Variables {varMenuOpen ? '▴' : '▾'}
+        </button>
+
+        {varMenuOpen && (
+          <div style={{
+            position: 'absolute', bottom: 'calc(100% + 4px)', right: 0, zIndex: 20,
+            minWidth: 220, padding: '6px 4px',
+            background: '#FFFFFF', borderRadius: 10,
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
+          }}>
+            <div style={{ padding: '4px 10px 6px', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Insertar variable
             </div>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div>
-                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Largo máximo</label>
-                  <input
-                    type="number"
-                    value={field.maxLength ?? ''}
-                    onChange={e => onUpdate(field.id, { maxLength: e.target.value ? Number(e.target.value) : undefined })}
-                    placeholder="Sin límite"
-                    style={{ ...inputStyle, padding: 8, fontSize: 12.5 }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Patrón (regex)</label>
-                  <input
-                    value={field.pattern ?? ''}
-                    onChange={e => onUpdate(field.id, { pattern: e.target.value })}
-                    placeholder="^[A-Z]{3}$"
-                    style={{ ...inputStyle, padding: 8, fontSize: 12.5, fontFamily: 'monospace' }}
-                  />
-                </div>
-              </div>
-              <div style={{ fontSize: 11, color: '#94A3B8', lineHeight: 1.4 }}>
-                El tipo "<strong>{FIELD_TYPES.find(t => t.id === type)?.label}</strong>" ya valida el formato base. Usá patrón regex solo si necesitás una restricción extra.
-              </div>
-            </>
-          )}
-        </div>
-      )}
+            {SAMPLE_VARIABLES.map(v => (
+              <button
+                key={v.label}
+                onClick={() => insertVariable(v.label)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', textAlign: 'left',
+                  padding: '6px 10px', borderRadius: 6,
+                  border: 'none', background: 'transparent', cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A', fontFamily: 'monospace' }}>{`{{${v.label}}}`}</span>
+                <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 8 }}>{v.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -959,6 +917,7 @@ function WorkflowCanvasInner({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
+      <style>{`.react-flow__node:focus,.react-flow__node:focus-visible{outline:none!important}.react-flow__node.selected>div{outline:none!important}`}</style>
       {/* Top-right toolbar */}
       <div style={{
         position: 'absolute', top: 16, right: 16, zIndex: 10,
