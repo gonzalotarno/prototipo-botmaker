@@ -1177,33 +1177,6 @@ function AdvancedEditorOverlay({
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
         <AdvancedFlow stateName={name} stateId={node.id} />
 
-        {/* Re-open config panel button (when panel is collapsed) */}
-        {pinSettings && !panelOpen && (
-          <button
-            onClick={() => setPanelOpen(true)}
-            style={{
-              position: 'absolute', top: 16, right: 16, zIndex: 11,
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '7px 12px', borderRadius: 8,
-              background: '#FFFFFF', border: '1px solid #E2E8F0',
-              color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.08)',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' }}
-          ><Settings size={13} /> Settings</button>
-        )}
-
-        {/* Right-side node palette (per Image #18) */}
-        <div style={{
-          position: 'absolute', top: 16, right: 16, zIndex: 10,
-          display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          <PaletteCard label="Instruction" icon={<MessageSquare size={14} />} color={PRIMARY} />
-          <PaletteCard label="Condition"   icon={<GitBranch    size={14} />} color="#D97706" />
-          <PaletteCard label="Loop"       icon={<RotateCcw    size={14} />} color="#0891B2" />
-        </div>
-
         {/* Bottom-left: mini-map placeholder + zoom controls row */}
         <div style={{
           position: 'absolute', left: 16, bottom: 16, zIndex: 10,
