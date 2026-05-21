@@ -49,14 +49,13 @@ export default function SuccessModal({ onClose }: Props) {
   const [hover, setHover] = useState<number | null>(null)
 
   async function handleSubmit() {
-    const body = new URLSearchParams({
-      lang,
-      rating: String(rating ?? ''),
-      comment,
-      ts: new Date().toISOString(),
-    })
+    const url = new URL(FEEDBACK_ENDPOINT)
+    url.searchParams.set('lang', lang)
+    url.searchParams.set('rating', String(rating ?? ''))
+    url.searchParams.set('comment', comment)
+    url.searchParams.set('ts', new Date().toISOString())
     try {
-      await fetch(FEEDBACK_ENDPOINT, { method: 'POST', mode: 'no-cors', body })
+      await fetch(url.toString(), { mode: 'no-cors' })
     } catch {}
     setSubmitted(true)
     setTimeout(onClose, 2200)
@@ -168,16 +167,16 @@ export default function SuccessModal({ onClose }: Props) {
               {/* Submit */}
               <button
                 onClick={handleSubmit}
-                disabled={rating === null}
                 style={{
                   padding: '13px 0', borderRadius: 12, border: 'none',
-                  background: rating !== null ? PRIMARY : '#E2E8F0',
-                  color: rating !== null ? '#FFFFFF' : '#94A3B8',
+                  background: PRIMARY, color: '#FFFFFF',
                   fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700,
-                  cursor: rating !== null ? 'pointer' : 'default',
-                  transition: 'background 150ms, color 150ms',
-                  boxShadow: rating !== null ? '0 4px 16px -4px rgba(48,79,254,0.40)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'opacity 150ms',
+                  boxShadow: '0 4px 16px -4px rgba(48,79,254,0.40)',
                 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >
                 {t.submit}
               </button>
