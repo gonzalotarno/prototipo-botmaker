@@ -83,11 +83,7 @@ function App() {
       <div style={{ flex: 1, overflow: 'hidden' }}><WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} /></div>
     </div>
   )
-  if (path === '/flow-test') return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <WorkflowCanvas initialVariant="unified" />
-    </div>
-  )
+  if (path === '/flow-test') return <AgentDetail initialTab="estados" variant="v2" />
   if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
