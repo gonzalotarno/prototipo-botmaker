@@ -26,45 +26,55 @@ const path = queryPath ?? window.location.pathname
 
 // Test mode: persists across page reloads so sidebar/orchestrator navigation
 // stays within the v2 prototype. Activated when entering /flow-test.
-const isTestMode = path === '/flow-test' || sessionStorage.getItem('testMode') === '1'
+const isTestMode = path === '/flow-test' || path === '/flow-test-orquestador' || sessionStorage.getItem('testMode') === '1'
+
+// Resolve a raw href (may be relative or absolute) to a pathname.
+function _testResolvePath(url: string): string {
+  try { return new URL(url, window.location.origin).pathname } catch { return url }
+}
 
 if (isTestMode) {
   sessionStorage.setItem('testMode', '1')
-  // Intercept href changes — redirect v1 and project routes to v2
+  const _currentPath = window.location.pathname
+
+  // Transform a destination URL for test mode.
+  // From agent view (/flow-test or /agente-v2/*): keep in v2, send orchestrator to /flow-test-orquestador.
+  // From orchestrator view (/flow-test-orquestador or /proyecto): agent clicks return to /agente-v2/estados.
+  function _transformUrl(url: string): string {
+    const p = _testResolvePath(url)
+    const fromOrchestrator = _currentPath === '/flow-test-orquestador' || _currentPath === '/proyecto'
+    if (fromOrchestrator) {
+      if (p === '/agente' || p === '/agents' || p === '/flow') return '/agente-v2/estados'
+      if (p.startsWith('/agente/') && !p.startsWith('/agente-v2/')) return p.replace('/agente/', '/agente-v2/')
+    } else {
+      if (p === '/agente' || p === '/agents' || p === '/flow') return '/agente-v2/estados'
+      if (p.startsWith('/agente/') && !p.startsWith('/agente-v2/')) return p.replace('/agente/', '/agente-v2/')
+      if (p === '/proyecto') return '/flow-test-orquestador'
+    }
+    return url
+  }
+
+  // Intercept href setter — catches both relative '/agente' and full 'https://…/agente' forms.
   try {
     const _desc = Object.getOwnPropertyDescriptor(Location.prototype, 'href')
     if (_desc?.set) {
       const _originalSet = _desc.set
       Object.defineProperty(Location.prototype, 'href', {
         ..._desc,
-        set(url: string) {
-          let target = url
-          if (url === '/agente' || url === '/agents' || url === '/flow') {
-            target = '/agente-v2/estados'
-          } else if (url.startsWith('/agente/') && !url.startsWith('/agente-v2/')) {
-            target = url.replace('/agente/', '/agente-v2/')
-          } else if (url === '/proyecto') {
-            target = '/agente-v2/estados'
-          }
-          _originalSet.call(window.location, target)
-        },
+        set(url: string) { _originalSet.call(window.location, _transformUrl(url)) },
         configurable: true,
       })
     }
   } catch {}
-  // Intercept <a> clicks too
+
+  // Intercept <a> clicks (for links that bypass the setter).
   document.addEventListener('click', (e) => {
     const a = (e.target as Element | null)?.closest('a')
     if (!a) return
     const href = a.getAttribute('href')
     if (!href) return
-    if (href === '/agente' || href === '/agents' || href === '/flow' || href === '/proyecto') {
-      e.preventDefault()
-      window.location.href = '/agente-v2/estados'
-    } else if (href.startsWith('/agente/') && !href.startsWith('/agente-v2/')) {
-      e.preventDefault()
-      window.location.href = href.replace('/agente/', '/agente-v2/')
-    }
+    const transformed = _transformUrl(href)
+    if (transformed !== href) { e.preventDefault(); window.location.href = transformed }
   }, true)
 }
 
@@ -130,6 +140,7 @@ function App() {
     </div>
   )
   if (path === '/flow-test') return <FlowTest />
+  if (path === '/flow-test-orquestador') return <><AgentsShell /><TaskReminderButton /></>
   if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
