@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -1113,23 +1113,23 @@ function AdvancedEditorOverlay({
             <span>/</span>
             <span style={{ fontWeight: 700, color: '#0F172A' }}>Flow: {name || node.data.name}</span>
           </div>
-          {/* Settings gear — only when the panel is not already pinned to the side */}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {!pinSettings && (
             <button
               onClick={() => setSettingsOpen(true)}
-              title="State settings (required data, etc.)"
+              title="State settings"
               style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'transparent', border: '1px solid #E2E8F0',
-                color: '#475569', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 10,
+                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            ><Settings size={14} /></button>
+              onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF' }}
+            ><Settings size={13} /> Settings</button>
           )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={() => onConvertToSimple(node.id)}
             style={{
@@ -1169,7 +1169,7 @@ function AdvancedEditorOverlay({
       {/* Body: canvas (and optionally a permanent right-side settings panel) */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#F8FAFC' }}>
-        <AdvancedFlow stateName={name} />
+        <AdvancedFlow stateName={name} stateId={node.id} />
 
         {/* Re-open config panel button (when panel is collapsed) */}
         {pinSettings && !panelOpen && (
@@ -1545,35 +1545,208 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
   )
 }
 
-function AdvancedFlow({ stateName }: { stateName?: string }) {
-  const initialAdvancedNodes: Node[] = [
+// Module-level ref so AddNodeButton can call back into AdvancedFlow without prop drilling
+const _advAddFn = { current: (_type: string) => {} }
+
+function AddNodeButton({ }: NodeProps) {
+  const [open, setOpen] = useState(false)
+  const items = [
+    { type: 'instAdv', label: 'Instrucción', color: PRIMARY, icon: <MessageSquare size={13} /> },
+    { type: 'condAdv', label: 'Condicional', color: '#F97316', icon: <GitBranch size={13} /> },
+    { type: 'loopAdv', label: 'Bucle',       color: '#16A34A', icon: <RotateCcw size={13} /> },
+  ]
+  return (
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Handle type="target" position={Position.Left} style={{ opacity: 0, pointerEvents: 'none' }} />
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #94A3B8',
+          background: 'white', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 17, fontWeight: 300, color: '#64748B',
+          boxShadow: '0 2px 8px rgba(15,23,42,0.12)', transition: 'all 140ms',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY; e.currentTarget.style.boxShadow = `0 2px 12px rgba(48,79,254,0.25)` }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = '#94A3B8'; e.currentTarget.style.color = '#64748B'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(15,23,42,0.12)' }}
+      >+</button>
+      {open && (
+        <div style={{
+          position: 'absolute', left: 36, top: -6, zIndex: 100,
+          background: 'white', borderRadius: 10, border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px rgba(15,23,42,0.14)', padding: 6, minWidth: 150,
+        }} onClick={e => e.stopPropagation()}>
+          {items.map(item => (
+            <button key={item.type}
+              onClick={() => { _advAddFn.current(item.type); setOpen(false) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 9,
+                width: '100%', padding: '8px 12px', borderRadius: 7,
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600,
+                color: item.color, textAlign: 'left',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >{item.icon}{item.label}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ConditionalAdvNode({ }: NodeProps) {
+  const [conditions, setConditions] = useState([''])
+  return (
+    <div style={{ width: 340, position: 'relative' }}>
+      <Handle type="target" position={Position.Left} style={{ background: '#F97316', width: 8, height: 8, border: 'none' }} />
+      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#FFF7ED', color: '#F97316', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
+        <GitBranch size={12} /> Condicional
+      </div>
+      <div style={{ background: 'white', border: '1.5px solid #FFEDD5', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Nodo condicional</span>
+          <button style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MoreVertical size={14} /></button>
+        </div>
+        <div style={{ padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {conditions.map((cond, i) => (
+            <div key={i} style={{ position: 'relative' }}>
+              <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 4 }}>Si se cumple</div>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E2E8F0', borderRadius: 8, background: 'white', overflow: 'hidden' }}>
+                <input value={cond} onChange={e => { const nc = [...conditions]; nc[i] = e.target.value; setConditions(nc) }}
+                  style={{ flex: 1, border: 'none', outline: 'none', padding: '9px 10px', fontFamily: 'Roboto, sans-serif', fontSize: 13, background: 'transparent', color: '#0F172A' }} />
+                <button onClick={() => setConditions(conditions.filter((_, ci) => ci !== i))}
+                  style={{ flexShrink: 0, width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Trash2 size={12} />
+                </button>
+              </div>
+              <Handle type="source" position={Position.Right} id={`c${i}`} style={{ background: '#F97316', width: 8, height: 8, border: 'none', top: '70%' }} />
+            </div>
+          ))}
+          <button onClick={() => setConditions([...conditions, ''])} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 8px', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+            <Plus size={14} /> Agregar
+          </button>
+        </div>
+        <div style={{ height: 1, background: '#F1F5F9', margin: '0 0' }} />
+        <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
+          <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 2 }}>De lo contrario</div>
+          <div style={{ fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>Ninguno se cumple</div>
+          <Handle type="source" position={Position.Right} id="else" style={{ background: '#94A3B8', width: 8, height: 8, border: 'none' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#FFFBEB', borderTop: '1px solid #FDE68A', fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#B45309' }}>
+          <AlertCircle size={12} /> Mejoras pendientes
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LoopAdvNode({ }: NodeProps) {
+  const [instruction, setInstruction] = useState('')
+  return (
+    <div style={{ width: 380, position: 'relative' }}>
+      <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
+      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#F0FDF4', color: '#16A34A', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
+        <RotateCcw size={12} /> While loop
+      </div>
+      <div style={{ background: 'white', border: '1.5px solid #DCFCE7', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px' }}>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Bucle</span>
+          <button style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MoreVertical size={14} /></button>
+        </div>
+        <div style={{ padding: '0 16px 12px' }}>
+          <textarea value={instruction} onChange={e => setInstruction(e.target.value)}
+            placeholder="Escribe lo que quieres que el agente haga"
+            rows={2}
+            style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 8, padding: '8px 10px', background: '#F8FAFC', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', resize: 'none', outline: 'none', lineHeight: 1.5 }}
+          />
+          <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8', marginTop: 4 }}>
+            Escribe <strong>$</strong> o <strong>/</strong> para desplegar el menú de variables
+          </div>
+        </div>
+        <div style={{ height: 1, background: '#F1F5F9' }} />
+        <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 500, color: '#0F172A' }}>Al finalizar</span>
+          <Handle type="source" position={Position.Right} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: string }) {
+  const storageKey = `bm-adv-flow-${stateId ?? 'default'}`
+
+  const makeInitialNodes = (): Node[] => [
     { id: 'a-start', type: 'inicioAdv', position: { x: 60, y: 240 }, data: { stateName } },
-    {
-      id: 'a-inst1', type: 'instAdv', position: { x: 400, y: 200 },
-      data: { title: 'User data', description: '', warning: 'Pending improvements' },
-    },
+    { id: 'a-add-0', type: 'addAdv',    position: { x: 320, y: 222 }, data: {} },
   ]
-  const initialAdvancedEdges: Edge[] = [
-    { id: 'ae-1', source: 'a-start', target: 'a-inst1', type: 'smoothstep' },
+  const makeInitialEdges = (): Edge[] => [
+    { id: 'ae-0', source: 'a-start', target: 'a-add-0', type: 'smoothstep' },
   ]
+
+  const loadSaved = (): { nodes: Node[]; edges: Edge[] } | null => {
+    try { const s = localStorage.getItem(storageKey); return s ? JSON.parse(s) : null } catch { return null }
+  }
+  const saved = loadSaved()
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(saved?.nodes ?? makeInitialNodes())
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(saved?.edges ?? makeInitialEdges())
+
+  // Keep refs fresh to avoid stale closures in _advAddFn
+  const nodesRef = useRef(nodes)
+  const edgesRef = useRef(edges)
+  useEffect(() => { nodesRef.current = nodes }, [nodes])
+  useEffect(() => { edgesRef.current = edges }, [edges])
+
+  // Persist on change
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify({ nodes, edges })) } catch {}
+  }, [nodes, edges, storageKey])
+
+  // Register the add-node handler so AddNodeButton can call it
+  _advAddFn.current = (type: string) => {
+    const cur = nodesRef.current
+    const curE = edgesRef.current
+    const addBtn = cur.find(n => n.type === 'addAdv')
+    const addBtnId = addBtn?.id ?? ''
+    const pos = addBtn?.position ?? { x: 320, y: 222 }
+    const srcEdge = curE.find(e => e.target === addBtnId)
+    const srcId = srcEdge?.source ?? 'a-start'
+    const newId = `node-${Date.now()}`
+    const newAddId = `add-${newId}`
+    const defData: Record<string, unknown> =
+      type === 'instAdv' ? { title: 'New instruction', description: '', warning: 'Pending improvements' } : {}
+    setNodes([
+      ...cur.filter(n => n.id !== addBtnId),
+      { id: newId, type, position: pos, data: defData },
+      { id: newAddId, type: 'addAdv', position: { x: pos.x + 440, y: pos.y }, data: {} },
+    ])
+    setEdges([
+      ...curE.filter(e => e.target !== addBtnId),
+      { id: `e-${srcId}-${newId}`, source: srcId, target: newId, type: 'smoothstep' },
+      { id: `e-${newId}-${newAddId}`, source: newId, target: newAddId, type: 'smoothstep' },
+    ])
+  }
+
   const advNodeTypes = useMemo(() => ({
     inicioAdv: InicioAdvNode,
-    instAdv: InstructionAdvNode,
+    instAdv:   InstructionAdvNode,
+    condAdv:   ConditionalAdvNode,
+    loopAdv:   LoopAdvNode,
+    addAdv:    AddNodeButton,
   }), [])
-  const [n, , onN] = useNodesState(initialAdvancedNodes)
-  const [e, setE, onE] = useEdgesState(initialAdvancedEdges)
-  const onConnect = useCallback((p: Connection) => setE(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setE])
+
+  const onConnect = useCallback((p: Connection) => setEdges(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setEdges])
+
   return (
     <ReactFlow
-      nodes={n}
-      edges={e}
+      nodes={nodes} edges={edges}
       nodeTypes={advNodeTypes}
-      onNodesChange={onN}
-      onEdgesChange={onE}
+      onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
-      fitView
-      fitViewOptions={{ padding: 0.3 }}
+      fitView fitViewOptions={{ padding: 0.35 }}
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
