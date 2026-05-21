@@ -83,9 +83,9 @@ const PRIMARY = '#304FFE'
 
 const INITIAL_NODES: AnyNode[] = [
   { id: 'start',  type: 'startNode',  position: { x: 80,  y: 220 }, data: { onAddNext: () => {} } as any },
-  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 195 }, data: { name: 'Evaluación inicial', description: 'Recopila los datos básicos del cliente antes de avanzar al triage.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_doing',type: 'stateNode',  position: { x: 700, y: 195 }, data: { name: 'Atención avanzada', description: '', color: '#3B82F6', requiresHuman: true,  requiredData: [], kind: 'complex', onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_done', type: 'stateNode',  position: { x: 1120, y: 220 }, data: { name: 'Resuelto', description: '', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'final',  onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 195 }, data: { name: 'Initial Assessment', description: 'Collect the customer\'s basic data before moving to triage.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_doing',type: 'stateNode',  position: { x: 700, y: 195 }, data: { name: 'Advanced Support', description: '', color: '#3B82F6', requiresHuman: true,  requiredData: [], kind: 'complex', onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_done', type: 'stateNode',  position: { x: 1120, y: 220 }, data: { name: 'Resolved', description: '', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'final',  onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
 // ─── Workflow Templates ────────────────────────────────────────────────────────
@@ -112,25 +112,25 @@ const START_NODE: AnyNode = { id: 'start', type: 'startNode', position: { x: 80,
 
 const TEMPLATES: Template[] = [
   {
-    id: 'blank', name: 'Empezar de cero', emoji: '✨',
-    description: 'Un workflow vacío con Inicio + Todo + Done',
+    id: 'blank', name: 'Start from scratch', emoji: '✨',
+    description: 'An empty workflow with Start + Todo + Done',
     build: () => ({
       nodes: [START_NODE, mkState('s1', 'Todo', 280, '#3B82F6'), mkState('s2', 'Done', 580, '#16A34A', 'final')],
       edges: [mkEdge('start', 's1'), mkEdge('s1', 's2')],
     }),
   },
   {
-    id: 'soporte', name: 'Triage de soporte', emoji: '🎧',
-    description: 'Evaluación inicial → triage → atención por prioridad',
+    id: 'soporte', name: 'Support Triage', emoji: '🎧',
+    description: 'Initial assessment → triage → priority-based support',
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('eval', 'Evaluación inicial', 280, '#16A34A'),
-        mkState('triage', 'Triage en proceso', 580, '#3B82F6'),
-        mkState('baja', 'Urgencia baja', 880, '#EAB308'),
-        mkState('media', 'Urgencia media', 880, '#9333EA'),
-        mkState('alta', 'Urgencia alta', 880, '#0F766E'),
-        mkState('atendido', 'Atendido', 1180, '#EC4899', 'final'),
+        mkState('eval', 'Initial Assessment', 280, '#16A34A'),
+        mkState('triage', 'Triage in progress', 580, '#3B82F6'),
+        mkState('baja', 'Low priority', 880, '#EAB308'),
+        mkState('media', 'Medium priority', 880, '#9333EA'),
+        mkState('alta', 'High priority', 880, '#0F766E'),
+        mkState('atendido', 'Resolved', 1180, '#EC4899', 'final'),
       ],
       edges: [
         mkEdge('start', 'eval'),
@@ -145,17 +145,17 @@ const TEMPLATES: Template[] = [
     }),
   },
   {
-    id: 'ventas', name: 'Funnel de ventas', emoji: '💼',
-    description: 'Lead → calificado → demo → propuesta → cierre',
+    id: 'ventas', name: 'Sales Funnel', emoji: '💼',
+    description: 'Lead → qualified → demo → proposal → close',
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('lead', 'Lead nuevo', 280, '#3B82F6'),
-        mkState('qual', 'Calificado', 580, '#EAB308'),
-        mkState('demo', 'Demo agendada', 880, '#9333EA'),
-        mkState('prop', 'Propuesta enviada', 1180, '#0F766E'),
-        mkState('won', 'Ganado', 1480, '#16A34A', 'final'),
-        mkState('lost', 'Perdido', 1480, '#DC2626', 'final'),
+        mkState('lead', 'New lead', 280, '#3B82F6'),
+        mkState('qual', 'Qualified', 580, '#EAB308'),
+        mkState('demo', 'Demo scheduled', 880, '#9333EA'),
+        mkState('prop', 'Proposal sent', 1180, '#0F766E'),
+        mkState('won', 'Won', 1480, '#16A34A', 'final'),
+        mkState('lost', 'Lost', 1480, '#DC2626', 'final'),
       ],
       edges: [
         mkEdge('start', 'lead'),
@@ -168,16 +168,16 @@ const TEMPLATES: Template[] = [
     }),
   },
   {
-    id: 'cobranzas', name: 'Cobranzas', emoji: '💳',
-    description: 'Recordatorios escalonados hasta acuerdo de pago',
+    id: 'cobranzas', name: 'Collections', emoji: '💳',
+    description: 'Escalating reminders until payment agreement',
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('aviso', 'Aviso amistoso', 280, '#3B82F6'),
-        mkState('r1', 'Recordatorio 1', 580, '#EAB308'),
-        mkState('r2', 'Recordatorio 2', 880, '#F59E0B'),
-        mkState('plan', 'Plan de pago', 1180, '#9333EA'),
-        mkState('pagado', 'Pagado', 1480, '#16A34A', 'final'),
+        mkState('aviso', 'Friendly notice', 280, '#3B82F6'),
+        mkState('r1', 'Reminder 1', 580, '#EAB308'),
+        mkState('r2', 'Reminder 2', 880, '#F59E0B'),
+        mkState('plan', 'Payment plan', 1180, '#9333EA'),
+        mkState('pagado', 'Paid', 1480, '#16A34A', 'final'),
       ],
       edges: [
         mkEdge('start', 'aviso'),
@@ -189,16 +189,16 @@ const TEMPLATES: Template[] = [
     }),
   },
   {
-    id: 'pedidos', name: 'Toma de pedidos', emoji: '🍕',
-    description: 'Pedido → confirmación → preparación → entrega',
+    id: 'pedidos', name: 'Order Taking', emoji: '🍕',
+    description: 'Order → confirmation → preparation → delivery',
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('orden', 'Pedido tomado', 280, '#3B82F6'),
-        mkState('pago', 'Pago confirmado', 580, '#EAB308'),
-        mkState('coc', 'En preparación', 880, '#F59E0B'),
-        mkState('cam', 'En camino', 1180, '#9333EA'),
-        mkState('ent', 'Entregado', 1480, '#16A34A', 'final'),
+        mkState('orden', 'Order received', 280, '#3B82F6'),
+        mkState('pago', 'Payment confirmed', 580, '#EAB308'),
+        mkState('coc', 'In preparation', 880, '#F59E0B'),
+        mkState('cam', 'On the way', 1180, '#9333EA'),
+        mkState('ent', 'Delivered', 1480, '#16A34A', 'final'),
       ],
       edges: [
         mkEdge('start', 'orden'),
@@ -210,15 +210,15 @@ const TEMPLATES: Template[] = [
     }),
   },
   {
-    id: 'onboarding', name: 'Onboarding de clientes', emoji: '🎯',
-    description: 'Bienvenida → setup → primer valor → activado',
+    id: 'onboarding', name: 'Customer Onboarding', emoji: '🎯',
+    description: 'Welcome → setup → first value → activated',
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('bien', 'Bienvenida', 280, '#3B82F6'),
-        mkState('setup', 'Setup inicial', 580, '#EAB308'),
-        mkState('valor', 'Primer valor', 880, '#9333EA'),
-        mkState('act', 'Cliente activado', 1180, '#16A34A', 'final'),
+        mkState('bien', 'Welcome', 280, '#3B82F6'),
+        mkState('setup', 'Initial setup', 580, '#EAB308'),
+        mkState('valor', 'First value', 880, '#9333EA'),
+        mkState('act', 'Customer activated', 1180, '#16A34A', 'final'),
       ],
       edges: [
         mkEdge('start', 'bien'),
@@ -253,7 +253,7 @@ function StartNode() {
       cursor: 'default',
       position: 'relative',
     }}>
-      Inicio
+      Start
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
     </div>
   )
@@ -293,7 +293,7 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         <span style={{ width: 9, height: 9, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
         <span style={{ flex: 1, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
         {requiresHuman && (
-          <span title="Requiere confirmación humana" style={{ width: 16, height: 16, borderRadius: '50%', background: '#FEF3C7', color: '#B45309', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span title="Requires human confirmation" style={{ width: 16, height: 16, borderRadius: '50%', background: '#FEF3C7', color: '#B45309', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <AlertCircle size={11} />
           </span>
         )}
@@ -316,7 +316,7 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
       {/* + button to add next state */}
       <button
         onClick={e => { e.stopPropagation(); data.onAddNext(id) }}
-        title="Agregar siguiente estado"
+        title="Add next state"
         style={{
           position: 'absolute', right: -36, top: '50%', transform: 'translateY(-50%)',
           width: 22, height: 22, borderRadius: '50%',
@@ -441,9 +441,9 @@ function EditStateDrawer({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
-          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || 'Estado sin nombre'}</span>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || 'Unnamed state'}</span>
         </div>
-        <button onClick={onClose} title="Cerrar (Esc)" style={{
+        <button onClick={onClose} title="Close (Esc)" style={{
           width: 28, height: 28, borderRadius: 8,
           background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
@@ -456,13 +456,13 @@ function EditStateDrawer({
         {/* Body */}
         <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Name with inline color swatch */}
-          <Field label="Nombre del estado">
+          <Field label="State name">
             <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
               {/* Color swatch (small, secondary) */}
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={() => setColorOpen(o => !o)}
-                  title="Color visual del estado (decorativo)"
+                  title="Visual color for the state (decorative)"
                   style={{
                     height: '100%', minHeight: 38,
                     display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -509,11 +509,11 @@ function EditStateDrawer({
           </Field>
 
           {/* Instructions */}
-          <Field label="Instrucciones del estado">
+          <Field label="State instructions">
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describí cómo el agente debe comportarse en este estado"
+              placeholder="Describe how the agent should behave in this state"
               rows={3}
               style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
             />
@@ -543,10 +543,10 @@ function EditStateDrawer({
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>
-                  {hasFlow ? 'Editar flujo del estado' : 'Agregar flujo al estado'}
+                  {hasFlow ? 'Edit state flow' : 'Add flow to state'}
                 </span>
                 <span style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
-                  {hasFlow ? 'Este estado tiene un flujo configurado' : 'Condicionales, pasos y llamadas dentro del estado'}
+                  {hasFlow ? 'This state has a configured flow' : 'Conditionals, steps and calls within the state'}
                 </span>
               </div>
             </div>
@@ -559,8 +559,8 @@ function EditStateDrawer({
             padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
           }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Requiere confirmación humana</div>
-              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Agrega un equipo o persona que confirme el cambio de workflow</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Requires human confirmation</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Add a team or person to confirm the workflow change</div>
             </div>
             <Toggle on={requiresHuman} onChange={setRequiresHuman} />
           </div>
@@ -588,7 +588,7 @@ function EditStateDrawer({
               background: '#FFFFFF', border: '1px solid #FECACA',
               color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
             }}
-          ><Trash2 size={14} /> Eliminar</button>
+          ><Trash2 size={14} /> Delete</button>
           <button
             onClick={onClose}
             style={{
@@ -596,7 +596,7 @@ function EditStateDrawer({
               background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
               color: PRIMARY, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
             }}
-          >Cerrar</button>
+          >Close</button>
         </div>
     </aside>
   )
@@ -610,14 +610,14 @@ function RequiredDataSection({
   fields: RequiredField[]
   onChange: (fields: RequiredField[]) => void
 }) {
-  const add = () => onChange([...fields, { id: `f_${Date.now()}`, name: 'Nuevo dato', description: '' }])
+  const add = () => onChange([...fields, { id: `f_${Date.now()}`, name: 'New field', description: '' }])
   const update = (id: string, patch: Partial<RequiredField>) =>
     onChange(fields.map(f => f.id === id ? { ...f, ...patch } : f))
   const remove = (id: string) => onChange(fields.filter(f => f.id !== id))
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Datos requeridos en este estado</div>
-      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12 }}>Estos datos deben completarse durante este workflow</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Required data for this state</div>
+      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12 }}>This data must be completed during this workflow</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {fields.map(field => (
           <RequiredDataCard key={field.id} field={field} onUpdate={update} onRemove={remove} />
@@ -630,19 +630,19 @@ function RequiredDataSection({
             color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             textAlign: 'left',
           }}
-        >+ Agregar dato</button>
+        >+ Add field</button>
       </div>
     </div>
   )
 }
 
 const SAMPLE_VARIABLES = [
-  { label: 'nombre', description: 'Nombre del usuario' },
-  { label: 'email', description: 'Email de contacto' },
-  { label: 'telefono', description: 'Teléfono del usuario' },
-  { label: 'empresa', description: 'Empresa del contacto' },
-  { label: 'producto', description: 'Producto consultado' },
-  { label: 'ticket_id', description: 'ID del ticket' },
+  { label: 'name', description: 'User name' },
+  { label: 'email', description: 'Contact email' },
+  { label: 'phone', description: 'User phone' },
+  { label: 'company', description: 'Contact company' },
+  { label: 'product', description: 'Consulted product' },
+  { label: 'ticket_id', description: 'Ticket ID' },
 ]
 
 function RequiredDataCard({
@@ -671,7 +671,7 @@ function RequiredDataCard({
         <input
           value={field.name}
           onChange={e => onUpdate(field.id, { name: e.target.value })}
-          placeholder="Nombre del dato"
+          placeholder="Field name"
           style={{
             flex: 1, border: 'none', background: 'transparent', outline: 'none',
             fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#0F172A',
@@ -682,7 +682,7 @@ function RequiredDataCard({
           padding: '3px 9px', borderRadius: 5,
           background: '#EEF0FF', color: PRIMARY,
           fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
-        }}>Obligatorio</span>
+        }}>Required</span>
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(o => !o)}
@@ -702,7 +702,7 @@ function RequiredDataCard({
               border: '1px solid #E2E8F0',
               boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
             }}>
-              <button onClick={() => { onRemove(field.id); setMenuOpen(false) }} style={menuItem}>Eliminar</button>
+              <button onClick={() => { onRemove(field.id); setMenuOpen(false) }} style={menuItem}>Delete</button>
             </div>
           )}
         </div>
@@ -712,7 +712,7 @@ function RequiredDataCard({
       <textarea
         value={field.description}
         onChange={e => onUpdate(field.id, { description: e.target.value })}
-        placeholder="Describe el dato que IA interpretará"
+        placeholder="Describe the data the AI will interpret"
         rows={2}
         style={{
           width: '100%', boxSizing: 'border-box', marginTop: 6,
@@ -750,7 +750,7 @@ function RequiredDataCard({
             boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
           }}>
             <div style={{ padding: '4px 10px 6px', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Insertar variable
+              Insert variable
             </div>
             {SAMPLE_VARIABLES.map(v => (
               <button
@@ -833,8 +833,9 @@ function WorkflowCanvasInner({
   onToggleSidebar?: () => void
   agentName?: string
 }) {
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [advancedId, setAdvancedId] = useState<string | null>(null)
+  const _demoParam = new URLSearchParams(window.location.search).get('demo')
+  const [editingId, setEditingId] = useState<string | null>(_demoParam === 'drawer' ? 's_todo' : null)
+  const [advancedId, setAdvancedId] = useState<string | null>(_demoParam === 'flow' ? 's_doing' : null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
@@ -892,7 +893,7 @@ function WorkflowCanvasInner({
     const newNode: AnyNode = {
       id: newId, type: 'stateNode',
       position: { x: (src.position.x ?? 0) + 380, y: (src.position.y ?? 0) },
-      data: { name: 'Nuevo estado', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any,
+      data: { name: 'New state', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any,
     }
     setNodes(ns => [...ns, newNode])
     setEdges(es => [...es, { id: `e-${fromId}-${newId}`, source: fromId, target: newId, ...edgeDefaults }])
@@ -920,12 +921,12 @@ function WorkflowCanvasInner({
         position: 'absolute', top: 16, right: 16, zIndex: 10,
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Plantillas</ToolbarBtn>
-        <ToolbarBtn icon={<Settings size={14} />}>Ajustes</ToolbarBtn>
+        <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Templates</ToolbarBtn>
+        <ToolbarBtn icon={<Settings size={14} />}>Settings</ToolbarBtn>
         <ToolbarBtn icon={<LayoutGrid size={14} />} onClick={onChangeVariant}>
-          {variant === 'unified' ? 'Vista: Unificada' : 'Vista: Clásica'}
+          {variant === 'unified' ? 'View: Unified' : 'View: Classic'}
         </ToolbarBtn>
-        <ToolbarBtn icon={<LayoutGrid size={14} />} primary onClick={onOpenKanban}>Ver tablero</ToolbarBtn>
+        <ToolbarBtn icon={<LayoutGrid size={14} />} primary onClick={onOpenKanban}>View board</ToolbarBtn>
         <ToolbarBtn icon={<Maximize2 size={14} />} square />
       </div>
 
@@ -1075,7 +1076,7 @@ function AdvancedEditorOverlay({
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              title="Ocultar/mostrar panel izquierdo"
+              title="Hide/show left panel"
               style={{
                 width: 32, height: 32, borderRadius: 8,
                 background: 'transparent', border: '1px solid #E2E8F0',
@@ -1097,7 +1098,7 @@ function AdvancedEditorOverlay({
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}
-            title="Volver al workflow"
+            title="Back to workflow"
             onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
           >←</button>
@@ -1107,13 +1108,13 @@ function AdvancedEditorOverlay({
             {agentName && <span>/</span>}
             <span style={{ fontWeight: 500 }}>Workflows</span>
             <span>/</span>
-            <span style={{ fontWeight: 700, color: '#0F172A' }}>Flujo de {name || node.data.name}</span>
+            <span style={{ fontWeight: 700, color: '#0F172A' }}>Flow: {name || node.data.name}</span>
           </div>
           {/* Settings gear — only when the panel is not already pinned to the side */}
           {!pinSettings && (
             <button
               onClick={() => setSettingsOpen(true)}
-              title="Configuración del estado (datos requeridos, etc.)"
+              title="State settings (required data, etc.)"
               style={{
                 width: 32, height: 32, borderRadius: 8,
                 background: 'transparent', border: '1px solid #E2E8F0',
@@ -1134,14 +1135,14 @@ function AdvancedEditorOverlay({
               color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
             }}
-          >Volver a simple</button>
+          >Back to simple</button>
           <button style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 16px', borderRadius: 10,
             background: '#FFFFFF', border: `1px solid ${PRIMARY}`,
             color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-          }}><Play size={13} /> Probar flujo</button>
+          }}><Play size={13} /> Test flow</button>
           {/* Search input */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1152,7 +1153,7 @@ function AdvancedEditorOverlay({
           }}>
             <Search size={14} color="#94A3B8" />
             <input
-              placeholder="Buscar ..."
+              placeholder="Search ..."
               style={{
                 flex: 1, border: 'none', background: 'transparent', outline: 'none',
                 fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A',
@@ -1181,7 +1182,7 @@ function AdvancedEditorOverlay({
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' }}
-          ><Settings size={13} /> Configuración</button>
+          ><Settings size={13} /> Settings</button>
         )}
 
         {/* Right-side node palette (per Image #18) */}
@@ -1189,9 +1190,9 @@ function AdvancedEditorOverlay({
           position: 'absolute', top: 16, right: 16, zIndex: 10,
           display: 'flex', flexDirection: 'column', gap: 10,
         }}>
-          <PaletteCard label="Instrucción" icon={<MessageSquare size={14} />} color={PRIMARY} />
-          <PaletteCard label="Condición"   icon={<GitBranch    size={14} />} color="#D97706" />
-          <PaletteCard label="Bucle"       icon={<RotateCcw    size={14} />} color="#0891B2" />
+          <PaletteCard label="Instruction" icon={<MessageSquare size={14} />} color={PRIMARY} />
+          <PaletteCard label="Condition"   icon={<GitBranch    size={14} />} color="#D97706" />
+          <PaletteCard label="Loop"       icon={<RotateCcw    size={14} />} color="#0891B2" />
         </div>
 
         {/* Bottom-left: mini-map placeholder + zoom controls row */}
@@ -1297,12 +1298,12 @@ function AdvancedEditorOverlay({
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '14px 18px', borderBottom: '1px solid #E2E8F0', flexShrink: 0,
                 }}>
-                  <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</span>
+                  <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>State settings</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ padding: '2px 7px', borderRadius: 5, background: '#EEF0FF', color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>Unificado</span>
+                    <span style={{ padding: '2px 7px', borderRadius: 5, background: '#EEF0FF', color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>Unified</span>
                     <button
                       onClick={() => setPanelOpen(false)}
-                      title="Ocultar panel"
+                      title="Hide panel"
                       style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #E2E8F0', background: 'transparent', cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
                       onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
@@ -1314,7 +1315,7 @@ function AdvancedEditorOverlay({
                 <div style={{ flex: 1, overflow: 'auto', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* Name */}
                   <div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>Nombre del estado</div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>State name</div>
                     <input
                       value={name}
                       onChange={e => setName(e.target.value)}
@@ -1324,11 +1325,11 @@ function AdvancedEditorOverlay({
 
                   {/* Instructions */}
                   <div>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>Instrucciones del estado</div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginBottom: 6, fontFamily: 'Roboto, sans-serif', textTransform: 'uppercase', letterSpacing: 0.4 }}>State instructions</div>
                     <textarea
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      placeholder="¿Qué debe hacer el agente en este estado?"
+                      placeholder="What should the agent do in this state?"
                       rows={3}
                       style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#475569', outline: 'none', resize: 'vertical', background: '#FAFBFD', lineHeight: 1.5 }}
                     />
@@ -1337,8 +1338,8 @@ function AdvancedEditorOverlay({
                   {/* Requires human */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Confirmación humana</div>
-                      <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Human confirmation</div>
+                      <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>Before changing the workflow</div>
                     </div>
                     <Toggle on={requiresHuman} onChange={setRequiresHuman} />
                   </div>
@@ -1419,7 +1420,7 @@ function SettingsDrawer({
       >
         <style>{`@keyframes wfDrawer{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Configuración del estado</h3>
+          <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>State settings</h3>
           <button onClick={onClose} style={{
             width: 28, height: 28, borderRadius: 8,
             background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
@@ -1432,8 +1433,8 @@ function SettingsDrawer({
           padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0',
         }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requiere confirmación humana</div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Antes de cambiar el workflow</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Requires human confirmation</div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>Before changing the workflow</div>
           </div>
           <Toggle on={requiresHuman} onChange={setRequiresHuman} />
         </div>
@@ -1449,7 +1450,7 @@ function SettingsDrawer({
 type InicioAdvData = Record<string, unknown> & { stateName?: string }
 
 function InicioAdvNode({ data }: NodeProps<Node<InicioAdvData>>) {
-  const label = data.stateName ? `Al entrar a "${data.stateName}"` : 'Inicio del estado'
+  const label = data.stateName ? `When entering "${data.stateName}"` : 'State start'
   return (
     <div style={{
       padding: '10px 18px',
@@ -1484,7 +1485,7 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
         fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700,
       }}>
         <MessageSquare size={12} />
-        Instrucción
+        Instruction
         <ChevronDown size={11} />
       </div>
       {/* Card */}
@@ -1515,13 +1516,13 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
             fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#94A3B8', lineHeight: 1.5,
             padding: '4px 0', minHeight: 40,
           }}>
-            {data.description || 'Escribe lo que quieres que el agente haga'}
+            {data.description || 'Write what you want the agent to do'}
           </div>
           <div style={{
             fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8',
             paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 4,
           }}>
-            Escribe <strong>$</strong> o <strong>/</strong> para desplegar el menú de variables
+            Type <strong>$</strong> or <strong>/</strong> to open the variable menu
           </div>
         </div>
         {/* Warning */}
@@ -1546,7 +1547,7 @@ function AdvancedFlow({ stateName }: { stateName?: string }) {
     { id: 'a-start', type: 'inicioAdv', position: { x: 60, y: 240 }, data: { stateName } },
     {
       id: 'a-inst1', type: 'instAdv', position: { x: 400, y: 200 },
-      data: { title: 'Datos del usuario', description: '', warning: 'Mejoras pendientes' },
+      data: { title: 'User data', description: '', warning: 'Pending improvements' },
     },
   ]
   const initialAdvancedEdges: Edge[] = [
@@ -1605,13 +1606,13 @@ function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
-              Plantillas de workflow
+              Workflow templates
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B', lineHeight: 1.5, maxWidth: 520 }}>
-              Empezá con una estructura común y adaptala a tu caso. Reemplaza el workflow actual.
+              Start with a common structure and adapt it to your case. This will replace the current workflow.
             </p>
           </div>
-          <button onClick={onClose} title="Cerrar" style={{
+          <button onClick={onClose} title="Close" style={{
             width: 30, height: 30, borderRadius: 8,
             background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
@@ -1647,7 +1648,7 @@ function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl
           ))}
         </div>
         <p style={{ margin: 0, fontSize: 11.5, color: '#94A3B8', lineHeight: 1.5 }}>
-          Las plantillas son un punto de partida — siempre podés agregar, modificar o eliminar estados después.
+          Templates are a starting point — you can always add, modify, or remove states later.
         </p>
       </div>
     </div>
@@ -1701,9 +1702,9 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
       fontFamily: 'Roboto, sans-serif',
     }}>
       <div style={{ maxWidth: 980, width: '100%' }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0F172A' }}>Elegí cómo querés ver el workflow</h2>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0F172A' }}>Choose how you want to view the workflow</h2>
         <p style={{ margin: '6px 0 28px', fontSize: 14, color: '#64748B', maxWidth: 640 }}>
-          Dos vistas distintas del mismo agente. Probalas y quedate con la que sume más al equipo.
+          Two different views of the same agent. Try them and keep the one that works best for your team.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {/* Classic */}
@@ -1725,8 +1726,8 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
                 padding: '2px 7px', borderRadius: 5,
                 background: '#F1F5F9', color: '#475569',
                 fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-              }}>Opción 1</span>
-              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Vista clásica</span>
+              }}>Option 1</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Classic view</span>
             </div>
             {/* Visual preview */}
             <div style={{
@@ -1753,9 +1754,9 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
                     padding: '1px 4px', borderRadius: 3,
                     background: '#EEF0FF', color: PRIMARY,
                     fontSize: 7.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
-                  }}>Avz</span>
+                  }}>Adv</span>
                 </div>
-                <div style={{ marginTop: 4 }}>Avanzado</div>
+                <div style={{ marginTop: 4 }}>Advanced</div>
               </div>
               <span style={{ color: '#94A3B8' }}>→</span>
               <div style={{
@@ -1764,14 +1765,14 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
               }}>Final</div>
             </div>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: '#475569' }}>
-              Estados <strong>simples</strong> y <strong>avanzados</strong> conviven y se ven distinto. Los avanzados muestran un mini-flujo y abren el editor de lógica.
+              <strong>Simple</strong> and <strong>advanced</strong> states coexist and look different. Advanced ones show a mini-flow and open the logic editor.
             </p>
             <div style={{
               alignSelf: 'flex-start',
               padding: '8px 14px', borderRadius: 8,
               background: PRIMARY, color: '#FFFFFF',
               fontSize: 13, fontWeight: 700,
-            }}>Usar vista clásica →</div>
+            }}>Use classic view →</div>
           </button>
 
           {/* Unified */}
@@ -1793,8 +1794,8 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
                 padding: '2px 7px', borderRadius: 5,
                 background: '#F1F5F9', color: '#475569',
                 fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-              }}>Opción 2</span>
-              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Vista unificada</span>
+              }}>Option 2</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Unified view</span>
             </div>
             {/* Visual preview */}
             <div style={{
@@ -1807,7 +1808,7 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
                 border: '1px solid #E2E8F0', fontSize: 10, fontWeight: 700, color: '#0F172A',
               }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', marginBottom: 4 }} />
-                Estado
+                State
               </div>
               <span style={{ color: '#94A3B8' }}>→</span>
               <div style={{
@@ -1815,7 +1816,7 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
                 border: '1px solid #E2E8F0', fontSize: 10, fontWeight: 700, color: '#0F172A',
               }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6', marginBottom: 4 }} />
-                Estado
+                State
               </div>
               <span style={{ color: '#94A3B8' }}>→</span>
               <div style={{
@@ -1824,14 +1825,14 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
               }}>Final</div>
             </div>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: '#475569' }}>
-              Todos los estados se ven <strong>iguales</strong>. Al entrar, ves la lógica del estado y el panel de configuración fijo a la derecha.
+              All states look <strong>the same</strong>. When you enter one, you see the state logic and a fixed settings panel on the right.
             </p>
             <div style={{
               alignSelf: 'flex-start',
               padding: '8px 14px', borderRadius: 8,
               background: PRIMARY, color: '#FFFFFF',
               fontSize: 13, fontWeight: 700,
-            }}>Usar vista unificada →</div>
+            }}>Use unified view →</div>
           </button>
         </div>
       </div>
