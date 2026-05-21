@@ -343,7 +343,7 @@ function PrincipalTab() {
             {agents.map(a => (
               <div
                 key={a.id}
-                onClick={() => { window.location.href = '/flow-test' }}
+                onClick={() => { window.location.href = '/flow-test-agent' }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 12px', borderRadius: 14,

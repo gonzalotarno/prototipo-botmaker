@@ -38,7 +38,7 @@ export default function AgentsListSidebar({
 }: Props) {
   const handleAgent = (name: string) => {
     if (onAgentClick) return onAgentClick(name)
-    window.location.href = '/flow-test'
+    window.location.href = '/flow-test-agent'
   }
   const handleOrchestrator = (id: string) => {
     if (onOrchestratorClick) return onOrchestratorClick(id)

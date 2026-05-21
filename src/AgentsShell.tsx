@@ -152,7 +152,7 @@ export default function AgentsShell() {
             collapsed={!showSidebar}
             onToggle={() => setShowSidebar(s => !s)}
             onOrchestratorClick={() => { window.location.href = '/flow-test-orquestador' }}
-            onAgentClick={() => { window.location.href = '/flow-test' }}
+            onAgentClick={() => { window.location.href = '/flow-test-agent' }}
           />
         ) : (
           showSidebar && (
