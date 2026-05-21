@@ -38,13 +38,13 @@ export default function FlowTest() {
           </h1>
           <p style={{ margin: '16px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
             Your sales team uses an AI agent on WhatsApp to follow up with new leads.
-            It's already live — a few hundred leads have gone through it this week.
+            It's live — a few hundred leads have gone through it this week.
           </p>
           <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
-            Right now it only has <strong style={{ color: '#0F172A' }}>one state</strong> that handles all leads the same way. Some leads are already ready to buy — they just need a quick nudge.
+            Right now it handles every lead the <strong style={{ color: '#0F172A' }}>same way — no custom steps</strong>, no specific logic per situation.
           </p>
           <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
-            Your task: <strong style={{ color: '#0F172A' }}>add a "Hot Lead" state</strong> to the workflow, open its flow, and <strong style={{ color: '#0F172A' }}>add an instruction</strong> telling the agent to offer a demo call right away.
+            Your task: <strong style={{ color: '#0F172A' }}>add a flow to the state</strong> so the agent follows a specific sequence of steps when handling a lead.
           </p>
         </div>
 

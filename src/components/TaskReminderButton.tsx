@@ -18,7 +18,7 @@ export default function TaskReminderButton() {
             Your task
           </div>
           <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: '#F1F5F9' }}>
-            Add a <strong style={{ color: '#FFFFFF' }}>"Hot Lead" state</strong> to the workflow. Open it, go into its flow, and add an <strong style={{ color: '#FFFFFF' }}>Instruction</strong> node telling the agent to offer a demo call right away.
+            The agent handles all leads the same way. <strong style={{ color: '#FFFFFF' }}>Add a flow to the state</strong> so it follows specific steps — at least one instruction telling the agent what to do.
           </p>
           {/* Arrow */}
           <div style={{
