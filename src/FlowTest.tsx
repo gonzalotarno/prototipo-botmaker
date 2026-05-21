@@ -41,7 +41,10 @@ export default function FlowTest() {
             It's already live — a few hundred leads have gone through it this week.
           </p>
           <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
-            Right now the agent only has <strong style={{ color: '#0F172A' }}>one conversation state</strong>. Your task is to <strong style={{ color: '#0F172A' }}>add at least one more state</strong> to better handle different types of leads.
+            Right now it only has <strong style={{ color: '#0F172A' }}>one state</strong> that handles all leads the same way. Some leads are already ready to buy — they just need a quick nudge.
+          </p>
+          <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
+            Your task: <strong style={{ color: '#0F172A' }}>add a "Hot Lead" state</strong> to the workflow, open its flow, and <strong style={{ color: '#0F172A' }}>add an instruction</strong> telling the agent to offer a demo call right away.
           </p>
         </div>
 

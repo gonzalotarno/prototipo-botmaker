@@ -8,6 +8,7 @@ import {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   addEdge,
   BaseEdge,
   getSmoothStepPath,
@@ -82,10 +83,8 @@ const PRIMARY = '#304FFE'
 // ─── Initial data ──────────────────────────────────────────────────────────────
 
 const INITIAL_NODES: AnyNode[] = [
-  { id: 'start',  type: 'startNode',  position: { x: 80,  y: 220 }, data: { onAddNext: () => {} } as any },
-  { id: 's_todo', type: 'stateNode',  position: { x: 280, y: 195 }, data: { name: 'Initial Assessment', description: 'Collect the customer\'s basic data before moving to triage.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_doing',type: 'stateNode',  position: { x: 700, y: 195 }, data: { name: 'Advanced Support', description: '', color: '#3B82F6', requiresHuman: true,  requiredData: [], kind: 'complex', onEdit: () => {}, onAddNext: () => {} } as any },
-  { id: 's_done', type: 'stateNode',  position: { x: 1120, y: 220 }, data: { name: 'Resolved', description: '', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'final',  onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 'start',  type: 'startNode', position: { x: 80,  y: 220 }, data: { onAddNext: () => {} } as any },
+  { id: 's_todo', type: 'stateNode', position: { x: 280, y: 195 }, data: { name: 'Lead Follow-up', description: 'Follow up with new leads via WhatsApp to qualify their interest.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
 // ─── Workflow Templates ────────────────────────────────────────────────────────
@@ -233,9 +232,7 @@ const TEMPLATES: Template[] = [
 type EdgeData = Record<string, unknown>
 
 const INITIAL_EDGES: Edge[] = [
-  { id: 'e-start-todo',  source: 'start',   target: 's_todo',  type: 'conditionEdge' },
-  { id: 'e-todo-doing',  source: 's_todo',  target: 's_doing', type: 'conditionEdge' },
-  { id: 'e-doing-done',  source: 's_doing', target: 's_done',  type: 'conditionEdge' },
+  { id: 'e-start-todo', source: 'start', target: 's_todo', type: 'conditionEdge' },
 ]
 
 // ─── Start Node ────────────────────────────────────────────────────────────────
@@ -1454,7 +1451,16 @@ function InicioAdvNode({ data }: NodeProps<Node<InicioAdvData>>) {
 
 type InstAdvData = Record<string, unknown> & { title: string; description: string; warning?: string }
 
-function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
+function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
+  const [text, setText] = useState(data.description || '')
+  const { setNodes } = useReactFlow()
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value
+    setText(val)
+    setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, description: val } } : n))
+  }
+
   return (
     <div style={{ width: 380, position: 'relative' }}>
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
@@ -1492,17 +1498,25 @@ function InstructionAdvNode({ data }: NodeProps<Node<InstAdvData>>) {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}><MoreVertical size={14} /></button>
         </div>
-        {/* Prompt textarea */}
+        {/* Editable prompt area */}
         <div style={{ padding: '0 16px 12px' }}>
-          <div style={{
-            fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#94A3B8', lineHeight: 1.5,
-            padding: '4px 0', minHeight: 40,
-          }}>
-            {data.description || 'Write what you want the agent to do'}
-          </div>
+          <textarea
+            className="nodrag nopan"
+            value={text}
+            onChange={handleChange}
+            placeholder="Write what you want the agent to do..."
+            rows={3}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              border: 'none', outline: 'none', resize: 'none',
+              background: 'transparent',
+              fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', lineHeight: 1.55,
+              padding: '4px 0', minHeight: 40,
+            }}
+          />
           <div style={{
             fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8',
-            paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 4,
+            paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 2,
           }}>
             Type <strong>$</strong> or <strong>/</strong> to open the variable menu
           </div>
@@ -1530,9 +1544,9 @@ const _advAddFn = { current: (_type: string) => {} }
 function AddNodeButton({ }: NodeProps) {
   const [open, setOpen] = useState(false)
   const items = [
-    { type: 'instAdv', label: 'Instrucción', color: PRIMARY, icon: <MessageSquare size={13} /> },
-    { type: 'condAdv', label: 'Condicional', color: '#F97316', icon: <GitBranch size={13} /> },
-    { type: 'loopAdv', label: 'Bucle',       color: '#16A34A', icon: <RotateCcw size={13} /> },
+    { type: 'instAdv', label: 'Instruction', color: PRIMARY,    icon: <MessageSquare size={13} /> },
+    { type: 'condAdv', label: 'Conditional', color: '#F97316',  icon: <GitBranch size={13} /> },
+    { type: 'loopAdv', label: 'Loop',        color: '#16A34A',  icon: <RotateCcw size={13} /> },
   ]
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1581,19 +1595,19 @@ function ConditionalAdvNode({ }: NodeProps) {
     <div style={{ width: 340, position: 'relative' }}>
       <Handle type="target" position={Position.Left} style={{ background: '#F97316', width: 8, height: 8, border: 'none' }} />
       <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#FFF7ED', color: '#F97316', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
-        <GitBranch size={12} /> Condicional
+        <GitBranch size={12} /> Conditional
       </div>
       <div style={{ background: 'white', border: '1.5px solid #FFEDD5', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
-          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Nodo condicional</span>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Conditional node</span>
           <button style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MoreVertical size={14} /></button>
         </div>
         <div style={{ padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {conditions.map((cond, i) => (
             <div key={i} style={{ position: 'relative' }}>
-              <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 4 }}>Si se cumple</div>
+              <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 4 }}>If true</div>
               <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E2E8F0', borderRadius: 8, background: 'white', overflow: 'hidden' }}>
-                <input value={cond} onChange={e => { const nc = [...conditions]; nc[i] = e.target.value; setConditions(nc) }}
+                <input className="nodrag nopan" value={cond} onChange={e => { const nc = [...conditions]; nc[i] = e.target.value; setConditions(nc) }}
                   style={{ flex: 1, border: 'none', outline: 'none', padding: '9px 10px', fontFamily: 'Roboto, sans-serif', fontSize: 13, background: 'transparent', color: '#0F172A' }} />
                 <button onClick={() => setConditions(conditions.filter((_, ci) => ci !== i))}
                   style={{ flexShrink: 0, width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1604,17 +1618,17 @@ function ConditionalAdvNode({ }: NodeProps) {
             </div>
           ))}
           <button onClick={() => setConditions([...conditions, ''])} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 8px', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
-            <Plus size={14} /> Agregar
+            <Plus size={14} /> Add condition
           </button>
         </div>
         <div style={{ height: 1, background: '#F1F5F9', margin: '0 0' }} />
         <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
-          <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 2 }}>De lo contrario</div>
-          <div style={{ fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>Ninguno se cumple</div>
+          <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 2 }}>Otherwise</div>
+          <div style={{ fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>None matched</div>
           <Handle type="source" position={Position.Right} id="else" style={{ background: '#94A3B8', width: 8, height: 8, border: 'none' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#FFFBEB', borderTop: '1px solid #FDE68A', fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#B45309' }}>
-          <AlertCircle size={12} /> Mejoras pendientes
+          <AlertCircle size={12} /> Pending improvements
         </div>
       </div>
     </div>
@@ -1631,22 +1645,22 @@ function LoopAdvNode({ }: NodeProps) {
       </div>
       <div style={{ background: 'white', border: '1.5px solid #DCFCE7', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 8px' }}>
-          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Bucle</span>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Loop</span>
           <button style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MoreVertical size={14} /></button>
         </div>
         <div style={{ padding: '0 16px 12px' }}>
-          <textarea value={instruction} onChange={e => setInstruction(e.target.value)}
-            placeholder="Escribe lo que quieres que el agente haga"
+          <textarea className="nodrag nopan" value={instruction} onChange={e => setInstruction(e.target.value)}
+            placeholder="Write what you want the agent to do..."
             rows={2}
             style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 8, padding: '8px 10px', background: '#F8FAFC', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', resize: 'none', outline: 'none', lineHeight: 1.5 }}
           />
           <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8', marginTop: 4 }}>
-            Escribe <strong>$</strong> o <strong>/</strong> para desplegar el menú de variables
+            Type <strong>$</strong> or <strong>/</strong> to open the variable menu
           </div>
         </div>
         <div style={{ height: 1, background: '#F1F5F9' }} />
         <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
-          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 500, color: '#0F172A' }}>Al finalizar</span>
+          <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 500, color: '#0F172A' }}>When done</span>
           <Handle type="source" position={Position.Right} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
         </div>
       </div>
