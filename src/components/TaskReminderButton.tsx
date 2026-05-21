@@ -1,7 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function TaskReminderButton() {
   const [open, setOpen] = useState(false)
+  const [inFlow, setInFlow] = useState(() => sessionStorage.getItem('bm-in-flow') === '1')
+
+  useEffect(() => {
+    const handler = () => setInFlow(sessionStorage.getItem('bm-in-flow') === '1')
+    window.addEventListener('bm-flow-change', handler)
+    return () => window.removeEventListener('bm-flow-change', handler)
+  }, [])
+
+  const taskCopy = inFlow
+    ? <>You're inside the flow! <strong style={{ color: '#FFFFFF' }}>Edit the Instruction node</strong> to tell the agent what to say — for example: "Ask if they'd like to schedule a demo call."</>
+    : <>The agent handles all leads the same way. <strong style={{ color: '#FFFFFF' }}>Add a flow to the state</strong> so it follows specific steps — at least one instruction telling the agent what to do.</>
 
   return (
     <div style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 999 }}>
@@ -18,7 +29,7 @@ export default function TaskReminderButton() {
             Your task
           </div>
           <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: '#F1F5F9' }}>
-            The agent handles all leads the same way. <strong style={{ color: '#FFFFFF' }}>Add a flow to the state</strong> so it follows specific steps — at least one instruction telling the agent what to do.
+            {taskCopy}
           </p>
           {/* Arrow */}
           <div style={{

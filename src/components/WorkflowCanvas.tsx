@@ -1661,11 +1661,13 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   const storageKey = `bm-adv-flow-${stateId ?? 'default'}`
 
   const makeInitialNodes = (): Node[] => [
-    { id: 'a-start', type: 'inicioAdv', position: { x: 60, y: 240 }, data: { stateName } },
-    { id: 'a-add-0', type: 'addAdv',    position: { x: 320, y: 222 }, data: {} },
+    { id: 'a-start',  type: 'inicioAdv', position: { x: 60, y: 200 },  data: { stateName } },
+    { id: 'a-inst-0', type: 'instAdv',   position: { x: 360, y: 150 }, data: { title: 'Instruction', description: "Ask the lead if they'd like to schedule a demo call to learn more about the product." } },
+    { id: 'a-add-0',  type: 'addAdv',    position: { x: 820, y: 172 }, data: {} },
   ]
   const makeInitialEdges = (): Edge[] => [
-    { id: 'ae-0', source: 'a-start', target: 'a-add-0', type: 'smoothstep' },
+    { id: 'ae-0', source: 'a-start',  target: 'a-inst-0', type: 'smoothstep' },
+    { id: 'ae-1', source: 'a-inst-0', target: 'a-add-0',  type: 'smoothstep' },
   ]
 
   const loadSaved = (): { nodes: Node[]; edges: Edge[] } | null => {
@@ -1675,6 +1677,9 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(saved?.nodes ?? makeInitialNodes())
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(saved?.edges ?? makeInitialEdges())
   const [dropMenuPos, setDropMenuPos] = useState<{ x: number; y: number } | null>(null)
+  const [savedToast, setSavedToast] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const mountedRef = useRef(false)
 
   // Keep refs fresh to avoid stale closures in _advAddFn
   const nodesRef = useRef(nodes)
@@ -1682,9 +1687,23 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   useEffect(() => { nodesRef.current = nodes }, [nodes])
   useEffect(() => { edgesRef.current = edges }, [edges])
 
-  // Persist on change
+  // Signal TaskReminderButton that user is inside a flow editor
+  useEffect(() => {
+    sessionStorage.setItem('bm-in-flow', '1')
+    window.dispatchEvent(new CustomEvent('bm-flow-change'))
+    return () => {
+      sessionStorage.removeItem('bm-in-flow')
+      window.dispatchEvent(new CustomEvent('bm-flow-change'))
+    }
+  }, [])
+
+  // Persist on change + show saved toast (skip initial mount)
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify({ nodes, edges })) } catch {}
+    if (!mountedRef.current) { mountedRef.current = true; return }
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    setSavedToast(true)
+    savedTimerRef.current = setTimeout(() => setSavedToast(false), 2200)
   }, [nodes, edges, storageKey])
 
   // Register the add-node handler so AddNodeButton can call it
@@ -1730,6 +1749,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
 
   return (
     <>
+      <style>{`@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
       <ReactFlowProvider>
         <ReactFlow
           nodes={nodes} edges={edges}
@@ -1744,6 +1764,20 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
         </ReactFlow>
       </ReactFlowProvider>
+      {savedToast && (
+        <div style={{
+          position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, pointerEvents: 'none',
+          background: '#0F172A', color: '#F8FAFC',
+          padding: '8px 18px', borderRadius: 100,
+          fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 7,
+          boxShadow: '0 4px 20px rgba(15,23,42,0.25)',
+          animation: 'toastIn 200ms ease both',
+        }}>
+          <span style={{ color: '#34D399', fontSize: 15 }}>✓</span> Flow saved
+        </div>
+      )}
       {dropMenuPos && (
         <>
           <div
