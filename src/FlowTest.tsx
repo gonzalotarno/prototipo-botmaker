@@ -46,7 +46,7 @@ export default function FlowTest() {
         {(['pt', 'es'] as const).map(l => (
           <button
             key={l}
-            onClick={() => setLang(l)}
+            onClick={() => { sessionStorage.setItem('bm-lang', l); setLang(l) }}
             style={{
               padding: '16px 20px', borderRadius: 12, border: '1.5px solid #E2E8F0',
               background: '#FFFFFF', cursor: 'pointer', textAlign: 'left',

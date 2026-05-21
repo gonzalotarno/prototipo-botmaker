@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import SuccessModal from './SuccessModal'
 import {
   ReactFlow,
   Background,
@@ -1678,6 +1679,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(saved?.edges ?? makeInitialEdges())
   const [dropMenuPos, setDropMenuPos] = useState<{ x: number; y: number } | null>(null)
   const [savedToast, setSavedToast] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const mountedRef = useRef(false)
 
@@ -1688,7 +1690,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   useEffect(() => { edgesRef.current = edges }, [edges])
 
   // Signal TaskReminderButton that user is inside a flow editor,
-  // then mark task complete after 1.5s (they found the flow — that's the aha moment)
+  // then mark task complete after 1.5s and show feedback modal after 2.5s
   useEffect(() => {
     sessionStorage.setItem('bm-in-flow', '1')
     window.dispatchEvent(new CustomEvent('bm-flow-change'))
@@ -1696,8 +1698,10 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
       sessionStorage.setItem('bm-flow-done', '1')
       window.dispatchEvent(new CustomEvent('bm-flow-change'))
     }, 1500)
+    const modalTimer = setTimeout(() => setShowSuccess(true), 2500)
     return () => {
       clearTimeout(doneTimer)
+      clearTimeout(modalTimer)
       sessionStorage.removeItem('bm-in-flow')
       window.dispatchEvent(new CustomEvent('bm-flow-change'))
     }
@@ -1770,6 +1774,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
         </ReactFlow>
       </ReactFlowProvider>
+      {showSuccess && <SuccessModal onClose={() => setShowSuccess(false)} />}
       {savedToast && (
         <div style={{
           position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)',
