@@ -9,6 +9,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+    <script>
+      (function (m, a, z, e) {
+        var s, t, u, v;
+        try { t = m.sessionStorage.getItem('maze-us'); } catch (err) {}
+        if (!t) { t = new Date().getTime(); try { m.sessionStorage.setItem('maze-us', t); } catch (err) {} }
+        u = document.currentScript || (function () { var w = document.getElementsByTagName('script'); return w[w.length - 1]; })();
+        v = u && u.nonce;
+        s = a.createElement('script');
+        s.src = z + '?apiKey=' + e;
+        s.async = true;
+        if (v) s.setAttribute('nonce', v);
+        a.getElementsByTagName('head')[0].appendChild(s);
+        m.mazeUniversalSnippetApiKey = e;
+      })(window, document, 'https://snippet.maze.co/maze-universal-loader.js', '2cf68600-798e-416e-a4ed-fb3f028f458a');
+    </script>
   </head>
   <body>
     <div id="root"></div>
