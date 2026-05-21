@@ -837,6 +837,7 @@ function WorkflowCanvasInner({
   const [editingId, setEditingId] = useState<string | null>(_demoParam === 'drawer' ? 's_todo' : null)
   const [advancedId, setAdvancedId] = useState<string | null>(_demoParam === 'flow' ? 's_doing' : null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [workflowSettingsOpen, setWorkflowSettingsOpen] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
 
@@ -922,11 +923,8 @@ function WorkflowCanvasInner({
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Templates</ToolbarBtn>
-        <ToolbarBtn icon={<Settings size={14} />}>Settings</ToolbarBtn>
-        <ToolbarBtn icon={<LayoutGrid size={14} />} onClick={onChangeVariant}>
-          {variant === 'unified' ? 'View: Unified' : 'View: Classic'}
-        </ToolbarBtn>
-        <ToolbarBtn icon={<LayoutGrid size={14} />} primary onClick={onOpenKanban}>View board</ToolbarBtn>
+        <ToolbarBtn icon={<Settings size={14} />} onClick={() => setWorkflowSettingsOpen(true)}>Workflow settings</ToolbarBtn>
+        <ToolbarBtn icon={<LayoutGrid size={14} />} primary>View board</ToolbarBtn>
         <ToolbarBtn icon={<Maximize2 size={14} />} square />
       </div>
 
@@ -1003,6 +1001,11 @@ function WorkflowCanvasInner({
       {/* Templates picker */}
       {templatesOpen && (
         <TemplatesModal onClose={() => setTemplatesOpen(false)} onPick={applyTemplate} />
+      )}
+
+      {/* Workflow settings modal */}
+      {workflowSettingsOpen && (
+        <WorkflowSettingsModal onClose={() => setWorkflowSettingsOpen(false)} />
       )}
 
       {/* Advanced editor overlay */}
@@ -1650,6 +1653,67 @@ function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl
         <p style={{ margin: 0, fontSize: 11.5, color: '#94A3B8', lineHeight: 1.5 }}>
           Templates are a starting point — you can always add, modify, or remove states later.
         </p>
+      </div>
+    </div>
+  )
+}
+
+function WorkflowSettingsModal({ onClose }: { onClose: () => void }) {
+  const [goal, setGoal] = useState('Leads')
+  const [desc, setDesc] = useState('')
+  const MAX = 1500
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.35)', backdropFilter: 'blur(2px)' }} onClick={onClose}>
+      <div style={{ width: 480, maxWidth: '90vw', background: 'white', borderRadius: 20, boxShadow: '0 24px 64px rgba(15,23,42,0.18)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 24px 18px' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Ajustes del workflow</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 8, color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#475569')} onMouseLeave={e => (e.currentTarget.style.color = '#94A3B8')}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ height: 1, background: '#E2E8F0', margin: '0 24px' }} />
+        {/* Body */}
+        <div style={{ padding: '22px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#475569', lineHeight: 1.6, fontFamily: 'Roboto, sans-serif' }}>
+            Lo que el agente gestiona y cómo lo hace. Definí los objetos del negocio que va a manejar y describí cómo combina lógicas, MCPs, bases y código para cumplir el objetivo.
+          </p>
+          {/* Goal input */}
+          <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
+            <label style={{ position: 'absolute', top: -9, left: 12, background: 'white', padding: '0 4px', fontSize: 11.5, color: '#64748B', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>
+              ¿Qué deseas gestionar en el workflow?
+            </label>
+            <input
+              value={goal}
+              onChange={e => setGoal(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '14px 14px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', background: 'transparent' }}
+            />
+          </div>
+          {/* Desc textarea */}
+          <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
+            <textarea
+              value={desc}
+              onChange={e => setDesc(e.target.value.slice(0, MAX))}
+              placeholder="Describe cómo el agente utiliza las herramientas para cumplir ..."
+              rows={4}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '14px 14px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', resize: 'none', background: 'transparent' }}
+            />
+            <span style={{ position: 'absolute', bottom: 10, right: 14, fontSize: 11.5, color: '#94A3B8', fontFamily: 'Roboto, sans-serif' }}>{desc.length}/{MAX}</span>
+          </div>
+          {/* AI button */}
+          <button style={{
+            position: 'absolute', bottom: 28, right: 24,
+            width: 48, height: 48, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(48,79,254,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background 140ms',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(48,79,254,0.22)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(48,79,254,0.12)')}
+          >
+            <Sparkles size={20} color={PRIMARY} />
+          </button>
+        </div>
       </div>
     </div>
   )

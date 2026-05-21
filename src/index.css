@@ -103,3 +103,10 @@ select option { background: #ffffff; color: var(--bm-grey-900); }
   line-height: 1.8;
   margin: 0 2px;
 }
+
+/* Hide Figma browser-extension "Send to Figma" inject button */
+#fig-mcp-btn, [id*="figma"][id*="btn"], [id*="figma"][id*="widget"],
+[class*="figma-send"], [class*="fig-send"], [class*="send-to-figma"],
+[data-figma-mcp], [aria-label="Send to Figma"] {
+  display: none !important;
+}
