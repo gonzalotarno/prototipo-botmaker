@@ -48,15 +48,13 @@ export default function SuccessModal({ onClose }: Props) {
   const [submitted, setSubmitted] = useState(false)
   const [hover, setHover] = useState<number | null>(null)
 
-  async function handleSubmit() {
+  function handleSubmit() {
     const url = new URL(FEEDBACK_ENDPOINT)
     url.searchParams.set('lang', lang)
     url.searchParams.set('rating', String(rating ?? ''))
     url.searchParams.set('comment', comment)
     url.searchParams.set('ts', new Date().toISOString())
-    try {
-      await fetch(url.toString(), { mode: 'no-cors' })
-    } catch {}
+    fetch(url.toString(), { mode: 'no-cors' }).catch(() => {})
     setSubmitted(true)
     setTimeout(onClose, 2200)
   }
