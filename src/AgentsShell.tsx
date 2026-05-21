@@ -33,7 +33,7 @@ function initialMode(): Mode {
   if (typeof window === 'undefined') return 'canvas'
   const queryPath = new URLSearchParams(window.location.search).get('path')
   const path = queryPath ?? window.location.pathname
-  return path === '/proyecto' ? 'project' : 'canvas'
+  return (path === '/proyecto' || path === '/flow-test-orquestador') ? 'project' : 'canvas'
 }
 
 export default function AgentsShell() {
