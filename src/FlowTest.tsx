@@ -41,7 +41,7 @@ export default function FlowTest() {
             It's already live — a few hundred leads have gone through it this week.
           </p>
           <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
-            Explore the configuration. See if there's anything you'd want to change or improve.
+            Right now the agent only has <strong style={{ color: '#0F172A' }}>one conversation state</strong>. Your task is to <strong style={{ color: '#0F172A' }}>add at least one more state</strong> to better handle different types of leads.
           </p>
         </div>
 
