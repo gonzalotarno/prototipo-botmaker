@@ -1541,13 +1541,15 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
 // Module-level ref so AddNodeButton can call back into AdvancedFlow without prop drilling
 const _advAddFn = { current: (_type: string) => {} }
 
+const ADV_NODE_ITEMS = [
+  { type: 'instAdv', label: 'Instruction', color: PRIMARY,    icon: <MessageSquare size={13} /> },
+  { type: 'condAdv', label: 'Conditional', color: '#F97316',  icon: <GitBranch size={13} /> },
+  { type: 'loopAdv', label: 'Loop',        color: '#16A34A',  icon: <RotateCcw size={13} /> },
+]
+
 function AddNodeButton({ }: NodeProps) {
   const [open, setOpen] = useState(false)
-  const items = [
-    { type: 'instAdv', label: 'Instruction', color: PRIMARY,    icon: <MessageSquare size={13} /> },
-    { type: 'condAdv', label: 'Conditional', color: '#F97316',  icon: <GitBranch size={13} /> },
-    { type: 'loopAdv', label: 'Loop',        color: '#16A34A',  icon: <RotateCcw size={13} /> },
-  ]
+  const items = ADV_NODE_ITEMS
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Handle type="target" position={Position.Left} style={{ opacity: 0, pointerEvents: 'none' }} />
@@ -1685,6 +1687,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   const saved = loadSaved()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(saved?.nodes ?? makeInitialNodes())
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(saved?.edges ?? makeInitialEdges())
+  const [dropMenuPos, setDropMenuPos] = useState<{ x: number; y: number } | null>(null)
 
   // Keep refs fresh to avoid stale closures in _advAddFn
   const nodesRef = useRef(nodes)
@@ -1732,20 +1735,68 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
 
   const onConnect = useCallback((p: Connection) => setEdges(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setEdges])
 
+  function onAdvConnectEnd(event: MouseEvent | TouchEvent, cs: { isValid: boolean | null; fromNode: { id: string } | null }) {
+    if (!cs?.fromNode || cs.isValid === true) return
+    const e = 'clientX' in event ? event : (event as TouchEvent).changedTouches[0]
+    setDropMenuPos({ x: e.clientX, y: e.clientY })
+  }
+
   return (
-    <ReactFlowProvider>
-      <ReactFlow
-        nodes={nodes} edges={edges}
-        nodeTypes={advNodeTypes}
-        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
-        fitView fitViewOptions={{ padding: 0.35 }}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
-      </ReactFlow>
-    </ReactFlowProvider>
+    <>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes} edges={edges}
+          nodeTypes={advNodeTypes}
+          onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onConnectEnd={onAdvConnectEnd as any}
+          defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
+          fitView fitViewOptions={{ padding: 0.35 }}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
+        </ReactFlow>
+      </ReactFlowProvider>
+      {dropMenuPos && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onClick={() => setDropMenuPos(null)}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: dropMenuPos.x,
+              top: dropMenuPos.y,
+              zIndex: 9999,
+              background: 'white',
+              borderRadius: 10,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 8px 24px rgba(15,23,42,0.14)',
+              padding: 6,
+              minWidth: 150,
+              fontFamily: 'Roboto, sans-serif',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {ADV_NODE_ITEMS.map(item => (
+              <button key={item.type}
+                onClick={() => { _advAddFn.current(item.type); setDropMenuPos(null) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9,
+                  width: '100%', padding: '8px 12px', borderRadius: 7,
+                  border: 'none', background: 'transparent', cursor: 'pointer',
+                  fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600,
+                  color: item.color, textAlign: 'left',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >{item.icon}{item.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
