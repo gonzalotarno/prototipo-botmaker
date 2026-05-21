@@ -15,6 +15,7 @@ import EstadosOptions from './EstadosOptions'
 import BackToLandingButton from './components/BackToLandingButton'
 import WorkflowCanvas from './components/WorkflowCanvas'
 import WorkflowList from './components/WorkflowList'
+import FlowTest from './FlowTest'
 
 // Support `?path=/agents&embed=1` for iframe embedding (portfolio).
 const params = new URLSearchParams(window.location.search)
@@ -83,7 +84,7 @@ function App() {
       <div style={{ flex: 1, overflow: 'hidden' }}><WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} /></div>
     </div>
   )
-  if (path === '/flow-test') return <AgentDetail initialTab="estados" variant="v2" />
+  if (path === '/flow-test') return <FlowTest />
   if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
