@@ -19,7 +19,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Plus, AlertCircle, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X } from 'lucide-react'
+import { Plus, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X, AlertCircle } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1522,16 +1522,6 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
           </div>
         </div>
         {/* Warning */}
-        {data.warning && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 16px',
-            background: '#FFFBEB', borderTop: '1px solid #FDE68A',
-            fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#B45309',
-          }}>
-            <AlertCircle size={12} /> {data.warning}
-          </div>
-        )}
       </div>
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none', top: 'calc(50% + 12px)' }} />
     </div>
@@ -1629,9 +1619,6 @@ function ConditionalAdvNode({ }: NodeProps) {
           <div style={{ fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>None matched</div>
           <Handle type="source" position={Position.Right} id="else" style={{ background: '#94A3B8', width: 8, height: 8, border: 'none' }} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#FFFBEB', borderTop: '1px solid #FDE68A', fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#B45309' }}>
-          <AlertCircle size={12} /> Pending improvements
-        </div>
       </div>
     </div>
   )
@@ -1712,7 +1699,7 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
     const newId = `node-${Date.now()}`
     const newAddId = `add-${newId}`
     const defData: Record<string, unknown> =
-      type === 'instAdv' ? { title: 'New instruction', description: '', warning: 'Pending improvements' } : {}
+      type === 'instAdv' ? { title: 'New instruction', description: '' } : {}
     setNodes([
       ...cur.filter(n => n.id !== addBtnId),
       { id: newId, type, position: pos, data: defData },
