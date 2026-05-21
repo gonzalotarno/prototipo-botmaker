@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, Trash2, Zap, X, Play, Check, Pencil, ChevronDown, Bot, Plug, Sliders, AlertTriangle, Pencil as PencilIcon, PlusCircle, MinusCircle, RotateCcw, History } from 'lucide-react'
-import { AgentAvatar } from './agentIcons'
 import OrchestratorTestChat from './components/OrchestratorTestChat'
+import Icon from './Icon'
+import { color, spacing, radius } from './ds'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -342,17 +343,23 @@ function PrincipalTab() {
             {agents.map(a => (
               <div
                 key={a.id}
-                onClick={() => { window.location.href = '/agente' }}
+                onClick={() => { window.location.href = '/flow-test' }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 12px', borderRadius: 14,
                   background: '#FAFBFF', border: '1px solid #ECEEFF',
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color + '55'; e.currentTarget.style.boxShadow = `0 2px 12px ${a.color}14` }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ADB8FF'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(48,79,254,0.10)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#ECEEFF'; e.currentTarget.style.boxShadow = 'none' }}
               >
-                <AgentAvatar iconKey={a.icon} color={a.color} size={34} />
+                <span style={{
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  background: '#E8EEFF', border: '1px solid #D0D8FF',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <img src="/avatar-ai.svg" style={{ width: 20, height: 20, filter: 'brightness(0) saturate(100%) invert(23%) sepia(93%) saturate(7484%) hue-rotate(234deg) brightness(101%) contrast(101%)' }} />
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#212121', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
@@ -938,6 +945,88 @@ function PublishedVersionsPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ── AI Model selector (same catalogue as ConfiguracionTab in AgentDetail) ──────
+
+interface LLM { id: string; name: string; provider: 'Anthropic' | 'OpenAI' | 'Google'; features: string[]; recommendation?: string; costPer1M: number; recommended?: boolean }
+
+const ORCH_LLMS: LLM[] = [
+  { id: 'claude-sonnet-4-7', name: 'Claude Sonnet 4.7', provider: 'Anthropic', features: ['Razonamiento balanceado', 'Análisis de código y texto largo'], recommendation: 'Mejor relación entre calidad, latencia y costo.', costPer1M: 3.0, recommended: true },
+  { id: 'claude-haiku-4-5',  name: 'Claude Haiku 4.5',  provider: 'Anthropic', features: ['Latencia ultra baja', 'Ideal para flujos simples y alto volumen'], recommendation: 'Optimizado para velocidad sobre profundidad.', costPer1M: 1.0 },
+  { id: 'gpt-5',             name: 'GPT-5',             provider: 'OpenAI',    features: ['Razonamiento profundo', 'Comprensión de instrucciones complejas'], recommendation: 'Prioridad en calidad de respuesta con coste mayor.', costPer1M: 5.0 },
+  { id: 'gemini-2-5-pro',    name: 'Gemini 2.5 Pro',    provider: 'Google',    features: ['Multimodal nativo', 'Imágenes, audio y documentos largos'], recommendation: 'Para casos con inputs no textuales.', costPer1M: 4.0 },
+]
+
+const PROVIDER_BG: Record<string, string> = { Anthropic: '#FFF7ED', OpenAI: '#F8FAFC', Google: '#F5F3FF' }
+
+function ProviderIcon({ provider, size = 20 }: { provider: string; size?: number }) {
+  if (provider === 'Anthropic') return (
+    <svg width={size} height={size} viewBox="-12 -12 24 24" style={{ display: 'block' }}>
+      {[0, 45, 90, 135].map(a => <rect key={a} x="-1" y="-10" width="2" height="20" rx="1" fill="#D97706" transform={`rotate(${a})`} />)}
+    </svg>
+  )
+  if (provider === 'OpenAI') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ display: 'block' }} fill="none" stroke="#000" strokeWidth="2">
+      <ellipse cx="12" cy="12" rx="9" ry="4" />
+      <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(60 12 12)" />
+      <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(120 12 12)" />
+    </svg>
+  )
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ display: 'block' }}>
+      <defs><linearGradient id="orchGemGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#4285F4" /><stop offset="0.5" stopColor="#7B61FF" /><stop offset="1" stopColor="#9333EA" /></linearGradient></defs>
+      <path d="M12 0 C12 7 17 12 24 12 C17 12 12 17 12 24 C12 17 7 12 0 12 C7 12 12 7 12 0 Z" fill="url(#orchGemGrad)" />
+    </svg>
+  )
+}
+
+function OrchestratorModelCard({ llm, selected, onSelect }: { llm: LLM; selected: boolean; onSelect: () => void }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button onClick={onSelect} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 14,
+      width: '100%', height: '100%', minWidth: 0, textAlign: 'left', padding: '18px 18px 14px',
+      borderRadius: radius.lg, border: `1.5px solid ${selected ? color.primary : color.borderDefault}`,
+      background: selected ? color.primaryUltraLight : (hov ? color.grey50 : 'white'),
+      cursor: 'pointer', transition: 'all 0.12s',
+    }}>
+      {llm.recommended && (
+        <span style={{ position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', padding: '3px 10px', borderRadius: 100, lineHeight: 1.4, background: color.primary, color: 'white' }}>
+          Recomendado
+        </span>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: PROVIDER_BG[llm.provider] ?? '#F8FAFC', border: `1px solid ${color.borderDefault}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ProviderIcon provider={llm.provider} size={20} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: color.grey900, lineHeight: 1.2 }}>{llm.name}</div>
+          <div style={{ fontSize: 11.5, color: color.grey500, marginTop: 2 }}>by {llm.provider}</div>
+        </div>
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {llm.features.map((f, i) => (
+          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span style={{ width: 16, height: 16, borderRadius: '50%', flexShrink: 0, marginTop: 1, background: color.primaryUltraLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="check" size={11} color={color.primary} />
+            </span>
+            <span style={{ fontSize: 12, color: color.grey700, lineHeight: 1.4 }}>{f}</span>
+          </li>
+        ))}
+      </ul>
+      {llm.recommendation && (
+        <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: color.primary, lineHeight: 1.45, textAlign: 'center' }}>{llm.recommendation}</p>
+      )}
+      <div style={{ paddingTop: 10, borderTop: `1px solid ${color.borderSubtle}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ fontSize: 11.5, color: color.grey500 }}>Costo</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: color.primary, lineHeight: 1.1 }}>US$ {llm.costPer1M.toFixed(2).replace('.', ',')}</div>
+          <div style={{ fontSize: 10, color: color.grey500, marginTop: 2 }}>por 1 millón de tokens</div>
+        </div>
+      </div>
+    </button>
+  )
+}
+
 // ── ProjectView ────────────────────────────────────────────────────────────────
 
 interface ProjectViewProps {
@@ -952,6 +1041,7 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
   const [orchActive,      setOrchActive]      = useState(true)
   const [hasPending,      setHasPending]      = useState(true)   // mock: always starts with pending
   const [modalOpen,       setModalOpen]       = useState(false)
+  const [orchModelId,     setOrchModelId]     = useState('claude-sonnet-4-7')
   const [toastVisible,    setToastVisible]    = useState(false)
   const [isUpToDate,      setIsUpToDate]      = useState(false)
 
@@ -1153,9 +1243,25 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
               content: <PrincipalTab />,
             },
             {
-              title: 'Automatizaciones',
-              desc: 'Acciones automáticas que el orquestador ejecuta en horarios o condiciones específicas, sin necesidad de que un cliente escriba primero.',
-              content: <TriggersTab />,
+              title: 'Modelo generativo',
+              desc: 'Elegí el LLM que el orquestador usa para razonar y delegar tareas a los agentes. Podés cambiarlo en cualquier momento sin afectar el resto de la configuración.',
+              content: (
+                <div>
+                  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', overflowY: 'visible', paddingBottom: 8, paddingLeft: 2, paddingRight: 2, scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
+                    {ORCH_LLMS.map(llm => (
+                      <div key={llm.id} style={{ flex: '0 0 260px', scrollSnapAlign: 'start' }}>
+                        <OrchestratorModelCard llm={llm} selected={orchModelId === llm.id} onSelect={() => setOrchModelId(llm.id)} />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: spacing.xxSm, padding: `${spacing.xSm}px ${spacing.sm}px`, background: color.primaryUltraLight, border: `1px solid ${color.primaryLight}`, borderRadius: radius.md, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <Icon name="info" size={16} color={color.primary} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <p style={{ margin: 0, fontSize: 12, color: color.grey700, lineHeight: 1.55 }}>
+                      Botmaker usa un motor de IA propietario con agentes, bases vectoriales y búsquedas indexadas. El modelo que elijas acá impacta el desempeño de esas funcionalidades.
+                    </p>
+                  </div>
+                </div>
+              ),
             },
             {
               title: 'Tono & Estilo',

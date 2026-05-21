@@ -52,13 +52,10 @@ export default function AgentsShell() {
     }
   }, [])
 
-  // Clicking an orchestrator switches the right pane to ProjectView without
-  // unmounting the sidebar — same all-in-one shell, just a different surface.
+  // Clicking an orchestrator navigates to the dedicated test route so the
+  // test-mode interceptor keeps all subsequent navigation inside v2.
   const openOrchestrator = useCallback((_id: string) => {
-    setMode('project')
-    if (typeof window !== 'undefined' && window.location.pathname !== '/proyecto') {
-      window.history.pushState(null, '', '/proyecto')
-    }
+    window.location.href = '/flow-test-orquestador'
   }, [])
 
   const handleSave = useCallback(() => {
@@ -98,7 +95,7 @@ export default function AgentsShell() {
                   onClick={() => openOrchestrator(selectedOrch.id)}
                   className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors px-2 py-1 rounded-md"
                 >
-                  {selectedOrch.emoji} {selectedOrch.name}
+                  <span className="material-symbols-outlined" style={{ fontSize: 13, verticalAlign: 'middle', marginRight: 4, lineHeight: 1 }}>hub</span>{selectedOrch.name}
                 </button>
               </>
             )}
@@ -154,8 +151,8 @@ export default function AgentsShell() {
           <AgentsListSidebar
             collapsed={!showSidebar}
             onToggle={() => setShowSidebar(s => !s)}
-            onOrchestratorClick={() => { /* already here */ }}
-            onAgentClick={() => { window.location.href = '/agente' }}
+            onOrchestratorClick={() => { window.location.href = '/flow-test-orquestador' }}
+            onAgentClick={() => { window.location.href = '/flow-test' }}
           />
         ) : (
           showSidebar && (

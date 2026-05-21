@@ -38,11 +38,11 @@ export default function AgentsListSidebar({
 }: Props) {
   const handleAgent = (name: string) => {
     if (onAgentClick) return onAgentClick(name)
-    window.location.href = '/agente'
+    window.location.href = '/flow-test'
   }
   const handleOrchestrator = (id: string) => {
     if (onOrchestratorClick) return onOrchestratorClick(id)
-    window.location.href = '/proyecto'
+    window.location.href = '/flow-test-orquestador'
   }
 
   return (
@@ -198,9 +198,8 @@ export default function AgentsListSidebar({
                 width: 24, height: 24, borderRadius: 6, flexShrink: 0,
                 background: color.grey100,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, lineHeight: 1,
               }}>
-                {orch.emoji}
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: color.grey600, lineHeight: 1 }}>hub</span>
               </span>
               <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {orch.name}
