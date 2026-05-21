@@ -1166,7 +1166,7 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
                 onMouseEnter={e => { e.currentTarget.style.background = '#EEF1FF' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
               >
-                <Play size={11} style={{ fill: '#304FFE' }} /> Probar
+                <Play size={11} style={{ fill: '#304FFE' }} /> Test
               </button>
 
               {/* Versiones publicadas */}
@@ -1185,7 +1185,7 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
                 onMouseEnter={e => { if (!versionsOpen) { e.currentTarget.style.borderColor = '#304FFE'; e.currentTarget.style.color = '#304FFE' } }}
                 onMouseLeave={e => { if (!versionsOpen) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' } }}
               >
-                <History size={13} /> Versiones
+                <History size={13} /> Versions
               </button>
 
               {/* Publicar */}
@@ -1209,10 +1209,10 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
                   onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                 >
                   {isUpToDate
-                    ? <><Check size={11} /> Publicado</>
+                    ? <><Check size={11} /> Published</>
                     : hasPending
-                      ? <>Publicar <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 6px', borderRadius: 100 }}>{totalChanges}</span></>
-                      : 'Publicar'
+                      ? <>Publish <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.25)', padding: '1px 6px', borderRadius: 100 }}>{totalChanges}</span></>
+                      : 'Publish'
                   }
                 </button>
               </div>
@@ -1238,13 +1238,13 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
 
           {[
             {
-              title: 'Conexiones del orquestador',
-              desc: 'Los canales por donde llegan los mensajes y los agentes que el orquestador activa para responderlos. Podés conectar o desconectar cualquiera en tiempo real.',
+              title: 'Connections',
+              desc: 'Channels where messages arrive and agents the orchestrator activates to respond. You can connect or disconnect any at any time.',
               content: <PrincipalTab />,
             },
             {
-              title: 'Modelo generativo',
-              desc: 'Elegí el LLM que el orquestador usa para razonar y delegar tareas a los agentes. Podés cambiarlo en cualquier momento sin afectar el resto de la configuración.',
+              title: 'AI Model',
+              desc: 'Choose the LLM the orchestrator uses to reason and delegate tasks to agents. You can change it at any time without affecting the rest of the configuration.',
               content: (
                 <div>
                   <div style={{ display: 'flex', gap: 12, overflowX: 'auto', overflowY: 'visible', paddingBottom: 8, paddingLeft: 2, paddingRight: 2, scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}>
@@ -1264,13 +1264,13 @@ export default function ProjectView({ embedded = false }: ProjectViewProps = {})
               ),
             },
             {
-              title: 'Tono & Estilo',
-              desc: 'Cómo habla y se presenta el orquestador con tus clientes. Define su personalidad, nivel de formalidad y extensión de las respuestas.',
+              title: 'Tone & Style',
+              desc: 'How the orchestrator speaks with your customers. Defines its personality, formality level, and response length.',
               content: <TonoTab />,
             },
             {
-              title: 'Restricciones',
-              desc: 'Límites que el orquestador nunca puede cruzar, sin importar qué le pida el cliente. Útil para proteger precios, promesas y escaladas a humanos.',
+              title: 'Restrictions',
+              desc: 'Limits the orchestrator can never cross, regardless of what the customer asks. Useful for protecting prices, promises, and human escalations.',
               content: <RestriccionesTab />,
             },
           ].map(s => (

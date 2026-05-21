@@ -17,14 +17,14 @@ import { color, spacing, radius, font, shadow, text } from './ds'
 type Tab = 'perfil' | 'estados' | 'subagentes' | 'bases' | 'mcps' | 'apps' | 'codigo' | 'automatizaciones'
 
 const TABS: { id: Tab; label: string; icon: string; isMcp?: boolean }[] = [
-  { id: 'perfil',           label: 'Perfil',                icon: 'ai-agent'     },
+  { id: 'perfil',           label: 'Profile',               icon: 'ai-agent'     },
   { id: 'estados',          label: 'Workflows',             icon: 'view_kanban' },
-  // { id: 'subagentes',    label: 'Lógicas', icon: 'route' },  // removed: ahora viven dentro de Workflows como estados avanzados
-  { id: 'bases',            label: 'Bases',                 icon: 'description'  },
-  { id: 'mcps',             label: 'MCP',                   icon: '',            isMcp: true },
-  { id: 'apps',             label: 'Aplicaciones externas', icon: 'apps'        },
-  { id: 'codigo',           label: 'Códigos',               icon: 'code'         },
-  { id: 'automatizaciones', label: 'Automatizaciones',      icon: 'bolt'         },
+  // { id: 'subagentes',    label: 'Logics', icon: 'route' },  // removed: live inside Workflows as advanced states
+  { id: 'bases',            label: 'Knowledge',             icon: 'description'  },
+  { id: 'mcps',             label: 'Integrations (MCP)',    icon: '',            isMcp: true },
+  { id: 'apps',             label: 'Apps',                  icon: 'apps'        },
+  { id: 'codigo',           label: 'Code',                  icon: 'code'         },
+  { id: 'automatizaciones', label: 'Automations',           icon: 'bolt'         },
 ]
 
 // ── Agent data ─────────────────────────────────────────────────────────────────

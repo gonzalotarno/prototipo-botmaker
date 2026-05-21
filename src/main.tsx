@@ -18,6 +18,26 @@ import WorkflowList from './components/WorkflowList'
 import FlowTest from './FlowTest'
 import TaskReminderButton from './components/TaskReminderButton'
 
+// Hide "Send to Figma" browser extension button that gets injected into the page
+;(() => {
+  const hide = () => {
+    const selectors = [
+      '#fig-mcp-btn', '[id*="figma"][id*="btn"]', '[id*="figma"][id*="mcp"]',
+      '[aria-label="Send to Figma"]', '[class*="figma-send"]', '[class*="fig-send"]',
+      '[class*="send-to-figma"]', '[data-figma-mcp]',
+    ]
+    for (const sel of selectors) {
+      document.querySelectorAll<HTMLElement>(sel).forEach(el => { el.style.setProperty('display', 'none', 'important') })
+    }
+    // Catch by text content for extensions that don't use recognizable selectors
+    document.querySelectorAll<HTMLElement>('button, [role="button"]').forEach(el => {
+      if (el.textContent?.trim() === 'Send to Figma') el.style.setProperty('display', 'none', 'important')
+    })
+  }
+  hide()
+  new MutationObserver(hide).observe(document.documentElement, { childList: true, subtree: true })
+})()
+
 // Support `?path=/agents&embed=1` for iframe embedding (portfolio).
 const params = new URLSearchParams(window.location.search)
 const queryPath = params.get('path')

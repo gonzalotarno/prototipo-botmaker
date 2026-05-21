@@ -887,6 +887,11 @@ function WorkflowCanvasInner({
   const onConnect = useCallback((params: Connection) =>
     setEdges(eds => addEdge({ ...params, ...edgeDefaults }, eds)), [setEdges])
 
+  function onConnectEnd(_event: MouseEvent | TouchEvent, cs: { isValid: boolean | null; fromNode: { id: string } | null }) {
+    if (!cs?.fromNode || cs.isValid === true) return
+    handleAddNext(cs.fromNode.id)
+  }
+
   function handleAddNext(fromId: string) {
     const src = nodes.find(n => n.id === fromId)
     if (!src) return
@@ -943,6 +948,7 @@ function WorkflowCanvasInner({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd as any}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={edgeDefaults}
@@ -1115,21 +1121,6 @@ function AdvancedEditorOverlay({
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {!pinSettings && (
-            <button
-              onClick={() => setSettingsOpen(true)}
-              title="State settings"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 10,
-                background: '#FFFFFF', border: '1px solid #E2E8F0',
-                color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF' }}
-            ><Settings size={13} /> Settings</button>
-          )}
           <button
             onClick={() => onConvertToSimple(node.id)}
             style={{
@@ -1146,6 +1137,21 @@ function AdvancedEditorOverlay({
             color: PRIMARY, fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
           }}><Play size={13} /> Test flow</button>
+          {!pinSettings && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              title="State settings"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 10,
+                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                color: '#475569', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#FFFFFF' }}
+            ><Settings size={13} /> Settings</button>
+          )}
           {/* Search input */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1740,17 +1746,19 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   const onConnect = useCallback((p: Connection) => setEdges(es => addEdge({ ...p, type: 'smoothstep' }, es)), [setEdges])
 
   return (
-    <ReactFlow
-      nodes={nodes} edges={edges}
-      nodeTypes={advNodeTypes}
-      onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
-      fitView fitViewOptions={{ padding: 0.35 }}
-      proOptions={{ hideAttribution: true }}
-    >
-      <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
-    </ReactFlow>
+    <ReactFlowProvider>
+      <ReactFlow
+        nodes={nodes} edges={edges}
+        nodeTypes={advNodeTypes}
+        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#94A3B8', strokeWidth: 1.5 } }}
+        fitView fitViewOptions={{ padding: 0.35 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
+      </ReactFlow>
+    </ReactFlowProvider>
   )
 }
 
