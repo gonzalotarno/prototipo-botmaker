@@ -1687,11 +1687,17 @@ function AdvancedFlow({ stateName, stateId }: { stateName?: string; stateId?: st
   useEffect(() => { nodesRef.current = nodes }, [nodes])
   useEffect(() => { edgesRef.current = edges }, [edges])
 
-  // Signal TaskReminderButton that user is inside a flow editor
+  // Signal TaskReminderButton that user is inside a flow editor,
+  // then mark task complete after 1.5s (they found the flow — that's the aha moment)
   useEffect(() => {
     sessionStorage.setItem('bm-in-flow', '1')
     window.dispatchEvent(new CustomEvent('bm-flow-change'))
+    const doneTimer = setTimeout(() => {
+      sessionStorage.setItem('bm-flow-done', '1')
+      window.dispatchEvent(new CustomEvent('bm-flow-change'))
+    }, 1500)
     return () => {
+      clearTimeout(doneTimer)
       sessionStorage.removeItem('bm-in-flow')
       window.dispatchEvent(new CustomEvent('bm-flow-change'))
     }
