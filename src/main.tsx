@@ -16,12 +16,57 @@ import BackToLandingButton from './components/BackToLandingButton'
 import WorkflowCanvas from './components/WorkflowCanvas'
 import WorkflowList from './components/WorkflowList'
 import FlowTest from './FlowTest'
+import TaskReminderButton from './components/TaskReminderButton'
 
 // Support `?path=/agents&embed=1` for iframe embedding (portfolio).
 const params = new URLSearchParams(window.location.search)
 const queryPath = params.get('path')
 const isEmbed = params.get('embed') === '1'
 const path = queryPath ?? window.location.pathname
+
+// Test mode: persists across page reloads so sidebar/orchestrator navigation
+// stays within the v2 prototype. Activated when entering /flow-test.
+const isTestMode = path === '/flow-test' || sessionStorage.getItem('testMode') === '1'
+
+if (isTestMode) {
+  sessionStorage.setItem('testMode', '1')
+  // Intercept href changes — redirect v1 and project routes to v2
+  try {
+    const _desc = Object.getOwnPropertyDescriptor(Location.prototype, 'href')
+    if (_desc?.set) {
+      const _originalSet = _desc.set
+      Object.defineProperty(Location.prototype, 'href', {
+        ..._desc,
+        set(url: string) {
+          let target = url
+          if (url === '/agente' || url === '/agents' || url === '/flow') {
+            target = '/agente-v2/estados'
+          } else if (url.startsWith('/agente/') && !url.startsWith('/agente-v2/')) {
+            target = url.replace('/agente/', '/agente-v2/')
+          } else if (url === '/proyecto') {
+            target = '/agente-v2/estados'
+          }
+          _originalSet.call(window.location, target)
+        },
+        configurable: true,
+      })
+    }
+  } catch {}
+  // Intercept <a> clicks too
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element | null)?.closest('a')
+    if (!a) return
+    const href = a.getAttribute('href')
+    if (!href) return
+    if (href === '/agente' || href === '/agents' || href === '/flow' || href === '/proyecto') {
+      e.preventDefault()
+      window.location.href = '/agente-v2/estados'
+    } else if (href.startsWith('/agente/') && !href.startsWith('/agente-v2/')) {
+      e.preventDefault()
+      window.location.href = href.replace('/agente/', '/agente-v2/')
+    }
+  }, true)
+}
 
 // Embed mode: block in-iframe navigation (breadcrumbs, links) so users
 // don't bounce to 404s on the parent app.
@@ -105,7 +150,7 @@ function App() {
   return (
     <>
       {page}
-      {!isEmbed && <BackToLandingButton />}
+      {!isEmbed && (isTestMode ? <TaskReminderButton /> : <BackToLandingButton />)}
     </>
   )
 }

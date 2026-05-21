@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AgentDetail from './AgentDetail'
 
 export default function FlowTest() {
+  sessionStorage.setItem('testMode', '1')
   const [started, setStarted] = useState(false)
 
   if (started) return <AgentDetail initialTab="estados" variant="v2" />
@@ -37,10 +38,10 @@ export default function FlowTest() {
           </h1>
           <p style={{ margin: '16px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
             Your sales team uses an AI agent on WhatsApp to follow up with new leads.
-            You've just been given access to the platform to review and configure how it works.
+            It's already live — a few hundred leads have gone through it this week.
           </p>
           <p style={{ margin: '10px 0 0', fontSize: 15.5, lineHeight: 1.65, color: '#475569' }}>
-            Take a look around. There's no right or wrong — just explore.
+            Explore the configuration. See if there's anything you'd want to change or improve.
           </p>
         </div>
 
@@ -60,7 +61,7 @@ export default function FlowTest() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Lead Follow-up Agent</div>
             <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>
-              WhatsApp · Lead qualification &amp; follow-up
+              WhatsApp · 312 leads this week
             </div>
           </div>
           <div style={{
