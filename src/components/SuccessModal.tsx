@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 // ─── Replace with your deployed Google Apps Script URL ───────────────────────
 // Script code: see comment at bottom of this file
-const FEEDBACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwZ9zEDdwjdNEff7IAvEEgUaXBclPf7RtheQ-7DE8PBgllpfUtT_MU80KV3Tw17mQmfow/exec'
+const FEEDBACK_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwH_MRYYhNIAQjMYMuYzt3yXd62Z613FNNbh6LQoI9vIj01lL7Xeb2jYRdVESFqtb_LCw/exec'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COPY = {
