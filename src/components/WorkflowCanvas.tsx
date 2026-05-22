@@ -30,6 +30,7 @@ interface RequiredField {
   id: string
   name: string
   description: string
+  optional?: boolean
   type?: FieldType
   maxLength?: number
   pattern?: string
@@ -701,11 +702,25 @@ function RequiredDataCard({
             padding: 0,
           }}
         />
-        <span style={{
-          padding: '3px 9px', borderRadius: 5,
-          background: '#EEF0FF', color: PRIMARY,
-          fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
-        }}>Required</span>
+        {/* Required / Optional dropdown */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => onUpdate(field.id, { optional: !field.optional })}
+            title={field.optional ? 'Cambiar a obligatorio' : 'Cambiar a opcional'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px 3px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
+              background: field.optional ? '#FEF9C3' : '#EEF0FF',
+              color: field.optional ? '#B45309' : PRIMARY,
+              fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700,
+              letterSpacing: 0.6, textTransform: 'uppercase',
+              transition: 'background 120ms, color 120ms',
+            }}
+          >
+            {field.optional ? 'Opcional' : 'Obligatorio'}
+            <ChevronDown size={9} />
+          </button>
+        </div>
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(o => !o)}
@@ -2233,16 +2248,9 @@ function WorkflowSettingsDrawer({ onClose, stateNodes }: { onClose: () => void; 
                     {node.data.requiredData.map((field, i) => (
                       <div key={field.id} style={{
                         padding: '7px 14px',
-                        display: 'flex', alignItems: 'center', gap: 10,
+                        display: 'flex', alignItems: 'center', gap: 8,
                         borderTop: i > 0 ? '1px solid #F1F5F9' : undefined,
                       }}>
-                        <span style={{
-                          padding: '2px 7px', borderRadius: 5,
-                          background: '#F1F5F9', color: '#475569',
-                          fontSize: 10.5, fontWeight: 600,
-                          fontFamily: 'Roboto, sans-serif',
-                          flexShrink: 0, textTransform: 'capitalize' as const,
-                        }}>{field.type ?? 'text'}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {field.name}
@@ -2253,6 +2261,14 @@ function WorkflowSettingsDrawer({ onClose, stateNodes }: { onClose: () => void; 
                             </div>
                           )}
                         </div>
+                        <span style={{
+                          padding: '2px 7px', borderRadius: 5,
+                          background: field.optional ? '#FEF9C3' : '#EEF0FF',
+                          color: field.optional ? '#B45309' : PRIMARY,
+                          fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4,
+                          fontFamily: 'Roboto, sans-serif',
+                          flexShrink: 0, textTransform: 'uppercase' as const,
+                        }}>{field.optional ? 'Opcional' : 'Obligatorio'}</span>
                       </div>
                     ))}
                   </div>
