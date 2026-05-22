@@ -16,6 +16,7 @@ import BackToLandingButton from './components/BackToLandingButton'
 import WorkflowCanvas from './components/WorkflowCanvas'
 import WorkflowList from './components/WorkflowList'
 import FlowTest from './FlowTest'
+import WorkshopInsights from './WorkshopInsights'
 import TaskReminderButton from './components/TaskReminderButton'
 
 // Hide "Send to Figma" browser extension button that gets injected into the page
@@ -153,6 +154,7 @@ function App() {
       <div style={{ flex: 1, overflow: 'hidden' }}><WorkflowList onOpenKanban={() => { window.location.href = '/kanban' }} /></div>
     </div>
   )
+  if (path === '/workshop') return <WorkshopInsights />
   if (path === '/flow-test') return <FlowTest />
   if (path === '/flow-test-agent') return <><AgentDetail initialTab="estados" variant="v2" /><TaskReminderButton /></>
   if (path === '/flow-test-orquestador') return <><AgentsShell /><TaskReminderButton /></>
