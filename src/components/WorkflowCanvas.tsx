@@ -634,17 +634,38 @@ function RequiredDataSection({
   )
 }
 
+const TOKEN_VIOLET = '#7C3AED'
+const TOKEN_BG = 'rgba(124,58,237,0.10)'
+
+function tokenize(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = []
+  let last = 0
+  const re = /\$\{[^}]*\}/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index))
+    parts.push(
+      <span key={m.index} style={{ background: TOKEN_BG, color: TOKEN_VIOLET, borderRadius: 3, fontWeight: 700 }}>
+        {m[0]}
+      </span>
+    )
+    last = m.index + m[0].length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return parts
+}
+
 const SAMPLE_TICKET_FIELDS = [
-  { label: 'ticket.estado',              description: 'Estado del ticket' },
-  { label: 'ticket.nombre_contacto',     description: 'Nombre del contacto' },
-  { label: 'ticket.email',               description: 'Email del contacto' },
-  { label: 'ticket.telefono',            description: 'Teléfono' },
-  { label: 'ticket.asignado',            description: 'Agente asignado' },
-  { label: 'ticket.plataforma',          description: 'Plataforma' },
-  { label: 'ticket.canal',               description: 'Canal de comunicación' },
-  { label: 'ticket.equipo_soporte',      description: 'Equipo de soporte' },
-  { label: 'ticket.fecha_creacion',      description: 'Fecha de creación' },
-  { label: 'ticket.ultima_modificacion', description: 'Última modificación' },
+  { label: 'estado',              description: 'Estado del ticket' },
+  { label: 'nombre_contacto',     description: 'Nombre del contacto' },
+  { label: 'email',               description: 'Email del contacto' },
+  { label: 'telefono',            description: 'Teléfono' },
+  { label: 'asignado',            description: 'Agente asignado' },
+  { label: 'plataforma',          description: 'Plataforma' },
+  { label: 'canal',               description: 'Canal de comunicación' },
+  { label: 'equipo_soporte',      description: 'Equipo de soporte' },
+  { label: 'fecha_creacion',      description: 'Fecha de creación' },
+  { label: 'ultima_modificacion', description: 'Última modificación' },
 ]
 
 function RequiredDataCard({
@@ -658,7 +679,7 @@ function RequiredDataCard({
   const [varMenuOpen, setVarMenuOpen] = useState(false)
 
   const insertTicketField = (fieldLabel: string) => {
-    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` {{${fieldLabel}}}` })
+    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` \${${fieldLabel}}` })
     setVarMenuOpen(false)
   }
 
@@ -710,19 +731,33 @@ function RequiredDataCard({
         </div>
       </div>
 
-      {/* Description textarea */}
-      <textarea
-        value={field.description}
-        onChange={e => onUpdate(field.id, { description: e.target.value })}
-        placeholder="Describe the data the AI will interpret"
-        rows={2}
-        style={{
-          width: '100%', boxSizing: 'border-box', marginTop: 6,
-          padding: 0, border: 'none', background: 'transparent', outline: 'none', resize: 'vertical',
-          fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45, color: '#475569',
-          minHeight: 36,
-        }}
-      />
+      {/* Description textarea with token highlight */}
+      <div style={{ position: 'relative', marginTop: 6, minHeight: 36 }}>
+        <div aria-hidden style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45,
+          padding: 0, color: '#475569',
+          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          pointerEvents: 'none',
+        }}>
+          {tokenize(field.description)}
+          {'\n'}
+        </div>
+        <textarea
+          value={field.description}
+          onChange={e => onUpdate(field.id, { description: e.target.value })}
+          placeholder="Describe the data the AI will interpret"
+          rows={2}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: 0, border: 'none', background: 'transparent', outline: 'none', resize: 'none',
+            fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45,
+            color: field.description ? 'transparent' : '#475569',
+            caretColor: '#475569',
+            minHeight: 36, position: 'relative',
+          }}
+        />
+      </div>
 
       {/* Footer: ticket data button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0', position: 'relative' }}>
@@ -768,7 +803,7 @@ function RequiredDataCard({
                 onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A', fontFamily: 'monospace' }}>{`{{${v.label}}}`}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: TOKEN_VIOLET, fontFamily: 'monospace', background: TOKEN_BG, padding: '1px 5px', borderRadius: 3 }}>{`\${${v.label}}`}</span>
                 <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 8 }}>{v.description}</span>
               </button>
             ))}
@@ -1530,7 +1565,7 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
     if (!ta) { setShowPicker(false); return }
     const before = text.slice(0, triggerStart)
     const after = text.slice(ta.selectionStart)
-    const inserted = `{{ticket.${field.key}}}`
+    const inserted = `\${${field.key}}`
     const newVal = before + inserted + after
     commitText(newVal)
     setShowPicker(false)
@@ -1584,24 +1619,40 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
         </div>
         {/* Editable prompt area */}
         <div style={{ padding: '0 16px 12px', position: 'relative' }}>
-          <textarea
-            ref={textareaRef}
-            className="nodrag nopan"
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onInput={handleInput}
-            onBlur={() => setTimeout(() => setShowPicker(false), 150)}
-            placeholder="Write what you want the agent to do..."
-            rows={3}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              border: 'none', outline: 'none', resize: 'none',
-              background: 'transparent',
-              fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', lineHeight: 1.55,
-              padding: '4px 0', minHeight: 40,
-            }}
-          />
+          <div style={{ position: 'relative', minHeight: 40 }}>
+            {/* Highlight backdrop */}
+            <div aria-hidden style={{
+              position: 'absolute', top: 0, left: 0, right: 0,
+              fontFamily: 'Roboto, sans-serif', fontSize: 13, lineHeight: 1.55,
+              padding: '4px 0', color: '#0F172A',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              pointerEvents: 'none',
+            }}>
+              {tokenize(text)}
+              {'\n'}
+            </div>
+            <textarea
+              ref={textareaRef}
+              className="nodrag nopan"
+              value={text}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onInput={handleInput}
+              onBlur={() => setTimeout(() => setShowPicker(false), 150)}
+              placeholder="Write what you want the agent to do..."
+              rows={3}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                border: 'none', outline: 'none', resize: 'none',
+                background: 'transparent',
+                fontFamily: 'Roboto, sans-serif', fontSize: 13, lineHeight: 1.55,
+                padding: '4px 0', minHeight: 40,
+                color: text ? 'transparent' : '#0F172A',
+                caretColor: '#0F172A',
+                position: 'relative',
+              }}
+            />
+          </div>
           <div style={{
             fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8',
             paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 2,
@@ -1649,11 +1700,11 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
                 >
                   <span style={{
                     padding: '2px 6px', borderRadius: 4,
-                    background: 'rgba(48,79,254,0.07)', color: PRIMARY,
+                    background: TOKEN_BG, color: TOKEN_VIOLET,
                     fontSize: 10.5, fontWeight: 700, fontFamily: 'monospace',
                     flexShrink: 0,
                   }}>
-                    {'{{ticket.' + f.key + '}}'}
+                    {'${' + f.key + '}'}
                   </span>
                   <span style={{ color: '#475569' }}>{f.label}</span>
                 </button>
