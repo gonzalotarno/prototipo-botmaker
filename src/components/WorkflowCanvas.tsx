@@ -634,13 +634,17 @@ function RequiredDataSection({
   )
 }
 
-const SAMPLE_VARIABLES = [
-  { label: 'name', description: 'User name' },
-  { label: 'email', description: 'Contact email' },
-  { label: 'phone', description: 'User phone' },
-  { label: 'company', description: 'Contact company' },
-  { label: 'product', description: 'Consulted product' },
-  { label: 'ticket_id', description: 'Ticket ID' },
+const SAMPLE_TICKET_FIELDS = [
+  { label: 'ticket.estado',              description: 'Estado del ticket' },
+  { label: 'ticket.nombre_contacto',     description: 'Nombre del contacto' },
+  { label: 'ticket.email',               description: 'Email del contacto' },
+  { label: 'ticket.telefono',            description: 'Teléfono' },
+  { label: 'ticket.asignado',            description: 'Agente asignado' },
+  { label: 'ticket.plataforma',          description: 'Plataforma' },
+  { label: 'ticket.canal',               description: 'Canal de comunicación' },
+  { label: 'ticket.equipo_soporte',      description: 'Equipo de soporte' },
+  { label: 'ticket.fecha_creacion',      description: 'Fecha de creación' },
+  { label: 'ticket.ultima_modificacion', description: 'Última modificación' },
 ]
 
 function RequiredDataCard({
@@ -653,8 +657,8 @@ function RequiredDataCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const [varMenuOpen, setVarMenuOpen] = useState(false)
 
-  const insertVariable = (varLabel: string) => {
-    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` {{${varLabel}}}` })
+  const insertTicketField = (fieldLabel: string) => {
+    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` {{${fieldLabel}}}` })
     setVarMenuOpen(false)
   }
 
@@ -720,7 +724,7 @@ function RequiredDataCard({
         }}
       />
 
-      {/* Footer: variable button */}
+      {/* Footer: ticket data button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0', position: 'relative' }}>
         <button
           onClick={() => setVarMenuOpen(o => !o)}
@@ -736,24 +740,24 @@ function RequiredDataCard({
           onMouseEnter={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#EEF0FF'; e.currentTarget.style.borderColor = '#C7CEFF'; e.currentTarget.style.color = PRIMARY } }}
           onMouseLeave={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' } }}
         >
-          <Braces size={12} /> Variables {varMenuOpen ? '▴' : '▾'}
+          <Braces size={12} /> Datos del ticket {varMenuOpen ? '▴' : '▾'}
         </button>
 
         {varMenuOpen && (
           <div style={{
             position: 'absolute', bottom: 'calc(100% + 4px)', right: 0, zIndex: 20,
-            minWidth: 220, padding: '6px 4px',
+            minWidth: 260, padding: '6px 4px',
             background: '#FFFFFF', borderRadius: 10,
             border: '1px solid #E2E8F0',
             boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
           }}>
             <div style={{ padding: '4px 10px 6px', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Insert variable
+              Datos del ticket
             </div>
-            {SAMPLE_VARIABLES.map(v => (
+            {SAMPLE_TICKET_FIELDS.map(v => (
               <button
                 key={v.label}
-                onClick={() => insertVariable(v.label)}
+                onClick={() => insertTicketField(v.label)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   width: '100%', textAlign: 'left',
@@ -1780,7 +1784,7 @@ function LoopAdvNode({ }: NodeProps) {
             style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 8, padding: '8px 10px', background: '#F8FAFC', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', resize: 'none', outline: 'none', lineHeight: 1.5 }}
           />
           <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8', marginTop: 4 }}>
-            Type <strong>$</strong> or <strong>/</strong> to open the variable menu
+            Type <strong>$</strong> to insert datos del ticket
           </div>
         </div>
         <div style={{ height: 1, background: '#F1F5F9' }} />
