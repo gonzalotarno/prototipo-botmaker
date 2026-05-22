@@ -252,7 +252,7 @@ function StartNode() {
       position: 'relative',
     }}>
       Start
-      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
     </div>
   )
 }
@@ -284,7 +284,7 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
       onMouseEnter={e => { if (!selected) e.currentTarget.style.boxShadow = '0 8px 24px -8px rgba(15,23,42,0.14)' }}
       onMouseLeave={e => { if (!selected) e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
     >
-      <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
 
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -309,7 +309,7 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         </p>
       )}
 
-      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
 
       {/* + button to add next state */}
       <button
@@ -960,6 +960,18 @@ function WorkflowCanvasInner({
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#CBD5E1" />
       </ReactFlow>
 
+      {/* Shift-click hint */}
+      <div style={{
+        position: 'absolute', left: 16, bottom: 60, zIndex: 10,
+        padding: '5px 10px', background: '#FFFFFF',
+        border: '1px solid #E2E8F0', borderRadius: 8,
+        fontSize: 11.5, color: '#64748B', fontFamily: 'Roboto, sans-serif',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        pointerEvents: 'none',
+      }}>
+        Hold <strong>Shift</strong> to select multiple nodes
+      </div>
+
       {/* Bottom-left zoom controls */}
       <div style={{
         position: 'absolute', left: 16, bottom: 16, zIndex: 10,
@@ -1009,7 +1021,10 @@ function WorkflowCanvasInner({
 
       {/* Workflow settings drawer */}
       {workflowSettingsOpen && (
-        <WorkflowSettingsDrawer onClose={() => setWorkflowSettingsOpen(false)} />
+        <WorkflowSettingsDrawer
+          onClose={() => setWorkflowSettingsOpen(false)}
+          stateNodes={decoratedNodes.filter(n => n.type === 'stateNode') as Node<StateNodeData>[]}
+        />
       )}
 
       {/* Advanced editor overlay */}
@@ -1445,26 +1460,90 @@ function InicioAdvNode({ data }: NodeProps<Node<InicioAdvData>>) {
     }}>
       <MessageSquare size={13} />
       {label}
-      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
     </div>
   )
 }
+
+const TICKET_FIELDS = [
+  { label: 'Estado',               key: 'estado' },
+  { label: 'Fecha de creación',    key: 'fecha_creacion' },
+  { label: 'Asignado',             key: 'asignado' },
+  { label: 'Nombre del contacto',  key: 'nombre_contacto' },
+  { label: 'Email',                key: 'email' },
+  { label: 'Teléfono',             key: 'telefono' },
+  { label: 'Plataforma',           key: 'plataforma' },
+  { label: 'Equipo de soporte',    key: 'equipo_soporte' },
+  { label: 'Canal',                key: 'canal' },
+  { label: 'Última modificación',  key: 'ultima_modificacion' },
+]
 
 type InstAdvData = Record<string, unknown> & { title: string; description: string; warning?: string }
 
 function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
   const [text, setText] = useState(data.description || '')
+  const [showPicker, setShowPicker] = useState(false)
+  const [pickerFilter, setPickerFilter] = useState('')
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 })
+  const [triggerStart, setTriggerStart] = useState(-1)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { setNodes } = useReactFlow()
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value
+  const commitText = (val: string) => {
     setText(val)
     setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, description: val } } : n))
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    commitText(e.target.value)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showPicker) {
+      if (e.key === 'Escape') { setShowPicker(false); return }
+      if (e.key === 'Enter') { e.preventDefault(); return }
+    }
+    if (e.key === '$') {
+      const ta = e.currentTarget
+      const pos = ta.getBoundingClientRect()
+      setPickerPos({ top: pos.bottom + 4, left: pos.left })
+      setPickerFilter('')
+      setTriggerStart(ta.selectionStart)
+      setShowPicker(true)
+    }
+  }
+
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    if (!showPicker) return
+    const ta = e.currentTarget
+    const cursor = ta.selectionStart
+    const fragment = ta.value.slice(triggerStart + 1, cursor)
+    setPickerFilter(fragment.toLowerCase())
+  }
+
+  const insertField = (field: { label: string; key: string }) => {
+    const ta = textareaRef.current
+    if (!ta) { setShowPicker(false); return }
+    const before = text.slice(0, triggerStart)
+    const after = text.slice(ta.selectionStart)
+    const inserted = `{{ticket.${field.key}}}`
+    const newVal = before + inserted + after
+    commitText(newVal)
+    setShowPicker(false)
+    setTimeout(() => {
+      ta.focus()
+      const pos = triggerStart + inserted.length
+      ta.setSelectionRange(pos, pos)
+    }, 0)
+  }
+
+  const filteredFields = pickerFilter
+    ? TICKET_FIELDS.filter(f => f.label.toLowerCase().includes(pickerFilter) || f.key.includes(pickerFilter))
+    : TICKET_FIELDS
+
   return (
     <div style={{ width: 380, position: 'relative' }}>
-      <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 8, height: 8, border: 'none' }} />
+      <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
       {/* Floating type tab */}
       <div style={{
         position: 'absolute', left: 0, top: -32,
@@ -1500,11 +1579,15 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
           }}><MoreVertical size={14} /></button>
         </div>
         {/* Editable prompt area */}
-        <div style={{ padding: '0 16px 12px' }}>
+        <div style={{ padding: '0 16px 12px', position: 'relative' }}>
           <textarea
+            ref={textareaRef}
             className="nodrag nopan"
             value={text}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            onBlur={() => setTimeout(() => setShowPicker(false), 150)}
             placeholder="Write what you want the agent to do..."
             rows={3}
             style={{
@@ -1519,12 +1602,64 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
             fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8',
             paddingTop: 6, borderTop: '1px dashed #E2E8F0', marginTop: 2,
           }}>
-            Type <strong>$</strong> or <strong>/</strong> to open the variable menu
+            Type <strong>$</strong> to insert ticket data fields
           </div>
+          {/* Ticket field picker */}
+          {showPicker && (
+            <div
+              className="nodrag nopan"
+              style={{
+                position: 'absolute', left: 0, bottom: '100%', marginBottom: 4, zIndex: 999,
+                width: '100%',
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: 10,
+                boxShadow: '0 8px 24px -8px rgba(15,23,42,0.18)',
+                overflow: 'hidden',
+                fontFamily: 'Roboto, sans-serif',
+              }}
+            >
+              <div style={{
+                padding: '8px 10px 4px',
+                fontSize: 10.5, fontWeight: 700, color: '#94A3B8',
+                textTransform: 'uppercase', letterSpacing: 0.5,
+              }}>
+                Datos del ticket
+              </div>
+              {filteredFields.length === 0 ? (
+                <div style={{ padding: '8px 12px', fontSize: 12.5, color: '#94A3B8' }}>No matches</div>
+              ) : filteredFields.map(f => (
+                <button
+                  key={f.key}
+                  onMouseDown={e => { e.preventDefault(); insertField(f) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    width: '100%', textAlign: 'left',
+                    padding: '8px 12px',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A',
+                    transition: 'background 100ms',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  <span style={{
+                    padding: '2px 6px', borderRadius: 4,
+                    background: 'rgba(48,79,254,0.07)', color: PRIMARY,
+                    fontSize: 10.5, fontWeight: 700, fontFamily: 'monospace',
+                    flexShrink: 0,
+                  }}>
+                    {'{{ticket.' + f.key + '}}'}
+                  </span>
+                  <span style={{ color: '#475569' }}>{f.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {/* Warning */}
       </div>
-      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 8, height: 8, border: 'none', top: 'calc(50% + 12px)' }} />
+      <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none', top: 'calc(50% + 12px)' }} />
     </div>
   )
 }
@@ -1586,7 +1721,7 @@ function ConditionalAdvNode({ }: NodeProps) {
   const [conditions, setConditions] = useState([''])
   return (
     <div style={{ width: 340, position: 'relative' }}>
-      <Handle type="target" position={Position.Left} style={{ background: '#F97316', width: 8, height: 8, border: 'none' }} />
+      <Handle type="target" position={Position.Left} style={{ background: '#F97316', width: 12, height: 12, border: 'none' }} />
       <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#FFF7ED', color: '#F97316', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
         <GitBranch size={12} /> Conditional
       </div>
@@ -1607,7 +1742,7 @@ function ConditionalAdvNode({ }: NodeProps) {
                   <Trash2 size={12} />
                 </button>
               </div>
-              <Handle type="source" position={Position.Right} id={`c${i}`} style={{ background: '#F97316', width: 8, height: 8, border: 'none', top: '70%' }} />
+              <Handle type="source" position={Position.Right} id={`c${i}`} style={{ background: '#F97316', width: 12, height: 12, border: 'none', top: '70%' }} />
             </div>
           ))}
           <button onClick={() => setConditions([...conditions, ''])} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0 8px', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
@@ -1618,7 +1753,7 @@ function ConditionalAdvNode({ }: NodeProps) {
         <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
           <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 2 }}>Otherwise</div>
           <div style={{ fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>None matched</div>
-          <Handle type="source" position={Position.Right} id="else" style={{ background: '#94A3B8', width: 8, height: 8, border: 'none' }} />
+          <Handle type="source" position={Position.Right} id="else" style={{ background: '#94A3B8', width: 12, height: 12, border: 'none' }} />
         </div>
       </div>
     </div>
@@ -1629,7 +1764,7 @@ function LoopAdvNode({ }: NodeProps) {
   const [instruction, setInstruction] = useState('')
   return (
     <div style={{ width: 380, position: 'relative' }}>
-      <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
+      <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 12, height: 12, border: 'none' }} />
       <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#F0FDF4', color: '#16A34A', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
         <RotateCcw size={12} /> While loop
       </div>
@@ -1651,7 +1786,7 @@ function LoopAdvNode({ }: NodeProps) {
         <div style={{ height: 1, background: '#F1F5F9' }} />
         <div style={{ position: 'relative', padding: '10px 16px 12px' }}>
           <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 500, color: '#0F172A' }}>When done</span>
-          <Handle type="source" position={Position.Right} style={{ background: '#16A34A', width: 8, height: 8, border: 'none' }} />
+          <Handle type="source" position={Position.Right} style={{ background: '#16A34A', width: 12, height: 12, border: 'none' }} />
         </div>
       </div>
     </div>
@@ -1909,10 +2044,15 @@ function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl
   )
 }
 
-function WorkflowSettingsDrawer({ onClose }: { onClose: () => void }) {
+function WorkflowSettingsDrawer({ onClose, stateNodes }: { onClose: () => void; stateNodes: Node<StateNodeData>[] }) {
   const [goal, setGoal] = useState('Leads')
   const [desc, setDesc] = useState('')
+  const [activeTab, setActiveTab] = useState<'general' | 'datos'>('general')
   const MAX = 1500
+
+  const statesWithData = stateNodes.filter(n => n.data.requiredData && n.data.requiredData.length > 0)
+  const totalFields = statesWithData.reduce((acc, n) => acc + n.data.requiredData.length, 0)
+
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
       <aside
@@ -1934,37 +2074,137 @@ function WorkflowSettingsDrawer({ onClose }: { onClose: () => void }) {
             <X size={18} />
           </button>
         </div>
-        <div style={{ height: 1, background: '#E2E8F0', flexShrink: 0 }} />
+
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 0, padding: '0 22px', flexShrink: 0, borderBottom: '1px solid #E2E8F0' }}>
+          {(['general', 'datos'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer',
+                fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600,
+                color: activeTab === tab ? PRIMARY : '#64748B',
+                borderBottom: activeTab === tab ? `2px solid ${PRIMARY}` : '2px solid transparent',
+                marginBottom: -1, transition: 'color 120ms',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {tab === 'general' ? 'General' : (
+                <>
+                  Datos del workflow
+                  {totalFields > 0 && (
+                    <span style={{
+                      padding: '1px 6px', borderRadius: 10,
+                      background: activeTab === 'datos' ? PRIMARY : '#E2E8F0',
+                      color: activeTab === 'datos' ? '#fff' : '#475569',
+                      fontSize: 10.5, fontWeight: 700,
+                    }}>{totalFields}</span>
+                  )}
+                </>
+              )}
+            </button>
+          ))}
+        </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflow: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ margin: 0, fontSize: 13, color: '#475569', lineHeight: 1.65, fontFamily: 'Roboto, sans-serif' }}>
-            Lo que el agente gestiona y cómo lo hace. Definí los objetos del negocio que va a manejar y describí cómo combina lógicas, MCPs, bases y código para cumplir el objetivo.
-          </p>
+          {activeTab === 'general' ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: '#475569', lineHeight: 1.65, fontFamily: 'Roboto, sans-serif' }}>
+                Lo que el agente gestiona y cómo lo hace. Definí los objetos del negocio que va a manejar y describí cómo combina lógicas, MCPs, bases y código para cumplir el objetivo.
+              </p>
 
-          {/* Goal input */}
-          <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
-            <label style={{ position: 'absolute', top: -9, left: 12, background: 'white', padding: '0 4px', fontSize: 11, color: '#64748B', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>
-              ¿Qué deseas gestionar en el workflow?
-            </label>
-            <input
-              value={goal}
-              onChange={e => setGoal(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', background: 'transparent' }}
-            />
-          </div>
+              {/* Goal input */}
+              <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
+                <label style={{ position: 'absolute', top: -9, left: 12, background: 'white', padding: '0 4px', fontSize: 11, color: '#64748B', fontFamily: 'Roboto, sans-serif', fontWeight: 500 }}>
+                  ¿Qué deseas gestionar en el workflow?
+                </label>
+                <input
+                  value={goal}
+                  onChange={e => setGoal(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 14, color: '#0F172A', fontFamily: 'Roboto, sans-serif', background: 'transparent' }}
+                />
+              </div>
 
-          {/* Desc textarea */}
-          <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
-            <textarea
-              value={desc}
-              onChange={e => setDesc(e.target.value.slice(0, MAX))}
-              placeholder="Describe cómo el agente utiliza las herramientas para cumplir ..."
-              rows={5}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px 30px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 13.5, color: '#0F172A', fontFamily: 'Roboto, sans-serif', resize: 'none', background: 'transparent', lineHeight: 1.55 }}
-            />
-            <span style={{ position: 'absolute', bottom: 10, right: 14, fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif' }}>{desc.length}/{MAX}</span>
-          </div>
+              {/* Desc textarea */}
+              <div style={{ position: 'relative', border: '1.5px solid #CBD5E1', borderRadius: 10 }}>
+                <textarea
+                  value={desc}
+                  onChange={e => setDesc(e.target.value.slice(0, MAX))}
+                  placeholder="Describe cómo el agente utiliza las herramientas para cumplir ..."
+                  rows={5}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '13px 14px 30px', border: 'none', borderRadius: 10, outline: 'none', fontSize: 13.5, color: '#0F172A', fontFamily: 'Roboto, sans-serif', resize: 'none', background: 'transparent', lineHeight: 1.55 }}
+                />
+                <span style={{ position: 'absolute', bottom: 10, right: 14, fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif' }}>{desc.length}/{MAX}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: '#475569', lineHeight: 1.65, fontFamily: 'Roboto, sans-serif' }}>
+                Datos que el agente debe recolectar en cada estado del workflow. Podés editarlos desde cada estado.
+              </p>
+              {statesWithData.length === 0 ? (
+                <div style={{
+                  padding: '24px 16px', borderRadius: 10, border: '1.5px dashed #E2E8F0',
+                  textAlign: 'center', fontFamily: 'Roboto, sans-serif',
+                }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>Sin datos requeridos</div>
+                  <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>
+                    Abrí un estado y agregá los datos que el agente debe pedir.
+                  </div>
+                </div>
+              ) : statesWithData.map(node => (
+                <div key={node.id} style={{
+                  border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden',
+                }}>
+                  {/* State header */}
+                  <div style={{
+                    padding: '10px 14px', background: '#F8FAFC',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    borderBottom: '1px solid #E2E8F0',
+                  }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: node.data.color, flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', flex: 1 }}>
+                      {node.data.name}
+                    </span>
+                    <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
+                      {node.data.requiredData.length} campo{node.data.requiredData.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {/* Fields list */}
+                  <div style={{ padding: '8px 0' }}>
+                    {node.data.requiredData.map((field, i) => (
+                      <div key={field.id} style={{
+                        padding: '7px 14px',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        borderTop: i > 0 ? '1px solid #F1F5F9' : undefined,
+                      }}>
+                        <span style={{
+                          padding: '2px 7px', borderRadius: 5,
+                          background: '#F1F5F9', color: '#475569',
+                          fontSize: 10.5, fontWeight: 600,
+                          fontFamily: 'Roboto, sans-serif',
+                          flexShrink: 0, textTransform: 'capitalize' as const,
+                        }}>{field.type ?? 'text'}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {field.name}
+                          </div>
+                          {field.description && (
+                            <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {field.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* AI button — bottom right of drawer */}
