@@ -316,8 +316,30 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
           </span>
         )}
         {hasFlow && (
-          <span title="Tiene flujo configurado" style={{ display: 'flex', color: '#94A3B8', flexShrink: 0, cursor: 'default' }}>
-            <GitBranch size={13} strokeWidth={1.75} />
+          <span title="Flujo configurado" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            padding: '3px 5px 3px 4px', borderRadius: 5,
+            background: '#F1F5F9', flexShrink: 0, cursor: 'default',
+          }}>
+            <GitBranch size={10} strokeWidth={2} color="#94A3B8" style={{ flexShrink: 0 }} />
+            {flowApps && flowApps.slice(0, 3).map(appKey => {
+              const app = FLOW_APPS[appKey]
+              if (!app) return null
+              return (
+                <span key={appKey} title={app.label} style={{
+                  width: 14, height: 14, borderRadius: '50%',
+                  background: app.color, color: '#FFFFFF',
+                  fontSize: 7, fontWeight: 800, letterSpacing: '-0.02em',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>{app.letter}</span>
+              )
+            })}
+            {flowApps && flowApps.length > 3 && (
+              <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 700, lineHeight: 1 }}>
+                +{flowApps.length - 3}
+              </span>
+            )}
           </span>
         )}
         {isFinal && (
