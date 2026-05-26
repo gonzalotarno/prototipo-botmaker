@@ -609,14 +609,14 @@ function RequiredDataSection({
   fields: RequiredField[]
   onChange: (fields: RequiredField[]) => void
 }) {
-  const add = () => onChange([...fields, { id: `f_${Date.now()}`, name: 'New field', description: '' }])
+  const add = () => onChange([...fields, { id: `f_${Date.now()}`, name: '', description: '' }])
   const update = (id: string, patch: Partial<RequiredField>) =>
     onChange(fields.map(f => f.id === id ? { ...f, ...patch } : f))
   const remove = (id: string) => onChange(fields.filter(f => f.id !== id))
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Required data for this state</div>
-      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12 }}>This data must be completed during this workflow</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Datos del estado</div>
+      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12 }}>Datos que el agente debe recolectar en este estado</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {fields.map(field => (
           <RequiredDataCard key={field.id} field={field} onUpdate={update} onRemove={remove} />
@@ -629,7 +629,7 @@ function RequiredDataSection({
             color: PRIMARY, fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             textAlign: 'left',
           }}
-        >+ Add field</button>
+        >+ Agregar dato</button>
       </div>
     </div>
   )
@@ -676,155 +676,124 @@ function RequiredDataCard({
   onUpdate: (id: string, patch: Partial<RequiredField>) => void
   onRemove: (id: string) => void
 }) {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [varMenuOpen, setVarMenuOpen] = useState(false)
 
-  const insertTicketField = (fieldLabel: string) => {
-    onUpdate(field.id, { description: (field.description || '').trimEnd() + ` \${${fieldLabel}}` })
+  const selectField = (label: string) => {
+    onUpdate(field.id, { name: label })
     setVarMenuOpen(false)
   }
 
+  const tokenLabel = field.name ? `\${${field.name}}` : '${dato}'
+
   return (
     <div style={{
-      padding: '12px 14px', borderRadius: 10,
-      background: '#FFFFFF', border: '1px solid #E2E8F0',
-      position: 'relative',
+      borderRadius: 10, background: '#FFFFFF', border: '1px solid #E2E8F0',
+      overflow: 'visible',
     }}>
-      {/* Top row: name + obligatorio + menu */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <input
-          value={field.name}
-          onChange={e => onUpdate(field.id, { name: e.target.value })}
-          placeholder="Field name"
-          style={{
-            flex: 1, border: 'none', background: 'transparent', outline: 'none',
-            fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#0F172A',
-            padding: 0,
-          }}
-        />
-        {/* Required / Optional dropdown */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button
-            onClick={() => onUpdate(field.id, { optional: !field.optional })}
-            title={field.optional ? 'Cambiar a obligatorio' : 'Cambiar a opcional'}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '3px 8px 3px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
-              background: field.optional ? '#FEF9C3' : '#EEF0FF',
-              color: field.optional ? '#B45309' : PRIMARY,
-              fontFamily: 'inherit', fontSize: 9.5, fontWeight: 700,
-              letterSpacing: 0.6, textTransform: 'uppercase',
-              transition: 'background 120ms, color 120ms',
-            }}
-          >
-            {field.optional ? 'Opcional' : 'Obligatorio'}
-            <ChevronDown size={9} />
-          </button>
-        </div>
+      {/* Top row: token chip + obligatorio chip + delete */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px' }}>
+        {/* Token chip — opens field picker */}
         <div style={{ position: 'relative' }}>
           <button
-            onClick={() => setMenuOpen(o => !o)}
+            onClick={() => setVarMenuOpen(o => !o)}
             style={{
-              width: 22, height: 22, borderRadius: 6,
-              border: 'none', background: 'transparent', color: '#64748B', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '4px 10px', borderRadius: 100,
+              background: varMenuOpen ? TOKEN_BG : '#F1F5F9',
+              border: `1.5px solid ${varMenuOpen ? TOKEN_VIOLET : '#E2E8F0'}`,
+              color: varMenuOpen ? TOKEN_VIOLET : '#0F172A',
+              fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'all 120ms',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          ><MoreVertical size={14} /></button>
-          {menuOpen && (
+            onMouseEnter={e => { if (!varMenuOpen) { e.currentTarget.style.background = TOKEN_BG; e.currentTarget.style.borderColor = TOKEN_VIOLET; e.currentTarget.style.color = TOKEN_VIOLET } }}
+            onMouseLeave={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#0F172A' } }}
+          >
+            <span style={{ fontFamily: 'monospace' }}>{tokenLabel}</span>
+            <ChevronDown size={11} />
+          </button>
+
+          {varMenuOpen && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 5,
-              minWidth: 160, padding: 4,
+              position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 30,
+              minWidth: 270, padding: '6px 4px',
               background: '#FFFFFF', borderRadius: 10,
               border: '1px solid #E2E8F0',
               boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
             }}>
-              <button onClick={() => { onRemove(field.id); setMenuOpen(false) }} style={menuItem}>Delete</button>
+              <div style={{ padding: '4px 10px 6px', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Seleccioná un dato
+              </div>
+              {SAMPLE_TICKET_FIELDS.map(v => (
+                <button
+                  key={v.label}
+                  onClick={() => selectField(v.label)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', textAlign: 'left',
+                    padding: '6px 10px', borderRadius: 6,
+                    border: 'none', background: field.name === v.label ? '#F8FAFC' : 'transparent',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                  onMouseLeave={e => (e.currentTarget.style.background = field.name === v.label ? '#F8FAFC' : 'transparent')}
+                >
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: TOKEN_VIOLET, fontFamily: 'monospace', background: TOKEN_BG, padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>{`\${${v.label}}`}</span>
+                  <span style={{ fontSize: 11.5, color: '#64748B' }}>{v.description}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Description textarea with token highlight */}
-      <div style={{ position: 'relative', marginTop: 6, minHeight: 36 }}>
-        <div aria-hidden style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45,
-          padding: 0, color: '#475569',
-          whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          pointerEvents: 'none',
-        }}>
-          {tokenize(field.description)}
-          {'\n'}
-        </div>
-        <textarea
-          value={field.description}
-          onChange={e => onUpdate(field.id, { description: e.target.value })}
-          placeholder="Describe the data the AI will interpret"
-          rows={2}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: 0, border: 'none', background: 'transparent', outline: 'none', resize: 'none',
-            fontFamily: 'inherit', fontSize: 13, lineHeight: 1.45,
-            color: field.description ? 'transparent' : '#475569',
-            caretColor: '#475569',
-            minHeight: 36, position: 'relative',
-          }}
-        />
-      </div>
-
-      {/* Footer: ticket data button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, paddingTop: 8, borderTop: '1px dashed #E2E8F0', position: 'relative' }}>
+        {/* Obligatorio / Opcional chip */}
         <button
-          onClick={() => setVarMenuOpen(o => !o)}
+          onClick={() => onUpdate(field.id, { optional: !field.optional })}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '5px 10px', borderRadius: 6,
-            background: varMenuOpen ? '#EEF0FF' : '#F8FAFC',
-            border: `1px solid ${varMenuOpen ? '#C7CEFF' : '#E2E8F0'}`,
-            color: varMenuOpen ? PRIMARY : '#475569',
-            fontFamily: 'inherit', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
-            transition: 'all 120ms',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 100,
+            background: field.optional ? '#FEF9C3' : 'rgba(48,79,254,0.08)',
+            border: `1.5px solid ${field.optional ? '#FDE68A' : 'rgba(48,79,254,0.20)'}`,
+            color: field.optional ? '#B45309' : PRIMARY,
+            fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
+            letterSpacing: 0.5, textTransform: 'uppercase',
+            cursor: 'pointer', transition: 'all 120ms',
           }}
-          onMouseEnter={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#EEF0FF'; e.currentTarget.style.borderColor = '#C7CEFF'; e.currentTarget.style.color = PRIMARY } }}
-          onMouseLeave={e => { if (!varMenuOpen) { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569' } }}
         >
-          <Braces size={12} /> Datos del ticket {varMenuOpen ? '▴' : '▾'}
+          {field.optional ? 'Opcional' : 'Obligatorio'}
+          <ChevronDown size={9} />
         </button>
 
-        {varMenuOpen && (
-          <div style={{
-            position: 'absolute', bottom: 'calc(100% + 4px)', right: 0, zIndex: 20,
-            minWidth: 260, padding: '6px 4px',
-            background: '#FFFFFF', borderRadius: 10,
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)',
-          }}>
-            <div style={{ padding: '4px 10px 6px', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Datos del ticket
-            </div>
-            {SAMPLE_TICKET_FIELDS.map(v => (
-              <button
-                key={v.label}
-                onClick={() => insertTicketField(v.label)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  width: '100%', textAlign: 'left',
-                  padding: '6px 10px', borderRadius: 6,
-                  border: 'none', background: 'transparent', cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: TOKEN_VIOLET, fontFamily: 'monospace', background: TOKEN_BG, padding: '1px 5px', borderRadius: 3 }}>{`\${${v.label}}`}</span>
-                <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 8 }}>{v.description}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <span style={{ flex: 1 }} />
+
+        {/* Delete */}
+        <button
+          onClick={() => onRemove(field.id)}
+          style={{
+            width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+            border: 'none', background: 'transparent', color: '#CBD5E1', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color 120ms',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
+        ><X size={13} /></button>
       </div>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: '#F1F5F9' }} />
+
+      {/* Description */}
+      <input
+        value={field.description}
+        onChange={e => onUpdate(field.id, { description: e.target.value })}
+        placeholder="Descripción del dato"
+        style={{
+          display: 'block', width: '100%', boxSizing: 'border-box',
+          padding: '9px 12px',
+          border: 'none', background: 'transparent', outline: 'none',
+          fontFamily: 'inherit', fontSize: 13, color: '#475569',
+        }}
+      />
     </div>
   )
 }
@@ -2402,7 +2371,7 @@ function DatosDrawer({ onClose, stateNodes, onEditState }: {
                   <button
                     onClick={() => onEditState(node.id)}
                     style={{
-                      width: '100%', padding: '10px 14px',
+                      width: '100%', padding: '9px 14px',
                       background: '#F8FAFC', border: 'none', borderBottom: '1px solid #E2E8F0',
                       display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
                       textAlign: 'left',
@@ -2415,32 +2384,43 @@ function DatosDrawer({ onClose, stateNodes, onEditState }: {
                     <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
                       {node.data.requiredData.length} campo{node.data.requiredData.length !== 1 ? 's' : ''}
                     </span>
-                    <span style={{ fontSize: 13, color: '#94A3B8' }}>›</span>
+                    <span style={{ fontSize: 12, color: '#94A3B8' }}>›</span>
                   </button>
                   {/* Fields */}
                   <div style={{ padding: '4px 0' }}>
                     {node.data.requiredData.map((field, i) => (
                       <div key={field.id} style={{
-                        padding: '7px 14px',
-                        display: 'flex', alignItems: 'flex-start', gap: 8,
+                        padding: '8px 14px',
+                        display: 'flex', alignItems: 'center', gap: 8,
                         borderTop: i > 0 ? '1px solid #F8FAFC' : undefined,
                       }}>
+                        {/* State color indicator on each row */}
+                        <span style={{ width: 3, height: 32, borderRadius: 2, background: node.data.color, flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A' }}>
-                            {field.name || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Sin nombre</span>}
+                          {/* Token + chip row */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            {field.name ? (
+                              <span style={{
+                                fontSize: 12, fontWeight: 700, color: TOKEN_VIOLET,
+                                fontFamily: 'monospace', background: TOKEN_BG,
+                                padding: '1px 6px', borderRadius: 4,
+                              }}>{`\${${field.name}}`}</span>
+                            ) : (
+                              <span style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic' }}>Sin dato seleccionado</span>
+                            )}
+                            <span style={{
+                              padding: '1px 6px', borderRadius: 4,
+                              background: field.optional ? '#FEF9C3' : '#EEF0FF',
+                              color: field.optional ? '#B45309' : PRIMARY,
+                              fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const,
+                            }}>{field.optional ? 'Opcional' : 'Obligatorio'}</span>
                           </div>
                           {field.description && (
-                            <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {field.description}
                             </div>
                           )}
                         </div>
-                        <span style={{
-                          padding: '2px 7px', borderRadius: 5, flexShrink: 0, marginTop: 1,
-                          background: field.optional ? '#FEF9C3' : '#EEF0FF',
-                          color: field.optional ? '#B45309' : PRIMARY,
-                          fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const,
-                        }}>{field.optional ? 'Opcional' : 'Obligatorio'}</span>
                       </div>
                     ))}
                   </div>
