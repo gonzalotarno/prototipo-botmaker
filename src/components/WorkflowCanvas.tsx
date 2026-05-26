@@ -307,32 +307,32 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         <span style={{ flex: 1, minWidth: 0, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
         {hasData && (
           <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''} requerido${dataCount !== 1 ? 's' : ''}`} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 2.5,
-            padding: '3px 6px 3px 5px', borderRadius: 5,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            height: 20, padding: '0 6px', borderRadius: 5,
             background: '#F1F5F9', color: '#94A3B8',
-            fontFamily: 'Roboto, sans-serif', fontSize: 11, fontWeight: 600,
+            fontFamily: 'Roboto, sans-serif', fontSize: 11, fontWeight: 600, lineHeight: 1,
             flexShrink: 0, cursor: 'default',
           }}>
-            <Braces size={10} strokeWidth={2} />{dataCount}
+            <Braces size={11} strokeWidth={2} />{dataCount}
           </span>
         )}
         {requiresHuman && (
           <span title="Human in the loop — requiere aprobación manual" style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            padding: '3px', borderRadius: 5,
+            height: 20, padding: '0 6px', borderRadius: 5,
             background: '#F1F5F9', color: '#94A3B8',
             flexShrink: 0, cursor: 'default',
           }}>
-            <UserCog size={11} strokeWidth={1.75} />
+            <UserCog size={11} strokeWidth={2} />
           </span>
         )}
         {hasFlow && (
           <span title="Flujo configurado" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 2,
-            padding: '3px 5px 3px 4px', borderRadius: 5,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            height: 20, padding: '0 6px', borderRadius: 5,
             background: '#F1F5F9', flexShrink: 0, cursor: 'default',
           }}>
-            <GitBranch size={10} strokeWidth={2} color="#94A3B8" style={{ flexShrink: 0 }} />
+            <GitBranch size={11} strokeWidth={2} color="#94A3B8" style={{ flexShrink: 0 }} />
             {flowApps && flowApps.slice(0, 3).map((appKey, i) => {
               const app = FLOW_APPS[appKey]
               if (!app) return null
