@@ -278,7 +278,6 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
   const isFinal = kind === 'final'
   const dataCount = requiredData?.length ?? 0
   const hasData = dataCount > 0
-  const hasChips = hasData || hasFlow || requiresHuman
   const borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0'
 
   return (
@@ -302,13 +301,28 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
     >
       <Handle type="target" position={Position.Left} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
 
-      {/* Title row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ width: 9, height: 9, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-        <span style={{ flex: 1, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
+      {/* Title row — name left, indicators + Final right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+        <span style={{ flex: 1, minWidth: 0, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
+        {hasData && (
+          <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''} requerido${dataCount !== 1 ? 's' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2.5, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', fontSize: 11, fontWeight: 600, flexShrink: 0, cursor: 'default' }}>
+            <Braces size={11} strokeWidth={2} />{dataCount}
+          </span>
+        )}
+        {requiresHuman && (
+          <span title="Human in the loop — requiere aprobación manual" style={{ display: 'flex', color: '#94A3B8', flexShrink: 0, cursor: 'default' }}>
+            <UserCog size={13} strokeWidth={1.75} />
+          </span>
+        )}
+        {hasFlow && (
+          <span title="Tiene flujo configurado" style={{ display: 'flex', color: '#94A3B8', flexShrink: 0, cursor: 'default' }}>
+            <GitBranch size={13} strokeWidth={1.75} />
+          </span>
+        )}
         {isFinal && (
-          <span style={{ padding: '2px 6px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
-            🏁 Final
+          <span style={{ padding: '1px 5px', borderRadius: 4, background: '#F0FDF4', color: '#16A34A', fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.3, flexShrink: 0 }}>
+            🏁
           </span>
         )}
       </div>
@@ -318,62 +332,6 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         <p style={{ margin: '6px 0 0', fontFamily: 'Roboto, sans-serif', fontSize: 12, lineHeight: 1.45, color: '#64748B', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
           {description}
         </p>
-      )}
-
-      {/* Feature indicators */}
-      {hasChips && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 9, paddingTop: 8, borderTop: '1px solid #F1F5F9', flexWrap: 'wrap' }}>
-          {hasData && (
-            <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''}`} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              padding: '2px 7px', borderRadius: 100,
-              background: '#F1F5F9', color: '#64748B',
-              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
-              cursor: 'default',
-            }}>
-              <Braces size={10} strokeWidth={2.5} /> {dataCount}
-            </span>
-          )}
-          {requiresHuman && (
-            <span title="Human in the loop — requiere aprobación manual" style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 20, height: 20, borderRadius: 5,
-              background: '#F1F5F9', color: '#64748B',
-              cursor: 'default', flexShrink: 0,
-            }}>
-              <UserCog size={11} strokeWidth={2} />
-            </span>
-          )}
-          {hasFlow && flowApps && flowApps.slice(0, 3).map(appKey => {
-            const app = FLOW_APPS[appKey]
-            if (!app) return null
-            return (
-              <span key={appKey} title={app.label} style={{
-                width: 18, height: 18, borderRadius: '50%',
-                background: app.color, color: '#FFFFFF',
-                fontSize: 8.5, fontWeight: 800, letterSpacing: '-0.02em',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, cursor: 'default',
-              }}>{app.letter}</span>
-            )
-          })}
-          {hasFlow && flowApps && flowApps.length > 3 && (
-            <span title={`+${flowApps.length - 3} apps más`} style={{
-              fontSize: 10, color: '#94A3B8', fontWeight: 700,
-              fontFamily: 'Roboto, sans-serif', cursor: 'default',
-            }}>+{flowApps.length - 3}</span>
-          )}
-          {hasFlow && (!flowApps || flowApps.length === 0) && (
-            <span title="Tiene flujo de nodos" style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 20, height: 20, borderRadius: 5,
-              background: '#F1F5F9', color: '#64748B',
-              cursor: 'default', flexShrink: 0,
-            }}>
-              <GitBranch size={11} strokeWidth={2} />
-            </span>
-          )}
-        </div>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
