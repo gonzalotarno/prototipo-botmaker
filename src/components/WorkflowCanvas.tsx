@@ -54,6 +54,7 @@ type StateNodeData = Record<string, unknown> & {
   requiresHuman: boolean
   requiredData: RequiredField[]
   kind: 'simple' | 'complex' | 'final'
+  flowApps?: string[]
   isDisconnected?: boolean
   variant?: 'classic' | 'unified'
   onEdit: (id: string) => void
@@ -82,11 +83,22 @@ const COLORS = [
 
 const PRIMARY = '#304FFE'
 
+const FLOW_APPS: Record<string, { label: string; color: string; letter: string }> = {
+  gmail:     { label: 'Gmail',           color: '#EA4335', letter: 'G' },
+  whatsapp:  { label: 'WhatsApp',        color: '#25D366', letter: 'W' },
+  sheets:    { label: 'Google Sheets',   color: '#34A853', letter: 'S' },
+  slack:     { label: 'Slack',           color: '#4A154B', letter: 'S' },
+  webhook:   { label: 'Webhook',         color: '#6366F1', letter: 'H' },
+  calendar:  { label: 'Google Calendar', color: '#4285F4', letter: 'C' },
+  notion:    { label: 'Notion',          color: '#000000', letter: 'N' },
+  hubspot:   { label: 'HubSpot',         color: '#FF7A59', letter: 'H' },
+}
+
 // ─── Initial data ──────────────────────────────────────────────────────────────
 
 const INITIAL_NODES: AnyNode[] = [
   { id: 'start',  type: 'startNode', position: { x: 80,  y: 220 }, data: { onAddNext: () => {} } as any },
-  { id: 's_todo', type: 'stateNode', position: { x: 280, y: 195 }, data: { name: 'Lead Follow-up', description: 'Follow up with new leads via WhatsApp to qualify their interest.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any },
+  { id: 's_todo', type: 'stateNode', position: { x: 280, y: 195 }, data: { name: 'Lead Follow-up', description: 'Follow up with new leads via WhatsApp to qualify their interest.', color: '#16A34A', requiresHuman: false, requiredData: [], kind: 'complex', flowApps: ['whatsapp', 'gmail', 'sheets'], onEdit: () => {}, onAddNext: () => {} } as any },
 ]
 
 // ─── Workflow Templates ────────────────────────────────────────────────────────
@@ -99,10 +111,10 @@ interface Template {
   build: () => { nodes: AnyNode[]; edges: Edge[] }
 }
 
-function mkState(id: string, name: string, x: number, color: string, kind: 'simple' | 'complex' | 'final' = 'simple'): AnyNode {
+function mkState(id: string, name: string, x: number, color: string, kind: 'simple' | 'complex' | 'final' = 'simple', flowApps?: string[]): AnyNode {
   return {
     id, type: 'stateNode', position: { x, y: 200 },
-    data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, onEdit: () => {}, onAddNext: () => {} } as any,
+    data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, flowApps, onEdit: () => {}, onAddNext: () => {} } as any,
   }
 }
 function mkEdge(source: string, target: string): Edge {
@@ -126,11 +138,11 @@ const TEMPLATES: Template[] = [
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('eval', 'Initial Assessment', 280, '#16A34A'),
-        mkState('triage', 'Triage in progress', 580, '#3B82F6'),
+        mkState('eval', 'Initial Assessment', 280, '#16A34A', 'simple', ['whatsapp']),
+        mkState('triage', 'Triage in progress', 580, '#3B82F6', 'complex', ['slack', 'sheets']),
         mkState('baja', 'Low priority', 880, '#EAB308'),
-        mkState('media', 'Medium priority', 880, '#9333EA'),
-        mkState('alta', 'High priority', 880, '#0F766E'),
+        mkState('media', 'Medium priority', 880, '#9333EA', 'complex', ['gmail']),
+        mkState('alta', 'High priority', 880, '#0F766E', 'complex', ['gmail', 'slack', 'hubspot', 'sheets']),
         mkState('atendido', 'Resolved', 1180, '#EC4899', 'final'),
       ],
       edges: [
@@ -151,10 +163,10 @@ const TEMPLATES: Template[] = [
     build: () => ({
       nodes: [
         START_NODE,
-        mkState('lead', 'New lead', 280, '#3B82F6'),
-        mkState('qual', 'Qualified', 580, '#EAB308'),
-        mkState('demo', 'Demo scheduled', 880, '#9333EA'),
-        mkState('prop', 'Proposal sent', 1180, '#0F766E'),
+        mkState('lead', 'New lead', 280, '#3B82F6', 'simple', ['whatsapp']),
+        mkState('qual', 'Qualified', 580, '#EAB308', 'complex', ['whatsapp', 'sheets']),
+        mkState('demo', 'Demo scheduled', 880, '#9333EA', 'complex', ['gmail', 'calendar']),
+        mkState('prop', 'Proposal sent', 1180, '#0F766E', 'complex', ['gmail', 'sheets', 'hubspot']),
         mkState('won', 'Won', 1480, '#16A34A', 'final'),
         mkState('lost', 'Lost', 1480, '#DC2626', 'final'),
       ],
@@ -261,7 +273,7 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, requiredData, onEdit } = data
+  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, requiredData, flowApps, onEdit } = data
   const hasFlow = kind === 'complex'
   const isFinal = kind === 'final'
   const dataCount = requiredData?.length ?? 0
@@ -308,40 +320,57 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         </p>
       )}
 
-      {/* Feature chips */}
+      {/* Feature indicators */}
       {hasChips && (
-        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 9, paddingTop: 8, borderTop: '1px solid #F1F5F9', flexWrap: 'wrap' }}>
           {hasData && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '3px 8px', borderRadius: 100,
-              background: 'rgba(124,58,237,0.08)', color: '#7C3AED',
+            <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''}`} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              padding: '2px 7px', borderRadius: 100,
+              background: '#F1F5F9', color: '#64748B',
               fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
+              cursor: 'default',
             }}>
-              <Braces size={10} strokeWidth={2.5} />
-              {dataCount}
-            </span>
-          )}
-          {hasFlow && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '3px 8px', borderRadius: 100,
-              background: 'rgba(48,79,254,0.08)', color: PRIMARY,
-              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
-            }}>
-              <GitBranch size={10} strokeWidth={2.5} />
-              Flujo
+              <Braces size={10} strokeWidth={2.5} /> {dataCount}
             </span>
           )}
           {requiresHuman && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '3px 8px', borderRadius: 100,
-              background: 'rgba(234,88,12,0.08)', color: '#EA580C',
-              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
+            <span title="Human in the loop — requiere aprobación manual" style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 20, height: 20, borderRadius: 5,
+              background: '#F1F5F9', color: '#64748B',
+              cursor: 'default', flexShrink: 0,
             }}>
-              <UserCog size={10} strokeWidth={2.5} />
-              HITL
+              <UserCog size={11} strokeWidth={2} />
+            </span>
+          )}
+          {hasFlow && flowApps && flowApps.slice(0, 3).map(appKey => {
+            const app = FLOW_APPS[appKey]
+            if (!app) return null
+            return (
+              <span key={appKey} title={app.label} style={{
+                width: 18, height: 18, borderRadius: '50%',
+                background: app.color, color: '#FFFFFF',
+                fontSize: 8.5, fontWeight: 800, letterSpacing: '-0.02em',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, cursor: 'default',
+              }}>{app.letter}</span>
+            )
+          })}
+          {hasFlow && flowApps && flowApps.length > 3 && (
+            <span title={`+${flowApps.length - 3} apps más`} style={{
+              fontSize: 10, color: '#94A3B8', fontWeight: 700,
+              fontFamily: 'Roboto, sans-serif', cursor: 'default',
+            }}>+{flowApps.length - 3}</span>
+          )}
+          {hasFlow && (!flowApps || flowApps.length === 0) && (
+            <span title="Tiene flujo de nodos" style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 20, height: 20, borderRadius: 5,
+              background: '#F1F5F9', color: '#64748B',
+              cursor: 'default', flexShrink: 0,
+            }}>
+              <GitBranch size={11} strokeWidth={2} />
             </span>
           )}
         </div>
