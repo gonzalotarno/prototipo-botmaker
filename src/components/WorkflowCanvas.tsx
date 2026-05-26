@@ -83,13 +83,13 @@ const COLORS = [
 
 const PRIMARY = '#304FFE'
 
-const FLOW_APPS: Record<string, { label: string; color: string; letter: string }> = {
-  gmail:     { label: 'Gmail',           color: '#EA4335', letter: 'G' },
-  whatsapp:  { label: 'WhatsApp',        color: '#25D366', letter: 'W' },
-  sheets:    { label: 'Google Sheets',   color: '#34A853', letter: 'S' },
+const FLOW_APPS: Record<string, { label: string; color: string; letter: string; img?: string }> = {
+  gmail:     { label: 'Gmail',           color: '#EA4335', letter: 'G', img: '/logos/gmail.png' },
+  whatsapp:  { label: 'WhatsApp',        color: '#25D366', letter: 'W', img: '/logos/whatsapp.webp' },
+  sheets:    { label: 'Google Sheets',   color: '#34A853', letter: 'S', img: '/logos/google-sheets.png' },
   slack:     { label: 'Slack',           color: '#4A154B', letter: 'S' },
-  webhook:   { label: 'Webhook',         color: '#6366F1', letter: 'H' },
-  calendar:  { label: 'Google Calendar', color: '#4285F4', letter: 'C' },
+  webhook:   { label: 'Webhook',         color: '#6366F1', letter: 'W' },
+  calendar:  { label: 'Google Calendar', color: '#4285F4', letter: 'C', img: '/logos/google-calendar.webp' },
   notion:    { label: 'Notion',          color: '#000000', letter: 'N' },
   hubspot:   { label: 'HubSpot',         color: '#FF7A59', letter: 'H' },
 }
@@ -306,37 +306,54 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
         <span style={{ flex: 1, minWidth: 0, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
         {hasData && (
-          <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''} requerido${dataCount !== 1 ? 's' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 2.5, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', fontSize: 11, fontWeight: 600, flexShrink: 0, cursor: 'default' }}>
-            <Braces size={11} strokeWidth={2} />{dataCount}
+          <span title={`${dataCount} dato${dataCount !== 1 ? 's' : ''} requerido${dataCount !== 1 ? 's' : ''}`} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 2.5,
+            padding: '3px 6px 3px 5px', borderRadius: 5,
+            background: '#F1F5F9', color: '#94A3B8',
+            fontFamily: 'Roboto, sans-serif', fontSize: 11, fontWeight: 600,
+            flexShrink: 0, cursor: 'default',
+          }}>
+            <Braces size={10} strokeWidth={2} />{dataCount}
           </span>
         )}
         {requiresHuman && (
-          <span title="Human in the loop — requiere aprobación manual" style={{ display: 'flex', color: '#94A3B8', flexShrink: 0, cursor: 'default' }}>
-            <UserCog size={13} strokeWidth={1.75} />
+          <span title="Human in the loop — requiere aprobación manual" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            padding: '3px', borderRadius: 5,
+            background: '#F1F5F9', color: '#94A3B8',
+            flexShrink: 0, cursor: 'default',
+          }}>
+            <UserCog size={11} strokeWidth={1.75} />
           </span>
         )}
         {hasFlow && (
           <span title="Flujo configurado" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 3,
+            display: 'inline-flex', alignItems: 'center', gap: 2,
             padding: '3px 5px 3px 4px', borderRadius: 5,
             background: '#F1F5F9', flexShrink: 0, cursor: 'default',
           }}>
             <GitBranch size={10} strokeWidth={2} color="#94A3B8" style={{ flexShrink: 0 }} />
-            {flowApps && flowApps.slice(0, 3).map(appKey => {
+            {flowApps && flowApps.slice(0, 3).map((appKey, i) => {
               const app = FLOW_APPS[appKey]
               if (!app) return null
               return (
                 <span key={appKey} title={app.label} style={{
-                  width: 14, height: 14, borderRadius: '50%',
-                  background: app.color, color: '#FFFFFF',
-                  fontSize: 7, fontWeight: 800, letterSpacing: '-0.02em',
+                  width: 16, height: 16, borderRadius: '50%',
+                  border: '1.5px solid #F1F5F9',
+                  marginLeft: i > 0 ? -5 : 0,
+                  overflow: 'hidden', flexShrink: 0,
+                  background: app.img ? 'transparent' : app.color,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>{app.letter}</span>
+                }}>
+                  {app.img
+                    ? <img src={app.img} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    : <span style={{ fontSize: 7, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{app.letter}</span>
+                  }
+                </span>
               )
             })}
             {flowApps && flowApps.length > 3 && (
-              <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 700, lineHeight: 1 }}>
+              <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 700, lineHeight: 1, marginLeft: -3 }}>
                 +{flowApps.length - 3}
               </span>
             )}
