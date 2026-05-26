@@ -20,7 +20,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Plus, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X, AlertCircle, UserCog } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -261,9 +261,12 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, onEdit } = data
+  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, requiredData, onEdit } = data
   const hasFlow = kind === 'complex'
   const isFinal = kind === 'final'
+  const dataCount = requiredData?.length ?? 0
+  const hasData = dataCount > 0
+  const hasChips = hasData || hasFlow || requiresHuman
   const borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0'
 
   return (
@@ -291,11 +294,6 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ width: 9, height: 9, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
         <span style={{ flex: 1, fontFamily: 'Roboto, sans-serif', fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
-        {requiresHuman && (
-          <span title="Requires human confirmation" style={{ width: 16, height: 16, borderRadius: '50%', background: '#FEF3C7', color: '#B45309', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <AlertCircle size={11} />
-          </span>
-        )}
         {isFinal && (
           <span style={{ padding: '2px 6px', borderRadius: 4, background: '#DCFCE7', color: '#15803D', fontFamily: 'Roboto, sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, flexShrink: 0 }}>
             🏁 Final
@@ -308,6 +306,45 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
         <p style={{ margin: '6px 0 0', fontFamily: 'Roboto, sans-serif', fontSize: 12, lineHeight: 1.45, color: '#64748B', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
           {description}
         </p>
+      )}
+
+      {/* Feature chips */}
+      {hasChips && (
+        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap' }}>
+          {hasData && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px', borderRadius: 100,
+              background: 'rgba(124,58,237,0.08)', color: '#7C3AED',
+              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
+            }}>
+              <Braces size={10} strokeWidth={2.5} />
+              {dataCount}
+            </span>
+          )}
+          {hasFlow && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px', borderRadius: 100,
+              background: 'rgba(48,79,254,0.08)', color: PRIMARY,
+              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
+            }}>
+              <GitBranch size={10} strokeWidth={2.5} />
+              Flujo
+            </span>
+          )}
+          {requiresHuman && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px', borderRadius: 100,
+              background: 'rgba(234,88,12,0.08)', color: '#EA580C',
+              fontFamily: 'Roboto, sans-serif', fontSize: 10.5, fontWeight: 700,
+            }}>
+              <UserCog size={10} strokeWidth={2.5} />
+              HITL
+            </span>
+          )}
+        </div>
       )}
 
       <Handle type="source" position={Position.Right} style={{ background: PRIMARY, width: 12, height: 12, border: 'none' }} />
