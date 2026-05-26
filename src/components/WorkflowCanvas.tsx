@@ -890,6 +890,7 @@ function WorkflowCanvasInner({
   const [advancedId, setAdvancedId] = useState<string | null>(_demoParam === 'flow' ? 's_doing' : null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const [workflowSettingsOpen, setWorkflowSettingsOpen] = useState(false)
+  const [datosOpen, setDatosOpen] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
 
@@ -980,6 +981,10 @@ function WorkflowCanvasInner({
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Templates</ToolbarBtn>
+        <DatosToolbarBtn
+          totalFields={decoratedNodes.filter(n => n.type === 'stateNode').reduce((acc, n) => acc + ((n.data as StateNodeData).requiredData?.length ?? 0), 0)}
+          onClick={() => setDatosOpen(true)}
+        />
         <ToolbarBtn icon={<Settings size={14} />} onClick={() => setWorkflowSettingsOpen(true)}>Workflow settings</ToolbarBtn>
         <ToolbarBtn icon={<LayoutGrid size={14} />} primary>View board</ToolbarBtn>
         <ToolbarBtn icon={<Maximize2 size={14} />} square />
@@ -1078,6 +1083,15 @@ function WorkflowCanvasInner({
         <WorkflowSettingsDrawer
           onClose={() => setWorkflowSettingsOpen(false)}
           stateNodes={decoratedNodes.filter(n => n.type === 'stateNode') as Node<StateNodeData>[]}
+        />
+      )}
+
+      {/* Datos drawer */}
+      {datosOpen && (
+        <DatosDrawer
+          onClose={() => setDatosOpen(false)}
+          stateNodes={decoratedNodes.filter(n => n.type === 'stateNode') as Node<StateNodeData>[]}
+          onEditState={(id) => { setDatosOpen(false); setEditingId(id) }}
         />
       )}
 
@@ -2290,6 +2304,179 @@ function WorkflowSettingsDrawer({ onClose, stateNodes }: { onClose: () => void; 
           >
             <Sparkles size={20} color={PRIMARY} />
           </button>
+        </div>
+      </aside>
+    </div>
+  )
+}
+
+function DatosToolbarBtn({ totalFields, onClick }: { totalFields: number; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '8px 14px', borderRadius: 100,
+        background: totalFields > 0 ? 'rgba(48,79,254,0.06)' : '#FFFFFF',
+        border: `1px solid ${totalFields > 0 ? 'rgba(48,79,254,0.25)' : '#E2E8F0'}`,
+        color: totalFields > 0 ? PRIMARY : '#0F172A',
+        fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600,
+        cursor: 'pointer',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        transition: 'background 140ms ease-out',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = totalFields > 0 ? 'rgba(48,79,254,0.10)' : '#F8FAFC')}
+      onMouseLeave={e => (e.currentTarget.style.background = totalFields > 0 ? 'rgba(48,79,254,0.06)' : '#FFFFFF')}
+    >
+      <Braces size={14} />
+      Datos del workflow
+      {totalFields > 0 && (
+        <span style={{
+          minWidth: 18, height: 18, borderRadius: 9,
+          background: PRIMARY, color: '#fff',
+          fontSize: 10.5, fontWeight: 700, lineHeight: '18px',
+          textAlign: 'center', padding: '0 5px',
+        }}>{totalFields}</span>
+      )}
+    </button>
+  )
+}
+
+function DatosDrawer({ onClose, stateNodes, onEditState }: {
+  onClose: () => void
+  stateNodes: Node<StateNodeData>[]
+  onEditState: (id: string) => void
+}) {
+  const statesWithData = stateNodes.filter(n => n.data.requiredData && n.data.requiredData.length > 0)
+  const totalFields = statesWithData.reduce((acc, n) => acc + n.data.requiredData.length, 0)
+  const statesWithout = stateNodes.filter(n => !n.data.requiredData || n.data.requiredData.length === 0)
+
+  return (
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 20 }}>
+      <style>{`@keyframes datosDrawer { from { opacity:0; transform:translateX(24px) } to { opacity:1; transform:translateX(0) } }`}</style>
+      <aside
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0,
+          width: 380, background: '#FFFFFF',
+          borderLeft: '1px solid #E2E8F0',
+          boxShadow: '-12px 0 30px -10px rgba(15,23,42,0.18)',
+          display: 'flex', flexDirection: 'column',
+          fontFamily: 'Roboto, sans-serif',
+          animation: 'datosDrawer 240ms cubic-bezier(0.16,1,0.3,1) both',
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: '20px 20px 16px', flexShrink: 0, borderBottom: '1px solid #F1F5F9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Braces size={16} color={PRIMARY} />
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', flex: 1 }}>Datos del workflow</span>
+            {totalFields > 0 && (
+              <span style={{ padding: '2px 8px', borderRadius: 10, background: '#EEF0FF', color: PRIMARY, fontSize: 11, fontWeight: 700 }}>
+                {totalFields} campo{totalFields !== 1 ? 's' : ''}
+              </span>
+            )}
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 8, color: '#94A3B8', display: 'flex' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#475569')} onMouseLeave={e => (e.currentTarget.style.color = '#94A3B8')}>
+              <X size={17} />
+            </button>
+          </div>
+          <p style={{ margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 1.55 }}>
+            Datos que el agente recolecta en cada estado. Hacé clic en un estado para editarlos.
+          </p>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {stateNodes.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: 26, marginBottom: 8 }}>📋</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>Sin estados todavía</div>
+              <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Creá estados en el canvas para empezar a definir datos.</div>
+            </div>
+          ) : (
+            <>
+              {statesWithData.map(node => (
+                <div key={node.id} style={{ border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden' }}>
+                  {/* State header — clickable to edit */}
+                  <button
+                    onClick={() => onEditState(node.id)}
+                    style={{
+                      width: '100%', padding: '10px 14px',
+                      background: '#F8FAFC', border: 'none', borderBottom: '1px solid #E2E8F0',
+                      display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#F8FAFC')}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: node.data.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', flex: 1 }}>{node.data.name}</span>
+                    <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>
+                      {node.data.requiredData.length} campo{node.data.requiredData.length !== 1 ? 's' : ''}
+                    </span>
+                    <span style={{ fontSize: 13, color: '#94A3B8' }}>›</span>
+                  </button>
+                  {/* Fields */}
+                  <div style={{ padding: '4px 0' }}>
+                    {node.data.requiredData.map((field, i) => (
+                      <div key={field.id} style={{
+                        padding: '7px 14px',
+                        display: 'flex', alignItems: 'flex-start', gap: 8,
+                        borderTop: i > 0 ? '1px solid #F8FAFC' : undefined,
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0F172A' }}>
+                            {field.name || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Sin nombre</span>}
+                          </div>
+                          {field.description && (
+                            <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {field.description}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{
+                          padding: '2px 7px', borderRadius: 5, flexShrink: 0, marginTop: 1,
+                          background: field.optional ? '#FEF9C3' : '#EEF0FF',
+                          color: field.optional ? '#B45309' : PRIMARY,
+                          fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const,
+                        }}>{field.optional ? 'Opcional' : 'Obligatorio'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* States without data */}
+              {statesWithout.length > 0 && (
+                <div style={{ marginTop: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                    Sin datos definidos
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {statesWithout.map(node => (
+                      <button
+                        key={node.id}
+                        onClick={() => onEditState(node.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '9px 14px', borderRadius: 8,
+                          border: '1.5px dashed #E2E8F0', background: 'none', cursor: 'pointer',
+                          textAlign: 'left', width: '100%',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: node.data.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: '#475569', flex: 1 }}>{node.data.name}</span>
+                        <span style={{ fontSize: 12, color: '#94A3B8' }}>+ Agregar datos</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </aside>
     </div>
