@@ -528,6 +528,8 @@ function EditStateDrawer({
 
   const hasFlow = node.data.kind === 'complex'
 
+  const [resourcesOpen, setResourcesOpen] = useState(false)
+
   const handleFlowAction = () => {
     if (!hasFlow) {
       onSave(node.id, { name, description, color, requiresHuman, requiredData, kind: 'complex' })
@@ -688,11 +690,42 @@ function EditStateDrawer({
             onChange={setRequiredData}
           />
 
-          {/* Resources */}
-          <StateResourcesSection
-            resources={resources}
-            onChange={setResources}
-          />
+          {/* Resources CTA */}
+          <button
+            onClick={() => setResourcesOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 14px', borderRadius: 12,
+              background: resources.length > 0 ? '#F0FDF4' : '#FAFBFD',
+              border: `1px solid ${resources.length > 0 ? '#BBF7D0' : '#E2E8F0'}`,
+              cursor: 'pointer', textAlign: 'left', width: '100%',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#BBF7D0' }}
+            onMouseLeave={e => { e.currentTarget.style.background = resources.length > 0 ? '#F0FDF4' : '#FAFBFD'; e.currentTarget.style.borderColor = resources.length > 0 ? '#BBF7D0' : '#E2E8F0' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: resources.length > 0 ? '#16A34A' : '#E2E8F0',
+                color: resources.length > 0 ? '#FFFFFF' : '#64748B',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                transition: 'background 150ms',
+              }}>
+                <Cpu size={14} />
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>
+                  {resources.length > 0 ? `${resources.length} recurso${resources.length !== 1 ? 's' : ''} del estado` : 'Agregar recursos'}
+                </span>
+                <span style={{ fontSize: 11.5, color: '#64748B', marginTop: 2 }}>
+                  {resources.length > 0
+                    ? resources.map(r => r.name).join(' · ')
+                    : 'MCPs, código y lógicas disponibles en este estado'}
+                </span>
+              </div>
+            </div>
+            <span style={{ color: resources.length > 0 ? '#16A34A' : '#94A3B8', fontSize: 18, fontWeight: 700, marginLeft: 8 }}>→</span>
+          </button>
 
         </div>
         </div>{/* end scrollable */}
@@ -721,15 +754,95 @@ function EditStateDrawer({
             }}
           >Close</button>
         </div>
+
+        {/* Resources panel — slides over the drawer */}
+        {resourcesOpen && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10,
+            background: '#FFFFFF', borderRadius: 14,
+            display: 'flex', flexDirection: 'column',
+            animation: 'wfDrawerSlide 200ms cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            {/* Panel header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
+              <button
+                onClick={() => setResourcesOpen(false)}
+                style={{ width: 28, height: 28, borderRadius: 8, background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >←</button>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Recursos del estado</div>
+                <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginTop: 1 }}>
+                  {name || 'Estado'}
+                </div>
+              </div>
+            </div>
+            {/* Panel body */}
+            <div style={{ flex: 1, overflow: 'auto', padding: '20px 20px' }}>
+              <StateResourcesPanel
+                stateName={name}
+                resources={resources}
+                onChange={setResources}
+              />
+            </div>
+          </div>
+        )}
     </aside>
   )
 }
 
-// ─── State Resources Section ───────────────────────────────────────────────────
+// ─── State Resources Panel ────────────────────────────────────────────────────
 
-function StateResourcesSection({ resources, onChange }: { resources: StateResource[]; onChange: (r: StateResource[]) => void }) {
-  const [showKbPicker, setShowKbPicker] = useState(false)
-  const [showMcpPicker, setShowMcpPicker] = useState(false)
+const RESOURCE_TYPES = [
+  {
+    id: 'mcp',
+    label: 'MCP',
+    sublabel: 'Tool or integration',
+    icon: <Cpu size={16} strokeWidth={2} />,
+    color: '#6366F1',
+    bg: '#EEF2FF',
+    border: '#C7D2FE',
+    items: [
+      { id: 'mcp-sf',      type: 'mcp' as const, name: 'Salesforce CRM',     color: '#00A1E0' },
+      { id: 'mcp-slack',   type: 'mcp' as const, name: 'Slack',              color: '#4A154B' },
+      { id: 'mcp-sheets',  type: 'mcp' as const, name: 'Google Sheets',      color: '#34A853' },
+      { id: 'mcp-hubspot', type: 'mcp' as const, name: 'HubSpot',            color: '#FF7A59' },
+      { id: 'mcp-jira',    type: 'mcp' as const, name: 'Jira',               color: '#0052CC' },
+    ],
+  },
+  {
+    id: 'code',
+    label: 'MCP código',
+    sublabel: 'Custom function or script',
+    icon: <span style={{ fontFamily: 'monospace', fontSize: 14, fontWeight: 700 }}>{'{}'}</span>,
+    color: '#0F766E',
+    bg: '#F0FDFA',
+    border: '#99F6E4',
+    items: [
+      { id: 'code-calc',   type: 'mcp' as const, name: 'Price calculator',   color: '#0F766E' },
+      { id: 'code-notify', type: 'mcp' as const, name: 'Notification sender', color: '#0F766E' },
+      { id: 'code-score',  type: 'mcp' as const, name: 'Lead scorer',        color: '#0F766E' },
+    ],
+  },
+  {
+    id: 'logic',
+    label: 'Lógica',
+    sublabel: 'Sub-flow or conditional logic',
+    icon: <GitBranch size={16} strokeWidth={2} />,
+    color: '#9333EA',
+    bg: '#FAF5FF',
+    border: '#E9D5FF',
+    items: [
+      { id: 'logic-qual',  type: 'mcp' as const, name: 'Qualification logic', color: '#9333EA' },
+      { id: 'logic-esc',   type: 'mcp' as const, name: 'Escalation flow',    color: '#9333EA' },
+      { id: 'logic-route', type: 'mcp' as const, name: 'Smart routing',      color: '#9333EA' },
+    ],
+  },
+]
+
+function StateResourcesPanel({ stateName, resources, onChange }: { stateName: string; resources: StateResource[]; onChange: (r: StateResource[]) => void }) {
+  const [openSection, setOpenSection] = useState<string | null>(null)
 
   const toggle = (item: StateResource) => {
     const exists = resources.some(r => r.id === item.id)
@@ -737,129 +850,99 @@ function StateResourcesSection({ resources, onChange }: { resources: StateResour
   }
   const remove = (id: string) => onChange(resources.filter(r => r.id !== id))
 
-  const kbs = resources.filter(r => r.type === 'kb')
-  const mcps = resources.filter(r => r.type === 'mcp')
+  const isEmpty = resources.length === 0
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Recursos del estado</div>
-      </div>
-      <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>
-        Bases de conocimiento y herramientas MCP activas en este estado específico
-      </div>
-
-      {/* Knowledge bases */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#475569' }}>
-            <BookOpen size={13} strokeWidth={2} color="#475569" /> Bases de conocimiento
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {isEmpty && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '28px 20px 20px', gap: 10,
+          background: '#F8FAFC', borderRadius: 12, border: '1.5px dashed #E2E8F0',
+          marginBottom: 8,
+        }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Cpu size={20} strokeWidth={1.5} color="#94A3B8" />
           </div>
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => { setShowKbPicker(o => !o); setShowMcpPicker(false) }}
-              style={{ fontSize: 11, fontWeight: 600, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
-            >+ Agregar</button>
-            {showKbPicker && (
-              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 10, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', padding: 6, minWidth: 200 }}>
-                {CATALOG_KBS.map(kb => {
-                  const active = resources.some(r => r.id === kb.id)
-                  return (
-                    <button key={kb.id} onClick={() => { toggle(kb); setShowKbPicker(false) }} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                      borderRadius: 7, border: 'none', background: active ? '#EFF6FF' : 'transparent',
-                      cursor: 'pointer', textAlign: 'left',
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.background = active ? '#EFF6FF' : '#F8FAFC')}
-                      onMouseLeave={e => (e.currentTarget.style.background = active ? '#EFF6FF' : 'transparent')}
-                    >
-                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: kb.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <BookOpen size={10} strokeWidth={2.5} color="#fff" />
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{kb.name}</span>
-                      {active && <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700 }}>✓</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>Sin recursos</div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 3, lineHeight: 1.5 }}>
+              Agregá MCPs, código o lógicas disponibles cuando el agente esté en «{stateName || 'este estado'}»
+            </div>
           </div>
         </div>
-        {kbs.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>Sin bases de conocimiento asignadas</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {kbs.map(kb => (
-              <div key={kb.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: kb.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <BookOpen size={10} strokeWidth={2.5} color="#fff" />
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{kb.name}</span>
-                <button onClick={() => remove(kb.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CBD5E1', padding: 2, display: 'flex', borderRadius: 4 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
-                ><X size={13} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* MCP tools */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#475569' }}>
-            <Cpu size={13} strokeWidth={2} color="#475569" /> Herramientas MCP
-          </div>
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => { setShowMcpPicker(o => !o); setShowKbPicker(false) }}
-              style={{ fontSize: 11, fontWeight: 600, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
-            >+ Agregar</button>
-            {showMcpPicker && (
-              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 10, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', padding: 6, minWidth: 200 }}>
-                {CATALOG_MCPS.map(mcp => {
-                  const active = resources.some(r => r.id === mcp.id)
-                  return (
-                    <button key={mcp.id} onClick={() => { toggle(mcp); setShowMcpPicker(false) }} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
-                      borderRadius: 7, border: 'none', background: active ? '#EFF6FF' : 'transparent',
-                      cursor: 'pointer', textAlign: 'left',
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.background = active ? '#EFF6FF' : '#F8FAFC')}
-                      onMouseLeave={e => (e.currentTarget.style.background = active ? '#EFF6FF' : 'transparent')}
-                    >
-                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: mcp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Cpu size={10} strokeWidth={2.5} color="#fff" />
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{mcp.name}</span>
-                      {active && <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700 }}>✓</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+      {/* Attached resources list */}
+      {resources.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 4 }}>
+          {resources.map(res => (
+            <div key={res.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 9, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+              <span style={{ width: 22, height: 22, borderRadius: 6, background: res.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Cpu size={11} strokeWidth={2.5} color="#fff" />
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{res.name}</span>
+              <button onClick={() => remove(res.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CBD5E1', padding: 2, display: 'flex', borderRadius: 4 }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
+              ><X size={13} /></button>
+            </div>
+          ))}
         </div>
-        {mcps.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>Sin herramientas MCP asignadas</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {mcps.map(mcp => (
-              <div key={mcp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: mcp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Cpu size={10} strokeWidth={2.5} color="#fff" />
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{mcp.name}</span>
-                <button onClick={() => remove(mcp.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CBD5E1', padding: 2, display: 'flex', borderRadius: 4 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
-                ><X size={13} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
+
+      {/* Type sections */}
+      {RESOURCE_TYPES.map(rtype => (
+        <div key={rtype.id}>
+          <button
+            onClick={() => setOpenSection(openSection === rtype.id ? null : rtype.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: '11px 14px', borderRadius: 10,
+              background: openSection === rtype.id ? rtype.bg : '#FAFBFD',
+              border: `1px solid ${openSection === rtype.id ? rtype.border : '#E2E8F0'}`,
+              cursor: 'pointer', textAlign: 'left', transition: 'all 140ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = rtype.bg; e.currentTarget.style.borderColor = rtype.border }}
+            onMouseLeave={e => { e.currentTarget.style.background = openSection === rtype.id ? rtype.bg : '#FAFBFD'; e.currentTarget.style.borderColor = openSection === rtype.id ? rtype.border : '#E2E8F0' }}
+          >
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: rtype.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {rtype.icon}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>+ {rtype.label}</div>
+              <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>{rtype.sublabel}</div>
+            </div>
+            <span style={{ color: '#94A3B8', fontSize: 16 }}>{openSection === rtype.id ? '▲' : '▾'}</span>
+          </button>
+
+          {openSection === rtype.id && (
+            <div style={{ padding: '6px 0 2px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {rtype.items.map(item => {
+                const active = resources.some(r => r.id === item.id)
+                return (
+                  <button key={item.id} onClick={() => toggle(item)} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 14px', borderRadius: 8,
+                    border: `1px solid ${active ? rtype.border : '#E2E8F0'}`,
+                    background: active ? rtype.bg : '#FFFFFF',
+                    cursor: 'pointer', textAlign: 'left', transition: 'all 120ms',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = rtype.bg; e.currentTarget.style.borderColor = rtype.border }}
+                    onMouseLeave={e => { e.currentTarget.style.background = active ? rtype.bg : '#FFFFFF'; e.currentTarget.style.borderColor = active ? rtype.border : '#E2E8F0' }}
+                  >
+                    <span style={{ width: 20, height: 20, borderRadius: 5, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Cpu size={10} strokeWidth={2.5} color="#fff" />
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{item.name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: active ? rtype.color : '#CBD5E1' }}>{active ? '✓ Agregado' : '+ Agregar'}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
@@ -2792,6 +2875,82 @@ function ZoomBtn({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Process type onboarding ──────────────────────────────────────────────────
+
+const PROCESS_TYPES = [
+  { id: 'leads',     emoji: '🎯', label: 'Seguimiento de leads',   desc: 'Calificación, demos y cierre de oportunidades' },
+  { id: 'pedidos',   emoji: '🍕', label: 'Toma de pedidos',        desc: 'Recepcionar, confirmar y entregar pedidos' },
+  { id: 'soporte',   emoji: '🎧', label: 'Soporte al cliente',     desc: 'Triage, diagnóstico y resolución de tickets' },
+  { id: 'cobranzas', emoji: '💳', label: 'Cobranzas',              desc: 'Recordatorios y acuerdos de pago' },
+  { id: 'agenda',    emoji: '📅', label: 'Agendamiento',           desc: 'Reservas, confirmaciones y recordatorios' },
+  { id: 'otro',      emoji: '✨', label: 'Otro proceso',           desc: 'Empezar desde cero con un canvas vacío' },
+]
+
+const PROCESS_TEMPLATES: Record<string, () => { nodes: AnyNode[]; edges: Edge[] }> = {
+  leads:     () => TEMPLATES.find(t => t.id === 'ventas')!.build(),
+  pedidos:   () => TEMPLATES.find(t => t.id === 'pedidos')!.build(),
+  soporte:   () => TEMPLATES.find(t => t.id === 'soporte')!.build(),
+  cobranzas: () => TEMPLATES.find(t => t.id === 'cobranzas')!.build(),
+  agenda:    () => ({
+    nodes: [
+      { id: 'start', type: 'startNode', position: { x: 80, y: 220 }, data: { onAddNext: () => {} } as any },
+      mkState('req',  'Request received',  280,  '#3B82F6', 'simple', ['whatsapp']),
+      mkState('slot', 'Slot selection',    580,  '#EAB308', 'complex', ['calendar']),
+      mkState('conf', 'Confirmed',         880,  '#9333EA', 'complex', ['gmail', 'whatsapp']),
+      mkState('done', 'Attended',          1180, '#16A34A', 'final'),
+    ],
+    edges: [mkEdge('start', 'req'), mkEdge('req', 'slot'), mkEdge('slot', 'conf'), mkEdge('conf', 'done')],
+  }),
+  otro: () => TEMPLATES.find(t => t.id === 'blank')!.build(),
+}
+
+function ProcessTypePicker({ onPick }: { onPick: (tpl: { nodes: AnyNode[]; edges: Edge[] }) => void }) {
+  return (
+    <div style={{
+      width: '100%', minHeight: 600, height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 40, background: '#F8FAFC',
+      fontFamily: 'Roboto, sans-serif',
+    }}>
+      <div style={{ maxWidth: 680, width: '100%' }}>
+        <div style={{ marginBottom: 8, fontSize: 12, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          Nuevo workflow
+        </div>
+        <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
+          ¿Qué proceso de negocio querés gestionar?
+        </h2>
+        <p style={{ margin: '0 0 28px', fontSize: 14, color: '#64748B' }}>
+          El agente va a mover a los usuarios por los estados de este proceso automáticamente.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {PROCESS_TYPES.map(pt => (
+            <button
+              key={pt.id}
+              onClick={() => onPick(PROCESS_TEMPLATES[pt.id]())}
+              style={{
+                textAlign: 'left', cursor: 'pointer', padding: '16px 18px',
+                borderRadius: 12, background: '#FFFFFF',
+                border: '1.5px solid #E2E8F0',
+                boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+                transition: 'border-color 140ms, box-shadow 200ms, transform 140ms',
+                display: 'flex', flexDirection: 'column', gap: 8,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.boxShadow = `0 8px 24px -8px rgba(48,79,254,0.20)`; e.currentTarget.style.transform = 'translateY(-2px)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              <span style={{ fontSize: 24 }}>{pt.emoji}</span>
+              <div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A' }}>{pt.label}</div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 3, lineHeight: 1.45 }}>{pt.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Variant chooser ───────────────────────────────────────────────────────────
 
 function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void }) {
@@ -2955,20 +3114,48 @@ export interface WorkflowCanvasProps {
 }
 
 export default function WorkflowCanvas({ onOpenKanban, initialVariant, onToggleSidebar, agentName, connectedToOrchestrator, orchestratorName, initialNodes: seedNodes, initialEdges: seedEdges }: WorkflowCanvasProps) {
-  const [variant, setVariant] = useState<'classic' | 'unified' | null>(initialVariant ?? null)
-  if (!variant) return <VariantChooser onPick={setVariant} />
+  // step: null = process picker (only shown on fresh new workflow, no initial data)
+  // 'variant' = variant chooser (legacy, still shown when no initialVariant)
+  // 'canvas' = canvas ready
+  type Step = 'process' | 'variant' | 'canvas'
+  const hasSeeds = !!(seedNodes && seedNodes.length > 0)
+  const [step, setStep] = useState<Step>(
+    hasSeeds || initialVariant ? 'canvas' : 'process'
+  )
+  const [variant, setVariant] = useState<'classic' | 'unified'>(initialVariant ?? 'unified')
+  const [chosenNodes, setChosenNodes] = useState<AnyNode[] | undefined>(seedNodes)
+  const [chosenEdges, setChosenEdges] = useState<Edge[] | undefined>(seedEdges)
+
+  if (step === 'process') {
+    return (
+      <ProcessTypePicker
+        onPick={tpl => {
+          setChosenNodes(tpl.nodes as AnyNode[])
+          setChosenEdges(tpl.edges)
+          // Go directly to canvas with unified view (skip variant chooser for simplicity)
+          setVariant('unified')
+          setStep('canvas')
+        }}
+      />
+    )
+  }
+
+  if (step === 'variant') {
+    return <VariantChooser onPick={v => { setVariant(v); setStep('canvas') }} />
+  }
+
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner
         variant={variant}
-        onChangeVariant={initialVariant ? () => {} : () => setVariant(null)}
+        onChangeVariant={() => setStep('variant')}
         onOpenKanban={onOpenKanban}
         onToggleSidebar={onToggleSidebar}
         agentName={agentName}
         connectedToOrchestrator={connectedToOrchestrator}
         orchestratorName={orchestratorName}
-        seedNodes={seedNodes}
-        seedEdges={seedEdges}
+        seedNodes={chosenNodes}
+        seedEdges={chosenEdges}
       />
     </ReactFlowProvider>
   )
