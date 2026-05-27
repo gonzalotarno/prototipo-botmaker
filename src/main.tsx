@@ -17,6 +17,7 @@ import WorkflowCanvas from './components/WorkflowCanvas'
 import WorkflowList from './components/WorkflowList'
 import FlowTest from './FlowTest'
 import WorkshopInsights from './WorkshopInsights'
+import AppleFlow from './AppleFlow'
 import TaskReminderButton from './components/TaskReminderButton'
 
 // Hide "Send to Figma" browser extension button that gets injected into the page
@@ -155,6 +156,7 @@ function App() {
     </div>
   )
   if (path === '/workshop') return <WorkshopInsights />
+  if (path === '/apple-flow') return <AppleFlow />
   if (path === '/flow-test') return <FlowTest />
   if (path === '/flow-test-agent') return <><AgentDetail initialTab="estados" variant="v2" /><TaskReminderButton /></>
   if (path === '/flow-test-orquestador') return <><AgentsShell /><TaskReminderButton /></>

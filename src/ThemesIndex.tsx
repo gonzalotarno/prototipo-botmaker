@@ -71,6 +71,17 @@ const THEMES: Theme[] = [
     icon: <Workflow size={16} />,
   },
   {
+    id: 'apple-flow',
+    href: '/apple-flow',
+    status: 'active',
+    eyebrow: 'Caso real · nuevo',
+    title: 'Apple AI Platform',
+    blurb: 'Orquestador con 3 agentes de IA: Sales, Support y Repairs. Muestra recursos por estado (KBs + MCPs), warning de orquestador y flujos reales.',
+    bullets: ['Orquestador → 3 agentes IA', 'Recursos (KB + MCP) por estado', 'Warning de desconexión del orquestador'],
+    preview: <SoonPreview />,
+    icon: <Sparkles size={16} />,
+  },
+  {
     id: 'soon',
     href: '#',
     status: 'soon',

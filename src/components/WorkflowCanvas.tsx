@@ -20,7 +20,7 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Plus, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X, AlertCircle, UserCog } from 'lucide-react'
+import { Plus, Trash2, Settings, LayoutGrid, Maximize2, Sparkles, MoreVertical, Braces, ChevronDown, MessageSquare, GitBranch, RotateCcw, Play, Search, MousePointer2, Hand, Undo2, Redo2, Map as MapIcon, X, AlertCircle, UserCog, BookOpen, Cpu, TriangleAlert } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,6 +47,13 @@ const FIELD_TYPES: { id: FieldType; label: string }[] = [
   { id: 'enum',   label: 'Lista de opciones' },
 ]
 
+interface StateResource {
+  id: string
+  type: 'kb' | 'mcp'
+  name: string
+  color: string
+}
+
 type StateNodeData = Record<string, unknown> & {
   name: string
   description: string
@@ -55,6 +62,7 @@ type StateNodeData = Record<string, unknown> & {
   requiredData: RequiredField[]
   kind: 'simple' | 'complex' | 'final'
   flowApps?: string[]
+  resources?: StateResource[]
   isDisconnected?: boolean
   variant?: 'classic' | 'unified'
   onEdit: (id: string) => void
@@ -94,6 +102,20 @@ const FLOW_APPS: Record<string, { label: string; color: string; letter: string; 
   hubspot:   { label: 'HubSpot',         color: '#FF7A59', letter: 'H' },
 }
 
+// Mock catalog of agent-level resources that can be attached per state
+const CATALOG_KBS: StateResource[] = [
+  { id: 'kb-faq',       type: 'kb', name: 'Product FAQ',         color: '#3B82F6' },
+  { id: 'kb-pricing',   type: 'kb', name: 'Pricing Guide',        color: '#F59E0B' },
+  { id: 'kb-support',   type: 'kb', name: 'Support Articles',     color: '#10B981' },
+  { id: 'kb-onboarding',type: 'kb', name: 'Onboarding Docs',      color: '#8B5CF6' },
+]
+const CATALOG_MCPS: StateResource[] = [
+  { id: 'mcp-sf',       type: 'mcp', name: 'Salesforce CRM',      color: '#00A1E0' },
+  { id: 'mcp-slack',    type: 'mcp', name: 'Slack Notifications',  color: '#4A154B' },
+  { id: 'mcp-sheets',   type: 'mcp', name: 'Google Sheets',        color: '#34A853' },
+  { id: 'mcp-hubspot',  type: 'mcp', name: 'HubSpot',              color: '#FF7A59' },
+]
+
 // ─── Initial data ──────────────────────────────────────────────────────────────
 
 const INITIAL_NODES: AnyNode[] = [
@@ -111,10 +133,10 @@ interface Template {
   build: () => { nodes: AnyNode[]; edges: Edge[] }
 }
 
-function mkState(id: string, name: string, x: number, color: string, kind: 'simple' | 'complex' | 'final' = 'simple', flowApps?: string[]): AnyNode {
+function mkState(id: string, name: string, x: number, color: string, kind: 'simple' | 'complex' | 'final' = 'simple', flowApps?: string[], resources?: StateResource[]): AnyNode {
   return {
     id, type: 'stateNode', position: { x, y: 200 },
-    data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, flowApps, onEdit: () => {}, onAddNext: () => {} } as any,
+    data: { name, description: '', color, requiresHuman: false, requiredData: [], kind, flowApps, resources, onEdit: () => {}, onAddNext: () => {} } as any,
   }
 }
 function mkEdge(source: string, target: string): Edge {
@@ -273,12 +295,14 @@ function StartNode() {
 // ─── State Node (the main card) ────────────────────────────────────────────────
 
 function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
-  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, requiredData, flowApps, onEdit } = data
+  const { name, description, color: dotColor, isDisconnected, requiresHuman, kind, requiredData, flowApps, resources, onEdit } = data
   const hasFlow = kind === 'complex'
   const isFinal = kind === 'final'
   const dataCount = requiredData?.length ?? 0
   const hasData = dataCount > 0
-  const borderColor = isDisconnected ? '#F59E0B' : '#E2E8F0'
+  const resCount = resources?.length ?? 0
+  const hasResources = resCount > 0
+  const borderColor = isDisconnected ? '#F59E0B' : selected ? PRIMARY : '#E2E8F0'
 
   return (
     <div
@@ -355,6 +379,35 @@ function StateNode({ id, data, selected }: NodeProps<Node<StateNodeData>>) {
             {flowApps && flowApps.length > 3 && (
               <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 700, lineHeight: 1, marginLeft: -3 }}>
                 +{flowApps.length - 3}
+              </span>
+            )}
+          </span>
+        )}
+        {hasResources && (
+          <span title={`${resCount} recurso${resCount !== 1 ? 's' : ''} del estado`} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            height: 20, padding: '0 6px', borderRadius: 5,
+            background: '#F1F5F9', flexShrink: 0, cursor: 'default',
+          }}>
+            <BookOpen size={11} strokeWidth={2} color="#94A3B8" style={{ flexShrink: 0 }} />
+            {resources!.slice(0, 3).map((res, i) => (
+              <span key={res.id} title={res.name} style={{
+                width: 16, height: 16, borderRadius: '50%',
+                border: '1.5px solid #F1F5F9',
+                marginLeft: i > 0 ? -5 : 0,
+                flexShrink: 0,
+                background: res.color,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {res.type === 'kb'
+                  ? <BookOpen size={8} strokeWidth={2.5} color="#fff" />
+                  : <Cpu size={8} strokeWidth={2.5} color="#fff" />
+                }
+              </span>
+            ))}
+            {resources!.length > 3 && (
+              <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 700, lineHeight: 1, marginLeft: -3 }}>
+                +{resources!.length - 3}
               </span>
             )}
           </span>
@@ -456,6 +509,7 @@ function EditStateDrawer({
   const [color, setColor] = useState(node.data.color)
   const [requiresHuman, setRequiresHuman] = useState(node.data.requiresHuman)
   const [requiredData, setRequiredData] = useState<RequiredField[]>(node.data.requiredData ?? [])
+  const [resources, setResources] = useState<StateResource[]>(node.data.resources ?? [])
   const [colorOpen, setColorOpen] = useState(false)
 
   // Sync state with new node when user clicks a different one
@@ -465,11 +519,12 @@ function EditStateDrawer({
     setColor(node.data.color)
     setRequiresHuman(node.data.requiresHuman)
     setRequiredData(node.data.requiredData ?? [])
+    setResources(node.data.resources ?? [])
   }, [node.id]) // eslint-disable-line
 
   useEffect(() => {
-    onSave(node.id, { name, description, color, requiresHuman, requiredData })
-  }, [name, description, color, requiresHuman, requiredData.length]) // eslint-disable-line
+    onSave(node.id, { name, description, color, requiresHuman, requiredData, resources })
+  }, [name, description, color, requiresHuman, requiredData.length, resources.length]) // eslint-disable-line
 
   const hasFlow = node.data.kind === 'complex'
 
@@ -575,7 +630,7 @@ function EditStateDrawer({
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describe how the agent should behave in this state"
+              placeholder="Describí el objetivo de este estado. Ej: «El agente califica al lead preguntando empresa y presupuesto. Si califica, agenda demo.»"
               rows={3}
               style={{ ...inputStyle, resize: 'vertical', minHeight: 86, lineHeight: 1.5, fontFamily: 'inherit' }}
             />
@@ -633,6 +688,12 @@ function EditStateDrawer({
             onChange={setRequiredData}
           />
 
+          {/* Resources */}
+          <StateResourcesSection
+            resources={resources}
+            onChange={setResources}
+          />
+
         </div>
         </div>{/* end scrollable */}
 
@@ -661,6 +722,145 @@ function EditStateDrawer({
           >Close</button>
         </div>
     </aside>
+  )
+}
+
+// ─── State Resources Section ───────────────────────────────────────────────────
+
+function StateResourcesSection({ resources, onChange }: { resources: StateResource[]; onChange: (r: StateResource[]) => void }) {
+  const [showKbPicker, setShowKbPicker] = useState(false)
+  const [showMcpPicker, setShowMcpPicker] = useState(false)
+
+  const toggle = (item: StateResource) => {
+    const exists = resources.some(r => r.id === item.id)
+    onChange(exists ? resources.filter(r => r.id !== item.id) : [...resources, item])
+  }
+  const remove = (id: string) => onChange(resources.filter(r => r.id !== id))
+
+  const kbs = resources.filter(r => r.type === 'kb')
+  const mcps = resources.filter(r => r.type === 'mcp')
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Recursos del estado</div>
+      </div>
+      <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>
+        Bases de conocimiento y herramientas MCP activas en este estado específico
+      </div>
+
+      {/* Knowledge bases */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#475569' }}>
+            <BookOpen size={13} strokeWidth={2} color="#475569" /> Bases de conocimiento
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => { setShowKbPicker(o => !o); setShowMcpPicker(false) }}
+              style={{ fontSize: 11, fontWeight: 600, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+            >+ Agregar</button>
+            {showKbPicker && (
+              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 10, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', padding: 6, minWidth: 200 }}>
+                {CATALOG_KBS.map(kb => {
+                  const active = resources.some(r => r.id === kb.id)
+                  return (
+                    <button key={kb.id} onClick={() => { toggle(kb); setShowKbPicker(false) }} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
+                      borderRadius: 7, border: 'none', background: active ? '#EFF6FF' : 'transparent',
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.background = active ? '#EFF6FF' : '#F8FAFC')}
+                      onMouseLeave={e => (e.currentTarget.style.background = active ? '#EFF6FF' : 'transparent')}
+                    >
+                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: kb.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <BookOpen size={10} strokeWidth={2.5} color="#fff" />
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{kb.name}</span>
+                      {active && <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700 }}>✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+        {kbs.length === 0 ? (
+          <div style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>Sin bases de conocimiento asignadas</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {kbs.map(kb => (
+              <div key={kb.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: kb.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <BookOpen size={10} strokeWidth={2.5} color="#fff" />
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{kb.name}</span>
+                <button onClick={() => remove(kb.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CBD5E1', padding: 2, display: 'flex', borderRadius: 4 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
+                ><X size={13} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* MCP tools */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#475569' }}>
+            <Cpu size={13} strokeWidth={2} color="#475569" /> Herramientas MCP
+          </div>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => { setShowMcpPicker(o => !o); setShowKbPicker(false) }}
+              style={{ fontSize: 11, fontWeight: 600, color: PRIMARY, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+            >+ Agregar</button>
+            {showMcpPicker && (
+              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 10, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.14)', padding: 6, minWidth: 200 }}>
+                {CATALOG_MCPS.map(mcp => {
+                  const active = resources.some(r => r.id === mcp.id)
+                  return (
+                    <button key={mcp.id} onClick={() => { toggle(mcp); setShowMcpPicker(false) }} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px',
+                      borderRadius: 7, border: 'none', background: active ? '#EFF6FF' : 'transparent',
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.background = active ? '#EFF6FF' : '#F8FAFC')}
+                      onMouseLeave={e => (e.currentTarget.style.background = active ? '#EFF6FF' : 'transparent')}
+                    >
+                      <span style={{ width: 20, height: 20, borderRadius: '50%', background: mcp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Cpu size={10} strokeWidth={2.5} color="#fff" />
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{mcp.name}</span>
+                      {active && <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700 }}>✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+        {mcps.length === 0 ? (
+          <div style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>Sin herramientas MCP asignadas</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {mcps.map(mcp => (
+              <div key={mcp.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: mcp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Cpu size={10} strokeWidth={2.5} color="#fff" />
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', flex: 1 }}>{mcp.name}</span>
+                <button onClick={() => remove(mcp.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CBD5E1', padding: 2, display: 'flex', borderRadius: 4 }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#CBD5E1')}
+                ><X size={13} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -909,13 +1109,17 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 // ─── Main Canvas component ─────────────────────────────────────────────────────
 
 function WorkflowCanvasInner({
-  variant, onOpenKanban, onChangeVariant, onToggleSidebar, agentName,
+  variant, onOpenKanban, onChangeVariant, onToggleSidebar, agentName, connectedToOrchestrator, orchestratorName, seedNodes, seedEdges,
 }: {
   variant: 'classic' | 'unified'
   onOpenKanban?: () => void
   onChangeVariant: () => void
   onToggleSidebar?: () => void
   agentName?: string
+  connectedToOrchestrator?: boolean
+  orchestratorName?: string
+  seedNodes?: AnyNode[]
+  seedEdges?: Edge[]
 }) {
   const _demoParam = new URLSearchParams(window.location.search).get('demo')
   const [editingId, setEditingId] = useState<string | null>(_demoParam === 'drawer' ? 's_todo' : null)
@@ -923,8 +1127,9 @@ function WorkflowCanvasInner({
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const [workflowSettingsOpen, setWorkflowSettingsOpen] = useState(false)
   const [datosOpen, setDatosOpen] = useState(false)
-  const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>(INITIAL_NODES as any)
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES)
+  const [orchBannerDismissed, setOrchBannerDismissed] = useState(false)
+  const [nodes, setNodes, onNodesChange] = useNodesState<AnyNode>((seedNodes ?? INITIAL_NODES) as any)
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(seedEdges ?? INITIAL_EDGES)
 
   const applyTemplate = (tpl: Template) => {
     const { nodes: tNodes, edges: tEdges } = tpl.build()
@@ -1004,12 +1209,37 @@ function WorkflowCanvasInner({
     setEdges(es => es.filter(e => e.source !== id && e.target !== id))
   }
 
+  const showOrchBanner = connectedToOrchestrator === false && !orchBannerDismissed
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
       <style>{`.react-flow__node:focus,.react-flow__node:focus-visible,.react-flow__node.selected{outline:none!important}.react-flow__node.selected>div{outline:none!important}`}</style>
+
+      {/* Orchestrator connection warning banner */}
+      {showOrchBanner && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 16px',
+          background: '#FFFBEB', borderBottom: '1px solid #FDE68A',
+        }}>
+          <TriangleAlert size={15} color="#D97706" style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#92400E', fontFamily: 'Roboto, sans-serif' }}>
+            Este agente <strong>no está conectado a ningún orquestador</strong> — no va a funcionar en producción.{' '}
+            {orchestratorName && <span>Conectá «{orchestratorName}» para activarlo.</span>}
+          </span>
+          <button
+            onClick={() => setOrchBannerDismissed(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B45309', fontSize: 11, fontWeight: 600, fontFamily: 'Roboto, sans-serif', padding: '4px 8px', borderRadius: 6 }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FEF3C7')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >Entendido ×</button>
+        </div>
+      )}
+
       {/* Top-right toolbar */}
       <div style={{
-        position: 'absolute', top: 16, right: 16, zIndex: 10,
+        position: 'absolute', top: showOrchBanner ? 48 : 16, right: 16, zIndex: 10,
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <ToolbarBtn icon={<Sparkles size={14} />} onClick={() => setTemplatesOpen(true)}>Templates</ToolbarBtn>
@@ -2713,7 +2943,18 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
 
 // ─── Exported wrapper ──────────────────────────────────────────────────────────
 
-export default function WorkflowCanvas({ onOpenKanban, initialVariant, onToggleSidebar, agentName }: { onOpenKanban?: () => void; initialVariant?: 'classic' | 'unified'; onToggleSidebar?: () => void; agentName?: string }) {
+export interface WorkflowCanvasProps {
+  onOpenKanban?: () => void
+  initialVariant?: 'classic' | 'unified'
+  onToggleSidebar?: () => void
+  agentName?: string
+  connectedToOrchestrator?: boolean
+  orchestratorName?: string
+  initialNodes?: AnyNode[]
+  initialEdges?: Edge[]
+}
+
+export default function WorkflowCanvas({ onOpenKanban, initialVariant, onToggleSidebar, agentName, connectedToOrchestrator, orchestratorName, initialNodes: seedNodes, initialEdges: seedEdges }: WorkflowCanvasProps) {
   const [variant, setVariant] = useState<'classic' | 'unified' | null>(initialVariant ?? null)
   if (!variant) return <VariantChooser onPick={setVariant} />
   return (
@@ -2724,6 +2965,10 @@ export default function WorkflowCanvas({ onOpenKanban, initialVariant, onToggleS
         onOpenKanban={onOpenKanban}
         onToggleSidebar={onToggleSidebar}
         agentName={agentName}
+        connectedToOrchestrator={connectedToOrchestrator}
+        orchestratorName={orchestratorName}
+        seedNodes={seedNodes}
+        seedEdges={seedEdges}
       />
     </ReactFlowProvider>
   )
