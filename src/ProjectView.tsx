@@ -33,10 +33,15 @@ const AVAILABLE_CHANNELS: Channel[] = [
   { id: 'email',    name: 'Email',     icon: '📧' },
 ]
 
-const INITIAL_AGENTS: Agent[] = [
-  { id: 'a1', name: 'Toma de Pedidos',    color: '#304FFE', icon: 'cart',       status: 'active',      description: 'Gestiona pedidos de punta a punta',        connected: true },
-  { id: 'a2', name: 'Soporte al Cliente', color: '#7c3aed', icon: 'headphones', status: 'active',      description: 'Responde consultas frecuentes del negocio', connected: true },
-  { id: 'a3', name: 'Menú & Promociones', color: '#0891b2', icon: 'megaphone',  status: 'configuring', description: 'Informa el menú del día y promociones',     connected: true },
+interface AgentWithPending extends Agent {
+  pendingChanges?: number
+  version?: string
+}
+
+const INITIAL_AGENTS: AgentWithPending[] = [
+  { id: 'a1', name: 'Toma de Pedidos',    color: '#304FFE', icon: 'cart',       status: 'active',      description: 'Gestiona pedidos de punta a punta',        connected: true,  version: 'v3', pendingChanges: 4 },
+  { id: 'a2', name: 'Soporte al Cliente', color: '#7c3aed', icon: 'headphones', status: 'active',      description: 'Responde consultas frecuentes del negocio', connected: true,  version: 'v2', pendingChanges: 0 },
+  { id: 'a3', name: 'Menú & Promociones', color: '#0891b2', icon: 'megaphone',  status: 'configuring', description: 'Informa el menú del día y promociones',     connected: true,  version: 'v1', pendingChanges: 2 },
 ]
 
 const INITIAL_TRIGGERS = [
@@ -363,9 +368,21 @@ function PrincipalTab() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#212121', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                    <VersionSelector agentId={a.id} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                      {a.version && (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: '#EEF1FF', color: '#304FFE' }}>{a.version}</span>
+                      )}
+                      <VersionSelector agentId={a.id} />
+                    </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: 10, color: '#9E9E9E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.description}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <p style={{ margin: 0, fontSize: 10, color: '#9E9E9E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{a.description}</p>
+                    {(a.pendingChanges ?? 0) > 0 && (
+                      <span style={{ fontSize: 9.5, fontWeight: 700, color: '#B45309', background: '#FEF3C7', padding: '2px 6px', borderRadius: 100, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {a.pendingChanges} sin publicar
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

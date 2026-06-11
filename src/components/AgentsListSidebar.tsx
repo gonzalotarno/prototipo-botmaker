@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Workflow, Plus, Search } from 'lucide-react'
 import { color, font } from '../ds'
-import { ORCHESTRATORS } from '../data/agents'
+import { ORCHESTRATORS, AGENTS } from '../data/agents'
 
 // Flat sidebar shared by /agente (AgentDetail) and /proyecto (orchestrator pane
 // inside AgentsShell). Lists Agentes + Orquestadores so the user can navigate
@@ -15,6 +15,9 @@ const SIDEBAR_AGENTS = [
   'Soporte técnico 24/7',
   'Toma de pedidos',
 ]
+
+// Agents from data that are not linked to any orchestrator
+const UNLINKED_AGENTS = AGENTS.filter(a => a.orchestratorId === null)
 
 const W = 256
 
@@ -151,6 +154,59 @@ export default function AgentsListSidebar({
               </button>
             )
           })}
+
+          {/* Unlinked agents — not connected to any orchestrator */}
+          {UNLINKED_AGENTS.length > 0 && (
+            <>
+              <div style={{ padding: '8px 10px 4px', fontSize: 10.5, fontWeight: 700, color: color.grey400, textTransform: 'uppercase', letterSpacing: 0.6, fontFamily: font.family }}>
+                Sin orquestador
+              </div>
+              {UNLINKED_AGENTS.map(ag => {
+                const selected = ag.name === selectedAgentName
+                return (
+                  <button
+                    key={ag.id}
+                    onClick={() => handleAgent(ag.name)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 10px', borderRadius: 8, border: 'none',
+                      cursor: 'pointer', textAlign: 'left',
+                      background: selected ? color.primaryUltraLight : 'transparent',
+                      color: selected ? color.primary : color.grey600,
+                      fontSize: 12.5, fontWeight: selected ? 600 : 400,
+                      transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={e => { if (!selected) e.currentTarget.style.background = color.grey50 }}
+                    onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <span style={{
+                      width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                      background: selected ? 'white' : color.grey50,
+                      border: `1px solid ${selected ? color.primaryLight : color.borderSubtle}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <img
+                        src="/avatar-ai.svg"
+                        style={{
+                          width: 14, height: 14,
+                          filter: selected
+                            ? 'brightness(0) saturate(100%) invert(23%) sepia(93%) saturate(7484%) hue-rotate(234deg) brightness(101%) contrast(101%)'
+                            : 'brightness(0) saturate(100%) invert(72%) sepia(5%) saturate(400%) hue-rotate(178deg) brightness(95%) contrast(85%)',
+                          opacity: 0.7,
+                        }}
+                      />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ag.name}
+                    </span>
+                    {ag.status === 'configuring' && (
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }} />
+                    )}
+                  </button>
+                )
+              })}
+            </>
+          )}
         </div>
 
         {/* ── Orquestadores section ──────────────────────────────────── */}

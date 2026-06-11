@@ -18,7 +18,7 @@ type Tab = 'perfil' | 'estados' | 'subagentes' | 'bases' | 'mcps' | 'apps' | 'co
 
 const TABS: { id: Tab; label: string; icon: string; isMcp?: boolean }[] = [
   { id: 'perfil',           label: 'Profile',               icon: 'ai-agent'     },
-  { id: 'estados',          label: 'Workflows',             icon: 'view_kanban' },
+  { id: 'estados',          label: 'Embudos',               icon: 'view_kanban' },
   // { id: 'subagentes',    label: 'Logics', icon: 'route' },  // removed: live inside Workflows as advanced states
   { id: 'bases',            label: 'Knowledge',             icon: 'description'  },
   { id: 'mcps',             label: 'Integrations (MCP)',    icon: '',            isMcp: true },
@@ -111,9 +111,9 @@ function EstadosTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xBig }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
         <div>
-          <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700, color: color.grey900 }}>Workflows</h2>
+          <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700, color: color.grey900 }}>Embudos</h2>
           <p style={{ margin: 0, fontSize: 12, color: color.grey500, lineHeight: 1.5 }}>
-            Los workflows definen los estados del Kanban para este agente.
+            Los embudos definen las etapas del proceso para este agente.
           </p>
         </div>
         <button style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 100, border: 'none', background: color.primary, fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', flexShrink: 0 }}
@@ -1855,14 +1855,14 @@ function ConfiguracionTab({ agent, onChange }: { agent: typeof AGENT; onChange: 
       {/* ── Workflow ───────────────────────────────────────────────────── */}
       <div style={{ background: 'white', borderRadius: radius.lg, border: `1px solid ${color.borderDefault}`, padding: spacing.xBig, display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: color.grey900 }}>Workflow</h2>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: color.grey900 }}>Embudo</h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: color.grey500, lineHeight: 1.5 }}>
             Lo que el agente gestiona y cómo lo hace. Definí los objetos del negocio que va a manejar y describí cómo combina lógicas, MCPs, bases y código para cumplir el objetivo.
           </p>
         </div>
         <div style={{ height: 1, background: color.borderSubtle, margin: `${spacing.xxSm}px 0` }} />
-        <FloatingInput label="¿Que desear gestionar en el workflow?" value={workflowGoal} onChange={setWorkflowGoal} placeholder="Pedidos, Tickets, Leads..." />
-        <FloatingInput label="Describe como el agente utiliza las lógicas, MCPs, bases y códigos para cumplir el objetivo del workflow" value={workflowDesc} onChange={setWorkflowDesc} multiline maxLength={1500} rows={4} />
+        <FloatingInput label="¿Qué proceso va a gestionar el embudo?" value={workflowGoal} onChange={setWorkflowGoal} placeholder="Pedidos, Tickets, Leads..." />
+        <FloatingInput label="Describe cómo el agente utiliza las lógicas, MCPs, bases y códigos para cumplir el objetivo del embudo" value={workflowDesc} onChange={setWorkflowDesc} multiline maxLength={1500} rows={4} />
       </div>
 
       {/* ── Eliminar agente ─────────────────────────────────────────────── */}
@@ -3104,11 +3104,47 @@ function V2SortDropdown({ value, onChange, options }: {
   )
 }
 
+interface LogicRule {
+  id: string
+  name: string
+  trigger: string
+  active: boolean
+}
+
+const INITIAL_LOGICS: LogicRule[] = [
+  { id: 'l1', name: 'Escalado a humano', trigger: 'Cuando el usuario pide hablar con una persona o el agente no puede resolver el problema después de 3 intentos', active: true },
+  { id: 'l2', name: 'Cierre de conversación', trigger: 'Sin respuesta del usuario por más de 30 minutos', active: false },
+]
+
 function MCPListV2() {
   const [workspaceItems, setWorkspaceItems] = useState<WorkspaceResource[]>(WORKSPACE_RESOURCES)
   const [agentItems, setAgentItems] = useState<Resource[]>([])
   const [search, setSearch] = useState('')
   const [sortMode, setSortMode] = useState<V2SortMode>('recomendado')
+
+  const [logicItems, setLogicItems] = useState<LogicRule[]>(INITIAL_LOGICS)
+  const [logicModalOpen, setLogicModalOpen] = useState(false)
+  const [newLogicName, setNewLogicName] = useState('')
+  const [newLogicTrigger, setNewLogicTrigger] = useState('')
+
+  const toggleLogic = (id: string) =>
+    setLogicItems(p => p.map(l => l.id === id ? { ...l, active: !l.active } : l))
+
+  const removeLogic = (id: string) =>
+    setLogicItems(p => p.filter(l => l.id !== id))
+
+  const addLogic = () => {
+    if (!newLogicName.trim() || !newLogicTrigger.trim()) return
+    setLogicItems(p => [...p, {
+      id: `logic-${Date.now()}`,
+      name: newLogicName.trim(),
+      trigger: newLogicTrigger.trim(),
+      active: true,
+    }])
+    setNewLogicName('')
+    setNewLogicTrigger('')
+    setLogicModalOpen(false)
+  }
 
   // Modal "Agregar nuevo": primero pickear el kind, después rellenar el form.
   const [connectOpen, setConnectOpen] = useState(false)
@@ -3432,10 +3468,20 @@ function MCPListV2() {
               </div>
 
               {([
-                { kind: 'mcp',  label: 'MCP Externo',  desc: 'Pegá la URL de un server MCP custom para darle tools al agente.', icon: <img src="/mcp-logo.png" style={{ width: 22, height: 22, objectFit: 'contain' }} />, bg: '#F1F5F9' },
-                { kind: 'code', label: 'MCP Interno',  desc: 'Función JS o Python custom. Se crea en Code Actions de Botmaker.',  icon: <Icon name="code" size={22} color="#1F2937" />, bg: '#F1F5F9' },
-              ] as const).map(opt => (
-                <button key={opt.kind} onClick={() => setNewKind(opt.kind as ResourceKind)}
+                { kind: 'mcp',   label: 'MCP Externo',  desc: 'Pegá la URL de un server MCP custom para darle tools al agente.', icon: <img src="/mcp-logo.png" style={{ width: 22, height: 22, objectFit: 'contain' }} />, bg: '#F1F5F9' },
+                { kind: 'code',  label: 'MCP Interno',  desc: 'Función JS o Python custom. Se crea en Code Actions de Botmaker.',  icon: <Icon name="code" size={22} color="#1F2937" />, bg: '#F1F5F9' },
+                { kind: 'logic', label: 'Lógica',        desc: 'Regla global que se dispara automáticamente cuando se cumple una condición.', icon: <Icon name="bolt" size={22} color={color.primary} />, bg: color.primaryUltraLight },
+              ] as { kind: ResourceKind | 'logic'; label: string; desc: string; icon: React.ReactNode; bg: string }[]).map(opt => (
+                <button key={opt.kind}
+                  onClick={() => {
+                    if (opt.kind === 'logic') {
+                      setConnectOpen(false)
+                      setNewKind(null)
+                      setLogicModalOpen(true)
+                    } else {
+                      setNewKind(opt.kind as ResourceKind)
+                    }
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 14,
                     padding: '14px 16px', borderRadius: radius.md,
@@ -3645,6 +3691,188 @@ function MCPListV2() {
                 </div>
               </div>
             )}
+          </div>
+        </V2Modal>
+      )}
+
+      {/* ── Lógicas section ────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: color.grey900, letterSpacing: '-0.01em' }}>Lógicas</h2>
+            <p style={{ margin: 0, fontSize: 13.5, color: color.grey600, lineHeight: 1.6, maxWidth: 720 }}>
+              Reglas globales que se activan independientemente del estado del flujo. Se ejecutan cuando se cumple su condición de disparo.
+            </p>
+          </div>
+          <button onClick={() => setLogicModalOpen(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              padding: '9px 18px', borderRadius: 100, border: 'none',
+              background: color.primary, color: 'white',
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              boxShadow: '0 4px 12px -3px rgba(48,79,254,0.35)',
+              transition: 'transform 0.12s, box-shadow 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 20px -4px rgba(48,79,254,0.45)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px -3px rgba(48,79,254,0.35)' }}
+          ><Icon name="add" size={14} /> Nueva lógica</button>
+        </div>
+
+        {logicItems.length === 0 ? (
+          <div style={{
+            background: 'white', borderRadius: radius.lg,
+            border: `1px solid ${color.borderDefault}`,
+            padding: '36px 20px', textAlign: 'center',
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, background: color.grey100,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px',
+            }}>
+              <Icon name="bolt" size={24} color={color.grey400} />
+            </div>
+            <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: color.grey800 }}>Sin lógicas globales</p>
+            <p style={{ margin: 0, fontSize: 12, color: color.grey500 }}>Creá una regla para que el agente reaccione automáticamente a condiciones específicas.</p>
+          </div>
+        ) : (
+          <div style={{
+            background: 'white', borderRadius: radius.lg,
+            border: `1px solid ${color.borderDefault}`,
+            overflow: 'hidden',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+          }}>
+            {logicItems.map((logic, i) => (
+              <div key={logic.id}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 14,
+                  padding: '14px 18px',
+                  borderBottom: i < logicItems.length - 1 ? `1px solid ${color.borderSubtle}` : 'none',
+                }}
+              >
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: logic.active ? color.primaryUltraLight : color.grey100,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.15s',
+                }}>
+                  <Icon name="bolt" size={18} color={logic.active ? color.primary : color.grey400} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: color.grey900, lineHeight: 1.3, marginBottom: 3 }}>
+                    {logic.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: color.grey500, lineHeight: 1.5 }}>
+                    {logic.trigger}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, paddingTop: 2 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    color: logic.active ? color.primary : color.grey400,
+                    padding: '2px 8px', borderRadius: 100,
+                    background: logic.active ? color.primaryUltraLight : color.grey100,
+                    transition: 'all 0.15s',
+                  }}>
+                    {logic.active ? 'Activa' : 'Inactiva'}
+                  </span>
+                  <button
+                    onClick={() => toggleLogic(logic.id)}
+                    title={logic.active ? 'Desactivar' : 'Activar'}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: 'none', cursor: 'pointer',
+                      background: logic.active ? color.primaryUltraLight : color.grey100,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = logic.active ? color.primaryLight : color.grey200)}
+                    onMouseLeave={e => (e.currentTarget.style.background = logic.active ? color.primaryUltraLight : color.grey100)}
+                  >
+                    <Icon name={logic.active ? 'pause' : 'play_arrow'} size={16} color={logic.active ? color.primary : color.grey500} />
+                  </button>
+                  <button
+                    onClick={() => removeLogic(logic.id)}
+                    title="Eliminar"
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: 'none', cursor: 'pointer',
+                      background: 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FEE2E2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Icon name="delete" size={16} color={color.grey400} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal nueva lógica */}
+      {logicModalOpen && (
+        <V2Modal
+          icon={<Icon name="bolt" size={20} color="white" />}
+          iconBg={color.primary}
+          title="Nueva lógica global"
+          subtitle="Se ejecuta cuando se cumple la condición, sin importar el estado del flujo"
+          onClose={() => { setLogicModalOpen(false); setNewLogicName(''); setNewLogicTrigger('') }}
+          footer={
+            <>
+              <button onClick={() => { setLogicModalOpen(false); setNewLogicName(''); setNewLogicTrigger('') }}
+                style={{ padding: '8px 16px', borderRadius: 100, border: `1px solid ${color.borderDefault}`, background: 'white', color: color.grey700, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >Cancelar</button>
+              <button onClick={addLogic} disabled={!newLogicName.trim() || !newLogicTrigger.trim()}
+                style={{
+                  padding: '8px 18px', borderRadius: 100, border: 'none',
+                  background: (newLogicName.trim() && newLogicTrigger.trim()) ? color.primary : color.grey200,
+                  color:      (newLogicName.trim() && newLogicTrigger.trim()) ? 'white' : color.grey500,
+                  fontSize: 13, fontWeight: 700,
+                  cursor: (newLogicName.trim() && newLogicTrigger.trim()) ? 'pointer' : 'default',
+                }}
+              >Crear lógica</button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: color.grey700, letterSpacing: '0.02em' }}>
+                Nombre de la lógica
+              </label>
+              <input
+                autoFocus
+                value={newLogicName}
+                onChange={e => setNewLogicName(e.target.value)}
+                placeholder="Ej: Escalado a humano"
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                  borderRadius: radius.md, border: `1px solid ${color.borderDefault}`,
+                  fontSize: 13, color: color.grey900, outline: 'none', fontFamily: font.family,
+                  background: 'white', transition: 'border-color 0.12s',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = color.primary)}
+                onBlur={e => (e.currentTarget.style.borderColor = color.borderDefault)}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: color.grey700, letterSpacing: '0.02em' }}>
+                ¿Cuándo se activa?
+              </label>
+              <textarea
+                value={newLogicTrigger}
+                onChange={e => setNewLogicTrigger(e.target.value)}
+                placeholder="Ej: Cuando el usuario menciona que quiere cancelar su suscripción"
+                rows={3}
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                  borderRadius: radius.md, border: `1px solid ${color.borderDefault}`,
+                  fontSize: 13, color: color.grey900, outline: 'none', fontFamily: font.family,
+                  background: 'white', resize: 'vertical', lineHeight: 1.5, transition: 'border-color 0.12s',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = color.primary)}
+                onBlur={e => (e.currentTarget.style.borderColor = color.borderDefault)}
+              />
+            </div>
           </div>
         </V2Modal>
       )}
@@ -6309,7 +6537,7 @@ function AddDisparadorDrawer({ onAdd, onClose }: { onAdd: (d: Disparador) => voi
                 <Icon name="account_tree" size={18} color={color.primary} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: color.grey900 }}>Workflows</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: color.grey900 }}>Embudos</div>
                 <div style={{ fontSize: 11.5, color: color.grey500 }}>{filteredWorkflow.length} cambios de estado</div>
               </div>
               <Icon name="expand_more" size={16} color={color.grey500} style={{ flexShrink: 0, transform: expandedSection === 'workflow' ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s' }} />
@@ -7642,7 +7870,7 @@ function TabPresenceInline({ users }: { users: OnlineUser[] }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab?: string; variant?: 'v1' | 'v2' }) {
+export default function AgentDetail({ initialTab, variant = 'v1', showBuilder = false }: { initialTab?: string; variant?: 'v1' | 'v2'; showBuilder?: boolean }) {
   const [activeTab, setActiveTab] = useState<Tab>((initialTab as Tab) || 'mcps')
   const [activeSubAgent, setActiveSubAgent] = useState<SubAgent | null>(null)
   const [activeDisparador, setActiveDisparador] = useState<Disparador | null>(null)
@@ -7790,7 +8018,7 @@ export default function AgentDetail({ initialTab, variant = 'v1' }: { initialTab
         }}>
           {activeTab === 'estados' ? (
             variant === 'v2'
-              ? <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} initialVariant="unified" onToggleSidebar={() => setShowSidebar(s => !s)} agentName={agentConfig.name} />
+              ? <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} initialVariant={showBuilder ? undefined : 'unified'} onToggleSidebar={() => setShowSidebar(s => !s)} agentName={agentConfig.name} />
               : <WorkflowCanvas onOpenKanban={() => { window.location.href = '/kanban' }} onToggleSidebar={() => setShowSidebar(s => !s)} agentName={agentConfig.name} />
           ) : (activeTab === 'mcps' || activeTab === 'apps' || activeTab === 'codigo' || activeTab === 'bases' || activeTab === 'subagentes' || activeTab === 'automatizaciones') ? (
             <>
