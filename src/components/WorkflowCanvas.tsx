@@ -1271,15 +1271,17 @@ function EditStateDrawer({
 
       {/* ══════ MODE D: creación guiada / edición completa ═════ */}
       {drawerMode === 'mix' && (() => {
-        // Descripción vive en el header — los steps son: assign, data?, advanced?
+        // Paso 1: Identificar (nombre + descripción) — OBLIGATORIO
+        // Pasos 2+: assign, data?, advanced?
         // Humano: solo assign (sin datos ni instrucciones)
         const isHumanMode = convMode === 'human'
         const hasAdvanced = !isHumanMode
         const sectionKeys = isHumanMode
-          ? ['assign']
-          : ['assign', 'data', 'advanced']
+          ? ['identify', 'assign']
+          : ['identify', 'assign', 'data', 'advanced']
         const totalSteps = sectionKeys.length
         const descMissing = !description.trim()
+        const nameMissing = !name.trim()
         // advance: avanza activo + actualiza máximo alcanzado
         const advance = () => {
           if (activeStep >= totalSteps) { onClose(); return }
@@ -1305,8 +1307,8 @@ function EditStateDrawer({
                   if (!isCreating || !isActive(secIdx)) return null
                   const isSecLast = secIdx + 1 >= totalSteps
                   const isSecOptional = secKey === 'data' || secKey === 'advanced'
-                  // El último paso bloquea el Listo si la descripción está vacía
-                  const isBlocked = isSecLast && descMissing
+                  // El último paso bloquea el Listo si faltan campos obligatorios
+                  const isBlocked = isSecLast && (nameMissing || descMissing)
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14 }}>
                       {/* Atrás — visible en pasos 2+ */}
@@ -1330,6 +1332,7 @@ function EditStateDrawer({
                 // Collapsed section header — solo visible en modo creación para pasos no activos
                 // Resumen compacto del contenido de cada paso (para el estado colapsado)
                 const summaryFor = (key: string): string | null => {
+                  if (key === 'identify') return name.trim() || null
                   if (key === 'desc')     return description.trim() || null
                   if (key === 'assign') {
                     if (convMode === 'ia')    return assignee ? `Agente IA · revisa ${assignee}` : 'Agente IA'
@@ -1386,9 +1389,10 @@ function EditStateDrawer({
                 }
 
                 const sections = [
-                  { key: 'assign',   idx: 0, label: '¿Quién responde en este paso?',        tag: undefined,   always: true },
-                  { key: 'data',     idx: 1, label: '¿Qué datos se guardan en este estado?', tag: 'Opcional',  always: !isHumanMode },
-                  { key: 'advanced', idx: 2, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
+                  { key: 'identify', idx: 0, label: 'Identificar el estado',                 tag: undefined,   always: true },
+                  { key: 'assign',   idx: 1, label: '¿Quién responde en este paso?',        tag: undefined,   always: true },
+                  { key: 'data',     idx: 2, label: '¿Qué datos se guardan en este estado?', tag: 'Opcional',  always: !isHumanMode },
+                  { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
 
                 return (
@@ -1407,6 +1411,33 @@ function EditStateDrawer({
                       return (
                         <div key={sec.key} style={{ ...secStyle(sec.key as any), animation: (isCreating && active && sec.idx > 0) ? 'wfFadeUp 0.22s ease-out' : undefined }} onClick={() => setFocusedSection(sec.key as any)}>
                           {SectionHeader(sec.key as any, sec.idx + 1, sec.label, sec.tag, true)}
+                          {sec.key === 'identify' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 0 14px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>Nombre del estado</label>
+                                <input
+                                  value={name}
+                                  onChange={e => setName(e.target.value)}
+                                  placeholder="Ej: Calificar leads"
+                                  autoFocus
+                                  style={{
+                                    width: '100%', boxSizing: 'border-box',
+                                    padding: '12px 14px', borderRadius: 10,
+                                    border: '1.5px solid #E2E8F0', outline: 'none',
+                                    fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                                    color: '#0F172A', background: '#F8FAFC',
+                                    transition: 'border-color 0.15s, background 0.15s',
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
+                                {DescriptionField}
+                              </div>
+                            </div>
+                          )}
                           {sec.key === 'desc'     && DescriptionField}
                           {sec.key === 'assign'   && AssignCards}
                           {sec.key === 'data'     && <RequiredDataSection fields={requiredData} onChange={setRequiredData} hideHeader />}
@@ -1434,7 +1465,7 @@ function EditStateDrawer({
           {!isCreating && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
               <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 100, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
-              <button onClick={() => { if (!descMissing) onClose() }} disabled={descMissing} title={descMissing ? 'Completá la descripción del estado para continuar' : ''} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: descMissing ? '#E2E8F0' : PRIMARY, color: descMissing ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: descMissing ? 'default' : 'pointer' }}>Listo ✓</button>
+              <button onClick={() => { if (!nameMissing && !descMissing) onClose() }} disabled={nameMissing || descMissing} title={nameMissing || descMissing ? 'Completá el nombre y descripción del estado para continuar' : ''} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: (nameMissing || descMissing) ? '#E2E8F0' : PRIMARY, color: (nameMissing || descMissing) ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: (nameMissing || descMissing) ? 'default' : 'pointer' }}>Listo ✓</button>
             </div>
           )}
         </>
