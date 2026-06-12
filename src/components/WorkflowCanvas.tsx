@@ -610,7 +610,7 @@ function EditStateDrawer({
   const TOTAL_STEPS = 4
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(true)
-  const [focusedSection, setFocusedSection] = useState<'desc' | 'assign' | 'data' | 'advanced'>('desc')
+  const [focusedSection, setFocusedSection] = useState<'identify' | 'desc' | 'assign' | 'data' | 'advanced'>('identify')
   // Modo creación: activeStep = paso expandido actualmente, maxStep = hasta dónde llegó (para los ✓)
   const [activeStep, setActiveStep] = useState(isCreating ? 1 : 99)
   const [maxStep, setMaxStep] = useState(isCreating ? 1 : 99)
@@ -797,7 +797,19 @@ function EditStateDrawer({
     </div>
   )
 
-  const HELP: Record<'desc' | 'assign' | 'data' | 'advanced', React.ReactNode> = {
+  const HELP: Record<'identify' | 'desc' | 'assign' | 'data' | 'advanced', React.ReactNode> = {
+    identify: (
+      <>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📌 Identificar el estado</div>
+        <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 12px' }}>
+          Dale un nombre claro a este paso y explicá en pocas palabras qué sucede acá. Así tu equipo entiende el flujo de un vistazo.
+        </p>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Ejemplo</div>
+        <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
+          Nombre: "Calificar leads"<br />Propósito: "Detectar intención de compra"
+        </div>
+      </>
+    ),
     desc: (
       <>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>💡 ¿Para qué sirve esto?</div>
@@ -849,7 +861,7 @@ function EditStateDrawer({
     ),
   }
 
-  const secStyle = (sec: 'desc' | 'assign' | 'data' | 'advanced') => ({
+  const secStyle = (sec: 'identify' | 'desc' | 'assign' | 'data' | 'advanced') => ({
     padding: '22px 24px',
     borderBottom: '1px solid #F1F5F9',
     cursor: 'pointer',
@@ -858,7 +870,7 @@ function EditStateDrawer({
     transition: 'border-color 0.15s, background 0.15s',
   } as React.CSSProperties)
 
-  const SectionHeader = (sec: 'desc' | 'assign' | 'data' | 'advanced', num: number, label: string, tag?: string, alwaysActive?: boolean) => {
+  const SectionHeader = (sec: 'identify' | 'desc' | 'assign' | 'data' | 'advanced', num: number, label: string, tag?: string, alwaysActive?: boolean) => {
     const on = focusedSection === sec || alwaysActive
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>
