@@ -1197,12 +1197,13 @@ function EditStateDrawer({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
             {step === 1 ? (
               <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 100, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
             ) : (
               <button onClick={() => setStep(s => s - 1)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 100, background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#64748B', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Anterior</button>
             )}
+            <div style={{ marginLeft: 'auto' }} />
             {step < TOTAL_STEPS ? (
               <button onClick={() => setStep(s => s + 1)} style={{ padding: '7px 20px', borderRadius: 100, background: PRIMARY, border: 'none', color: 'white', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Siguiente</button>
             ) : (
@@ -1300,21 +1301,19 @@ function EditStateDrawer({
                   // El último paso bloquea el Listo si faltan campos obligatorios
                   const isBlocked = isSecLast && (nameMissing || descMissing)
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14 }}>
                       {/* Atrás — visible en pasos 2+ */}
                       {secIdx > 0 ? (
                         <button onClick={e => { e.stopPropagation(); setActiveStep(s => s - 1) }} style={{ padding: '8px 16px', borderRadius: 100, background: 'transparent', border: '1px solid #E2E8F0', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Atrás</button>
-                      ) : <span />}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {isSecOptional && (
-                          <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 100, background: 'transparent', border: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
-                        )}
-                        <button
-                          onClick={e => { e.stopPropagation(); if (!isBlocked) advance() }}
-                          disabled={isBlocked}
-                          style={{ padding: '8px 20px', borderRadius: 100, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', transition: 'background 0.15s' }}
-                        >{isSecLast ? 'Listo ✓' : 'Siguiente'}</button>
-                      </div>
+                      ) : null}
+                      {isSecOptional && (
+                        <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 100, background: 'transparent', border: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
+                      )}
+                      <button
+                        onClick={e => { e.stopPropagation(); if (!isBlocked) advance() }}
+                        disabled={isBlocked}
+                        style={{ padding: '8px 20px', borderRadius: 100, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', transition: 'background 0.15s', marginLeft: 'auto' }}
+                      >{isSecLast ? 'Listo ✓' : 'Siguiente'}</button>
                     </div>
                   )
                 }
