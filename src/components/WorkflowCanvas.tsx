@@ -800,7 +800,7 @@ function EditStateDrawer({
   const HELP: Record<'identify' | 'desc' | 'assign' | 'data' | 'advanced', React.ReactNode> = {
     identify: (
       <>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📌 Identificar el estado</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📌 Identificar el paso</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 12px' }}>
           Dale un nombre claro a este paso y explicá en pocas palabras qué sucede acá. Así tu equipo entiende el flujo de un vistazo.
         </p>
@@ -919,7 +919,7 @@ function EditStateDrawer({
           {/* Color picker — solo en otros modos (en mix está en Paso 1) */}
           {drawerMode !== 'mix' && (
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
+              <button onClick={() => setColorOpen(o => !o)} title="Color del paso" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
               {colorOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
                   {COLORS.map(c => (
@@ -950,7 +950,7 @@ function EditStateDrawer({
               )}
             </div>
           ) : (
-            <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#64748B', flex: 1 }}>{name.trim() ? name : 'Nuevo estado'}</span>
+            <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#64748B', flex: 1 }}>{name.trim() ? name : 'Nuevo paso'}</span>
           )}
 
           {/* Acciones: Ayuda + cerrar */}
@@ -1139,7 +1139,7 @@ function EditStateDrawer({
               {step === 1 && (
                 <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Identificar el estado</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Identificar el paso</span>
                     <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Contale a tu equipo qué sucede en este paso del flujo. El nombre y propósito son obligatorios.</span>
                   </div>
                   {/* Nombre */}
@@ -1163,7 +1163,7 @@ function EditStateDrawer({
                   </div>
                   {/* ¿Para qué sirve? */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
+                    <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este paso?</label>
                     {DescriptionField}
                   </div>
                 </div>
@@ -1221,7 +1221,7 @@ function EditStateDrawer({
 
               {/* Descripción */}
               <div style={secStyle('desc')} onClick={() => setFocusedSection('desc')}>
-                {SectionHeader('desc', 1, '¿Para qué sirve este estado?')}
+                {SectionHeader('desc', 1, '¿Para qué sirve este paso?')}
                 {DescriptionField}
               </div>
 
@@ -1379,9 +1379,9 @@ function EditStateDrawer({
                 }
 
                 const sections = [
-                  { key: 'identify', idx: 0, label: 'Identificar el estado',                 tag: undefined,   always: true },
+                  { key: 'identify', idx: 0, label: 'Identificar el paso',                 tag: undefined,   always: true },
                   { key: 'assign',   idx: 1, label: '¿Quién responde en este paso?',        tag: undefined,   always: true },
-                  { key: 'data',     idx: 2, label: '¿Qué datos se guardan en este estado?', tag: 'Opcional',  always: !isHumanMode },
+                  { key: 'data',     idx: 2, label: '¿Qué datos se guardan en este paso?', tag: 'Opcional',  always: !isHumanMode },
                   { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
 
@@ -1405,43 +1405,44 @@ function EditStateDrawer({
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 0 14px' }}>
                               {/* Nombre + Color picker */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B', flex: 1 }}>Nombre del estado</label>
-                                  {/* Color picker */}
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B', marginBottom: 2 }}>Nombre del paso</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  {/* Color picker — a la izquierda */}
                                   <div style={{ position: 'relative', flexShrink: 0 }}>
-                                    <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
+                                    <button onClick={() => setColorOpen(o => !o)} title="Color del paso" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
                                       onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)' }}
                                       onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
                                     />
                                     {colorOpen && (
-                                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
+                                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
                                         {COLORS.map(c => (
                                           <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
                                         ))}
                                       </div>
                                     )}
                                   </div>
+                                  {/* Input */}
+                                  <input
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="Ej: Calificar leads"
+                                    autoFocus
+                                    style={{
+                                      flex: 1, boxSizing: 'border-box',
+                                      padding: '12px 14px', borderRadius: 10,
+                                      border: '1.5px solid #E2E8F0', outline: 'none',
+                                      fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                                      color: '#0F172A', background: '#F8FAFC',
+                                      transition: 'border-color 0.15s, background 0.15s',
+                                    }}
+                                    onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                                  />
                                 </div>
-                                <input
-                                  value={name}
-                                  onChange={e => setName(e.target.value)}
-                                  placeholder="Ej: Calificar leads"
-                                  autoFocus
-                                  style={{
-                                    width: '100%', boxSizing: 'border-box',
-                                    padding: '12px 14px', borderRadius: 10,
-                                    border: '1.5px solid #E2E8F0', outline: 'none',
-                                    fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
-                                    color: '#0F172A', background: '#F8FAFC',
-                                    transition: 'border-color 0.15s, background 0.15s',
-                                  }}
-                                  onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
-                                  onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
-                                />
                               </div>
                               {/* ¿Para qué sirve? */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este paso?</label>
                                 {DescriptionField}
                               </div>
                             </div>
@@ -1528,7 +1529,7 @@ function StateResourcesPanel({
 
       {/* ── Flow section ── */}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Flujo del estado</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Flujo del paso</div>
         <button
           onClick={onOpenFlow}
           style={{
@@ -2575,7 +2576,7 @@ function WorkflowCanvasInner({
     const newNode: AnyNode = {
       id: newId, type: 'stateNode',
       position: { x: (src.position.x ?? 0) + 400, y: (src.position.y ?? 0) },
-      data: { name: 'New state', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any,
+      data: { name: 'New step', description: '', color: COLORS[Math.floor(Math.random() * COLORS.length)], requiresHuman: false, requiredData: [], kind: 'simple', onEdit: () => {}, onAddNext: () => {} } as any,
     }
     setNodes(ns => [...ns, newNode])
     setEdges(es => [...es, { id: `e-${fromId}-${newId}`, source: fromId, target: newId, ...edgeDefaults }])
