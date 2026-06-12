@@ -1316,9 +1316,13 @@ function EditStateDrawer({
                         <button
                           onClick={e => {
                             e.stopPropagation()
-                            if (sec.key === 'identify' && (nameMissing || descMissing)) {
-                              setIdentifyErrors({ name: nameMissing, description: descMissing })
-                              return
+                            if (sec.key === 'identify') {
+                              const nameEmpty = !name.trim()
+                              const descEmpty = !description.trim()
+                              if (nameEmpty || descEmpty) {
+                                setIdentifyErrors({ name: nameEmpty, description: descEmpty })
+                                return
+                              }
                             }
                             if (!isBlocked) advance()
                           }}
