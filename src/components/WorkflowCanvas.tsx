@@ -1420,9 +1420,9 @@ function EditStateDrawer({
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 0 14px' }}>
                               {/* Nombre + Color picker */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B', marginBottom: 2 }}>Nombre del paso</label>
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.name ? '#DC2626' : '#64748B', marginBottom: 2 }}>Nombre del paso</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  {/* Color picker — a la izquierda */}
+                                  {/* Color picker */}
                                   <div style={{ position: 'relative', flexShrink: 0 }}>
                                     <button onClick={() => setColorOpen(o => !o)} title="Color del paso" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
                                       onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)' }}
@@ -1439,26 +1439,47 @@ function EditStateDrawer({
                                   {/* Input */}
                                   <input
                                     value={name}
-                                    onChange={e => setName(e.target.value)}
+                                    onChange={e => { setName(e.target.value); setIdentifyErrors(e => ({ ...e, name: false })) }}
                                     placeholder="Ej: Calificar leads"
                                     autoFocus
                                     style={{
                                       flex: 1, boxSizing: 'border-box',
                                       padding: '12px 14px', borderRadius: 10,
-                                      border: '1.5px solid #E2E8F0', outline: 'none',
+                                      border: `2px solid ${identifyErrors.name ? '#DC2626' : '#E2E8F0'}`, outline: 'none',
                                       fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
-                                      color: '#0F172A', background: '#F8FAFC',
+                                      color: '#0F172A', background: identifyErrors.name ? '#FEF2F2' : '#F8FAFC',
                                       transition: 'border-color 0.15s, background 0.15s',
                                     }}
                                     onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = identifyErrors.name ? '#DC2626' : '#E2E8F0'; e.currentTarget.style.background = identifyErrors.name ? '#FEF2F2' : '#F8FAFC' }}
                                   />
                                 </div>
+                                {identifyErrors.name && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>El nombre es obligatorio</span>}
                               </div>
                               {/* ¿Para qué sirve? */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este paso?</label>
-                                {DescriptionField}
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.description ? '#DC2626' : '#64748B' }}>¿Para qué sirve este paso?</label>
+                                <textarea
+                                  value={description}
+                                  onChange={e => { handleDescChange(e.target.value); setIdentifyErrors(e => ({ ...e, description: false })) }}
+                                  maxLength={MAX_CHARS}
+                                  rows={3}
+                                  placeholder='Ej: Califica leads de Meta Ads y detecta intención de compra'
+                                  style={{
+                                    width: '100%', boxSizing: 'border-box', resize: 'none',
+                                    padding: '12px 14px', borderRadius: 10,
+                                    border: `2px solid ${identifyErrors.description ? '#DC2626' : '#E2E8F0'}`, outline: 'none',
+                                    fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                                    color: '#0F172A', background: identifyErrors.description ? '#FEF2F2' : '#F8FAFC',
+                                    transition: 'border-color 0.15s, background 0.15s',
+                                  }}
+                                  onFocus={e => { setFocusedSection('identify'); e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = identifyErrors.description ? '#DC2626' : '#E2E8F0'; e.currentTarget.style.background = identifyErrors.description ? '#FEF2F2' : '#F8FAFC' }}
+                                />
+                                {identifyErrors.description && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>La descripción es obligatoria</span>}
+                                {!identifyErrors.description && description.length >= MAX_CHARS * 0.85 && (
+                                  <div style={{ fontSize: 10.5, color: description.length >= MAX_CHARS ? '#DC2626' : '#F59E0B', textAlign: 'right' }}>{description.length}/{MAX_CHARS}</div>
+                                )}
                               </div>
                             </div>
                           )}
