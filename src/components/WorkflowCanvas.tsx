@@ -950,7 +950,7 @@ function EditStateDrawer({
               )}
             </div>
           ) : (
-            <div />
+            <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#64748B', flex: 1 }}>{name.trim() ? name : 'Nuevo estado'}</span>
           )}
 
           {/* Acciones: Ayuda + cerrar */}
@@ -1402,40 +1402,44 @@ function EditStateDrawer({
                         <div key={sec.key} style={{ ...secStyle(sec.key as any), animation: (isCreating && active && sec.idx > 0) ? 'wfFadeUp 0.22s ease-out' : undefined }} onClick={() => setFocusedSection(sec.key as any)}>
                           {SectionHeader(sec.key as any, sec.idx + 1, sec.label, sec.tag, true)}
                           {sec.key === 'identify' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 0 14px' }}>
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                {/* Color picker */}
-                                <div style={{ position: 'relative', flexShrink: 0, paddingTop: 3 }}>
-                                  <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
-                                  {colorOpen && (
-                                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
-                                      {COLORS.map(c => (
-                                        <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
-                                      ))}
-                                    </div>
-                                  )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 0 14px' }}>
+                              {/* Nombre + Color picker */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B', flex: 1 }}>Nombre del estado</label>
+                                  {/* Color picker */}
+                                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
+                                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                                    />
+                                    {colorOpen && (
+                                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
+                                        {COLORS.map(c => (
+                                          <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                {/* Nombre */}
-                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>Nombre del estado</label>
-                                  <input
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    placeholder="Ej: Calificar leads"
-                                    autoFocus
-                                    style={{
-                                      width: '100%', boxSizing: 'border-box',
-                                      padding: '12px 14px', borderRadius: 10,
-                                      border: '1.5px solid #E2E8F0', outline: 'none',
-                                      fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
-                                      color: '#0F172A', background: '#F8FAFC',
-                                      transition: 'border-color 0.15s, background 0.15s',
-                                    }}
-                                    onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
-                                    onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
-                                  />
-                                </div>
+                                <input
+                                  value={name}
+                                  onChange={e => setName(e.target.value)}
+                                  placeholder="Ej: Calificar leads"
+                                  autoFocus
+                                  style={{
+                                    width: '100%', boxSizing: 'border-box',
+                                    padding: '12px 14px', borderRadius: 10,
+                                    border: '1.5px solid #E2E8F0', outline: 'none',
+                                    fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                                    color: '#0F172A', background: '#F8FAFC',
+                                    transition: 'border-color 0.15s, background 0.15s',
+                                  }}
+                                  onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                                  onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                                />
                               </div>
+                              {/* ¿Para qué sirve? */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
                                 {DescriptionField}
