@@ -1316,7 +1316,7 @@ function EditStateDrawer({
                         <button
                           onClick={e => {
                             e.stopPropagation()
-                            if (sec.key === 'identify') {
+                            if (secKey === 'identify') {
                               const nameEmpty = !name.trim()
                               const descEmpty = !description.trim()
                               if (nameEmpty || descEmpty) {
