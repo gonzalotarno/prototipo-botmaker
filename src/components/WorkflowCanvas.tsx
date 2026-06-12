@@ -510,7 +510,7 @@ function MiniFlowPreview() {
 
 function ConditionEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd }: EdgeProps<Edge<EdgeData>>) {
   const [edgePath] = getSmoothStepPath({
-    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 8,
+    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 32,
   })
   return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: '#94A3B8', strokeWidth: 1.5 }} />
 }
@@ -795,7 +795,7 @@ function EditStateDrawer({
           Dale un nombre claro a este paso y explicá en pocas palabras qué sucede acá. Así tu equipo entiende el flujo de un vistazo.
         </p>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Ejemplo</div>
-        <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
+        <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 32, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
           Nombre: "Calificar leads"<br />Propósito: "Detectar intención de compra"
         </div>
       </>
@@ -807,7 +807,7 @@ function EditStateDrawer({
           Es un título corto del paso —máx. 15 palabras— para que el equipo pueda entender el funnel de un vistazo. <strong style={{ color: '#475569' }}>No son instrucciones</strong> para el agente (eso va en la sección 4).
         </p>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Ejemplo</div>
-        <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
+        <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 32, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
           "Califica leads de Meta Ads y detecta intención de compra"
         </div>
       </>
@@ -1189,21 +1189,21 @@ function EditStateDrawer({
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
             {step === 1 ? (
-              <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
+              <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 32, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
             ) : (
               <div />
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {step > 1 && (
-                <button onClick={() => setStep(s => s - 1)} style={{ padding: '8px 20px', borderRadius: 8, background: 'white', border: '1px solid #E2E8F0', color: '#64748B', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' }}
+                <button onClick={() => setStep(s => s - 1)} style={{ padding: '8px 20px', borderRadius: 32, background: 'white', border: '1px solid #E2E8F0', color: '#64748B', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#64748B'; }}
                 >Anterior</button>
               )}
               {step < TOTAL_STEPS ? (
-                <button onClick={() => setStep(s => s + 1)} style={{ padding: '8px 20px', borderRadius: 8, background: PRIMARY, border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700 }}>Siguiente</button>
+                <button onClick={() => setStep(s => s + 1)} style={{ padding: '8px 20px', borderRadius: 32, background: PRIMARY, border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700 }}>Siguiente</button>
               ) : (
-                <button onClick={onClose} style={{ padding: '8px 20px', borderRadius: 8, background: PRIMARY, border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700 }}>Listo ✓</button>
+                <button onClick={onClose} style={{ padding: '8px 20px', borderRadius: 32, background: PRIMARY, border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700 }}>Listo ✓</button>
               )}
             </div>
           </div>
@@ -1302,20 +1302,27 @@ function EditStateDrawer({
                       <div />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {isSecOptional && (
-                          <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 8, background: 'transparent', border: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
+                          <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 32, background: 'transparent', border: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
                         )}
                         {/* Atrás — visible en pasos 2+ */}
                         {secIdx > 0 && (
-                          <button onClick={e => { e.stopPropagation(); setActiveStep(s => s - 1) }} style={{ padding: '8px 20px', borderRadius: 8, background: 'white', border: '1px solid #E2E8F0', color: '#64748B', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' }}
+                          <button onClick={e => { e.stopPropagation(); setActiveStep(s => s - 1) }} style={{ padding: '8px 20px', borderRadius: 32, background: 'white', border: '1px solid #E2E8F0', color: '#64748B', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' }}
                             onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY; }}
                             onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#64748B'; }}
                           >Atrás</button>
                         )}
                         {/* Siguiente/Listo */}
                         <button
-                          onClick={e => { e.stopPropagation(); if (!isBlocked) advance() }}
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (sec.key === 'identify' && (nameMissing || descMissing)) {
+                              alert('Por favor completa el nombre y descripción del paso para continuar')
+                              return
+                            }
+                            if (!isBlocked) advance()
+                          }}
                           disabled={isBlocked}
-                          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, transition: 'background 0.15s' }}
+                          style={{ padding: '8px 20px', borderRadius: 32, border: 'none', cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, transition: 'background 0.15s' }}
                         >{isSecLast ? 'Listo ✓' : 'Siguiente'}</button>
                       </div>
                     </div>
@@ -1588,7 +1595,7 @@ function StateResourcesPanel({
                   onMouseLeave={e => { e.currentTarget.style.background = active ? '#EFF0FF' : 'white' }}
                 >
                   <span style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                    width: 28, height: 28, borderRadius: 32, flexShrink: 0,
                     background: active ? '#E0E7FF' : '#F1F5F9',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'background 120ms',
@@ -1734,7 +1741,7 @@ function VariablePicker({
           <button
             onClick={() => onSelect(query.trim().toLowerCase().replace(/\s+/g, '_'))}
             style={{
-              padding: '7px 14px', borderRadius: 8,
+              padding: '7px 14px', borderRadius: 32,
               background: 'rgba(48,79,254,0.08)', border: '1.5px solid rgba(48,79,254,0.20)',
               color: PRIMARY, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
               cursor: 'pointer',
@@ -1769,7 +1776,7 @@ function FlowItemCard({
       background: '#EFF0FF', border: '1px solid #C7D2FE',
     }}>
       <span style={{
-        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+        width: 28, height: 28, borderRadius: 32, flexShrink: 0,
         background: PRIMARY, display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <GitBranch size={13} strokeWidth={2} color="white" />
@@ -1925,7 +1932,7 @@ function RequiredDataCard({
             onClick={() => { setVarMenuOpen(o => !o); setVarQuery('') }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '4px 10px', borderRadius: 8,
+              padding: '4px 10px', borderRadius: 32,
               background: varMenuOpen ? '#F0F4FF' : '#F1F5F9',
               border: `1.5px solid ${varMenuOpen ? 'rgba(48,79,254,0.25)' : '#E2E8F0'}`,
               color: varMenuOpen ? PRIMARY : '#0F172A',
@@ -1999,7 +2006,7 @@ const menuItem: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', boxSizing: 'border-box',
-  padding: 8, borderRadius: 8,
+  padding: 8, borderRadius: 32,
   background: '#FFFFFF', border: '1px solid #E2E8F0',
   fontFamily: 'inherit', fontSize: 14, color: '#0F172A',
   outline: 'none',
@@ -2735,7 +2742,7 @@ function WorkflowCanvasInner({
       <div style={{
         position: 'absolute', left: 16, bottom: 60, zIndex: 10,
         padding: '5px 10px', background: '#FFFFFF',
-        border: '1px solid #E2E8F0', borderRadius: 8,
+        border: '1px solid #E2E8F0', borderRadius: 32,
         fontSize: 11.5, color: '#64748B', fontFamily: 'Roboto, sans-serif',
         boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
         pointerEvents: 'none',
@@ -2886,7 +2893,7 @@ function AdvancedEditorOverlay({
               onClick={onToggleSidebar}
               title="Hide/show left panel"
               style={{
-                width: 32, height: 32, borderRadius: 8,
+                width: 32, height: 32, borderRadius: 32,
                 background: 'transparent', border: '1px solid #E2E8F0',
                 color: '#94A3B8', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -2900,7 +2907,7 @@ function AdvancedEditorOverlay({
           <button
             onClick={onClose}
             style={{
-              width: 32, height: 32, borderRadius: 8,
+              width: 32, height: 32, borderRadius: 32,
               background: 'transparent', border: '1px solid #E2E8F0',
               color: '#475569', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -3100,7 +3107,7 @@ function AdvancedEditorOverlay({
                     <input
                       value={name}
                       onChange={e => setName(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#0F172A', outline: 'none', background: '#FAFBFD' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 32, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 600, color: '#0F172A', outline: 'none', background: '#FAFBFD' }}
                     />
                   </div>
 
@@ -3112,7 +3119,7 @@ function AdvancedEditorOverlay({
                       onChange={e => setDescription(e.target.value)}
                       placeholder="What should the agent do in this state?"
                       rows={3}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#475569', outline: 'none', resize: 'vertical', background: '#FAFBFD', lineHeight: 1.5 }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 32, border: '1px solid #E2E8F0', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#475569', outline: 'none', resize: 'vertical', background: '#FAFBFD', lineHeight: 1.5 }}
                     />
                   </div>
 
@@ -3203,7 +3210,7 @@ function SettingsDrawer({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, fontFamily: 'Roboto, sans-serif', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>State settings</h3>
           <button onClick={onClose} style={{
-            width: 28, height: 28, borderRadius: 8,
+            width: 28, height: 28, borderRadius: 32,
             background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}>✕</button>
@@ -3334,7 +3341,7 @@ function InstructionAdvNode({ id, data }: NodeProps<Node<InstAdvData>>) {
       <div style={{
         position: 'absolute', left: 0, top: -32,
         display: 'inline-flex', alignItems: 'center', gap: 6,
-        padding: '6px 12px', borderRadius: 8,
+        padding: '6px 12px', borderRadius: 32,
         background: 'rgba(48,79,254,0.08)', color: PRIMARY,
         fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700,
       }}>
@@ -3524,7 +3531,7 @@ function ConditionalAdvNode({ }: NodeProps) {
   return (
     <div style={{ width: 340, position: 'relative' }}>
       <Handle type="target" position={Position.Left} style={{ background: '#F97316', width: 12, height: 12, border: 'none' }} />
-      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#FFF7ED', color: '#F97316', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
+      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 32, background: '#FFF7ED', color: '#F97316', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
         <GitBranch size={12} /> Conditional
       </div>
       <div style={{ background: 'white', border: '1.5px solid #FFEDD5', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
@@ -3536,7 +3543,7 @@ function ConditionalAdvNode({ }: NodeProps) {
           {conditions.map((cond, i) => (
             <div key={i} style={{ position: 'relative' }}>
               <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Roboto, sans-serif', marginBottom: 4 }}>If true</div>
-              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E2E8F0', borderRadius: 8, background: 'white', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #E2E8F0', borderRadius: 32, background: 'white', overflow: 'hidden' }}>
                 <input className="nodrag nopan" value={cond} onChange={e => { const nc = [...conditions]; nc[i] = e.target.value; setConditions(nc) }}
                   style={{ flex: 1, border: 'none', outline: 'none', padding: '9px 10px', fontFamily: 'Roboto, sans-serif', fontSize: 13, background: 'transparent', color: '#0F172A' }} />
                 <button onClick={() => setConditions(conditions.filter((_, ci) => ci !== i))}
@@ -3567,7 +3574,7 @@ function LoopAdvNode({ }: NodeProps) {
   return (
     <div style={{ width: 380, position: 'relative' }}>
       <Handle type="target" position={Position.Left} style={{ background: '#16A34A', width: 12, height: 12, border: 'none' }} />
-      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#F0FDF4', color: '#16A34A', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
+      <div style={{ position: 'absolute', left: 0, top: -32, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 32, background: '#F0FDF4', color: '#16A34A', fontFamily: 'Roboto, sans-serif', fontSize: 12, fontWeight: 700 }}>
         <RotateCcw size={12} /> While loop
       </div>
       <div style={{ background: 'white', border: '1.5px solid #DCFCE7', borderRadius: 12, boxShadow: '0 1px 2px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
@@ -3579,7 +3586,7 @@ function LoopAdvNode({ }: NodeProps) {
           <textarea className="nodrag nopan" value={instruction} onChange={e => setInstruction(e.target.value)}
             placeholder="Write what you want the agent to do..."
             rows={2}
-            style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 8, padding: '8px 10px', background: '#F8FAFC', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', resize: 'none', outline: 'none', lineHeight: 1.5 }}
+            style={{ width: '100%', boxSizing: 'border-box', border: 'none', borderRadius: 32, padding: '8px 10px', background: '#F8FAFC', fontFamily: 'Roboto, sans-serif', fontSize: 13, color: '#0F172A', resize: 'none', outline: 'none', lineHeight: 1.5 }}
           />
           <div style={{ fontFamily: 'Roboto, sans-serif', fontSize: 11.5, color: '#94A3B8', marginTop: 4 }}>
             Type <strong>$</strong> to insert datos del ticket
@@ -3804,7 +3811,7 @@ function TemplatesModal({ onClose, onPick }: { onClose: () => void; onPick: (tpl
             </p>
           </div>
           <button onClick={onClose} title="Close" style={{
-            width: 30, height: 30, borderRadius: 8,
+            width: 30, height: 30, borderRadius: 32,
             background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
           }}
@@ -3875,7 +3882,7 @@ function WorkflowSettingsDrawer({ onClose, stateNodes, onDeleteField }: {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 22px 16px', flexShrink: 0 }}>
           <span style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', fontFamily: 'Roboto, sans-serif' }}>Configuración del funnel</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 8, color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 32, color: '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#475569')} onMouseLeave={e => (e.currentTarget.style.color = '#94A3B8')}>
             <X size={18} />
           </button>
@@ -4109,7 +4116,7 @@ function DatosDrawer({ onClose, stateNodes, onEditState, onDeleteField }: {
                 {totalFields} campo{totalFields !== 1 ? 's' : ''}
               </span>
             )}
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 8, color: '#94A3B8', display: 'flex' }}
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 32, color: '#94A3B8', display: 'flex' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#475569')} onMouseLeave={e => (e.currentTarget.style.color = '#94A3B8')}>
               <X size={17} />
             </button>
@@ -4214,7 +4221,7 @@ function DatosDrawer({ onClose, stateNodes, onEditState, onDeleteField }: {
                         onClick={() => onEditState(node.id)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '9px 14px', borderRadius: 8,
+                          padding: '9px 14px', borderRadius: 32,
                           border: '1.5px dashed #E2E8F0', background: 'none', cursor: 'pointer',
                           textAlign: 'left', width: '100%',
                         }}
@@ -4565,7 +4572,7 @@ function FunnelBuilderScreen({ onCreate }: { onCreate: (stages: string[]) => voi
           {/* Version switch */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500 }}>Modo:</span>
-            <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', borderRadius: 32, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
               {(['A', 'B'] as const).map((v, i) => (
                 <button key={v} onClick={() => switchVersion(v)} style={{
                   padding: '5px 14px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -4912,7 +4919,7 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
             </p>
             <div style={{
               alignSelf: 'flex-start',
-              padding: '8px 14px', borderRadius: 8,
+              padding: '8px 14px', borderRadius: 32,
               background: PRIMARY, color: '#FFFFFF',
               fontSize: 13, fontWeight: 700,
             }}>Use classic view →</div>
@@ -4972,7 +4979,7 @@ function VariantChooser({ onPick }: { onPick: (v: 'classic' | 'unified') => void
             </p>
             <div style={{
               alignSelf: 'flex-start',
-              padding: '8px 14px', borderRadius: 8,
+              padding: '8px 14px', borderRadius: 32,
               background: PRIMARY, color: '#FFFFFF',
               fontSize: 13, fontWeight: 700,
             }}>Use unified view →</div>
