@@ -902,14 +902,12 @@ function EditStateDrawer({
       `}</style>
 
       {/* ── Header ──────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 18px', borderBottom: '1px solid #E2E8F0', gap: 10, flexShrink: 0,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+      <div style={{ borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 18px' }}>
+
           {/* Color picker */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'block' }} />
+          <div style={{ position: 'relative', flexShrink: 0, paddingTop: 3 }}>
+            <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
             {colorOpen && (
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
                 {COLORS.map(c => (
@@ -918,51 +916,70 @@ function EditStateDrawer({
               </div>
             )}
           </div>
-          {/* Name */}
-          {editingName ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-              <input autoFocus value={draftName} onChange={e => setDraftName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { setName(draftName.trim() || name); setEditingName(false) } if (e.key === 'Escape') { setEditingName(false) } }}
-                style={{ flex: 1, minWidth: 0, fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', border: 'none', outline: 'none', background: 'transparent', borderBottom: `1.5px solid ${PRIMARY}`, padding: '0 0 1px' }}
+
+          {/* Identity block: nombre + para qué sirve — un solo bloque unificado */}
+          {drawerMode === 'mix' ? (
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {/* Nombre — siempre editable inline */}
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Nombre del estado"
+                style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', border: 'none', outline: 'none', background: 'transparent', padding: 0, width: '100%' }}
               />
-              <button onMouseDown={e => { e.preventDefault(); setName(draftName.trim() || name); setEditingName(false) }} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', flexShrink: 0, background: PRIMARY, color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Check size={13} strokeWidth={3} /></button>
-              <button onMouseDown={e => { e.preventDefault(); setEditingName(false) }} style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid #E2E8F0', cursor: 'pointer', flexShrink: 0, background: 'white', color: '#64748B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={13} strokeWidth={2.5} /></button>
+              {/* ¿Para qué sirve? — subtítulo inline */}
+              <input
+                value={description}
+                onChange={e => handleDescChange(e.target.value)}
+                maxLength={MAX_CHARS}
+                placeholder="¿Para qué sirve este estado?"
+                style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12.5, color: description ? '#475569' : '#94A3B8', border: 'none', outline: 'none', background: 'transparent', padding: 0, width: '100%' }}
+              />
+              {description.length >= MAX_CHARS * 0.85 && (
+                <div style={{ fontSize: 10.5, color: description.length >= MAX_CHARS ? '#DC2626' : '#F59E0B', textAlign: 'right' }}>{description.length}/{MAX_CHARS}</div>
+              )}
             </div>
           ) : (
-            <button onClick={() => { setDraftName(name); setEditingName(true) }} title="Editar nombre" style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || 'Sin nombre'}</span>
-              <Pencil size={12} color="#94A3B8" style={{ flexShrink: 0 }} />
-            </button>
+            /* Otros modos: nombre editable con click (comportamiento anterior) */
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {editingName ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input autoFocus value={draftName} onChange={e => setDraftName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { setName(draftName.trim() || name); setEditingName(false) } if (e.key === 'Escape') { setEditingName(false) } }}
+                    style={{ flex: 1, fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', border: 'none', outline: 'none', background: 'transparent', borderBottom: `1.5px solid ${PRIMARY}`, padding: '0 0 1px' }}
+                  />
+                  <button onMouseDown={e => { e.preventDefault(); setName(draftName.trim() || name); setEditingName(false) }} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', cursor: 'pointer', flexShrink: 0, background: PRIMARY, color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Check size={13} strokeWidth={3} /></button>
+                  <button onMouseDown={e => { e.preventDefault(); setEditingName(false) }} style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid #E2E8F0', cursor: 'pointer', flexShrink: 0, background: 'white', color: '#64748B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={13} strokeWidth={2.5} /></button>
+                </div>
+              ) : (
+                <button onClick={() => { setDraftName(name); setEditingName(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{name || 'Sin nombre'}</span>
+                  <Pencil size={12} color="#94A3B8" />
+                </button>
+              )}
+            </div>
           )}
-        </div>
-        {/* Mode toggle — solo visible en dev/prototipo */}
-        {false && (
-          <div style={{ display: 'flex', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden', flexShrink: 0 }}>
-            {([['simple', 'C'], ['steps', 'A'], ['full', 'B'], ['mix', 'D']] as const).map(([m, label], i) => (
-              <button key={m} onClick={() => setDrawerMode(m)} style={{
-                padding: '5px 11px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 11, fontWeight: 700, background: drawerMode === m ? PRIMARY : 'white',
-                color: drawerMode === m ? 'white' : '#94A3B8',
-                borderLeft: i > 0 ? '1px solid #E2E8F0' : 'none', transition: 'background 0.15s, color 0.15s',
-              }}>{label}</button>
-            ))}
+
+          {/* Acciones: Ayuda + cerrar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {/* Mode toggle — solo visible en dev */}
+            {false && null}
+            {drawerMode === 'mix' && (
+              <button onClick={() => setHelpOpen(o => !o)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7,
+                border: '1px solid #E2E8F0', background: helpOpen ? PRIMARY : 'white',
+                color: helpOpen ? 'white' : '#64748B', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+              }}>
+                <Info size={13} /> Ayuda
+              </button>
+            )}
+            <button onClick={onClose} title="Cerrar" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >✕</button>
           </div>
-        )}
-        {/* Ayuda — solo en modo D */}
-        {drawerMode === 'mix' && (
-          <button onClick={() => setHelpOpen(o => !o)} title={helpOpen ? 'Ocultar ayuda' : 'Mostrar ayuda'} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7, flexShrink: 0,
-            border: '1px solid #E2E8F0', background: helpOpen ? PRIMARY : 'white',
-            color: helpOpen ? 'white' : '#64748B', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            transition: 'background 0.15s, color 0.15s',
-          }}>
-            <Info size={13} /> Ayuda
-          </button>
-        )}
-        <button onClick={onClose} title="Cerrar" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >✕</button>
+        </div>
       </div>
 
       {/* ══════ MODE C: Simple / guiado (lenguaje natural) ════════ */}
@@ -1104,7 +1121,7 @@ function EditStateDrawer({
         <>
           {/* Progress steps */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '16px 18px 14px', flexShrink: 0 }}>
-            {([['Descripción', 1], ['Asignación', 2], ['Datos', 3], ['Instrucciones', 4]] as const).map(([label, s], i) => {
+            {([['Identificar estado', 1], ['¿Quién responde?', 2], ['Datos', 3], ['Instrucciones', 4]] as const).map(([label, s], i) => {
               const done = s < step, current = s === step
               return (
                 <Fragment key={s}>
@@ -1132,17 +1149,40 @@ function EditStateDrawer({
               {step === 1 && (
                 <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Descripción del estado</span>
-                    <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Un resumen corto, en lenguaje natural, de qué pasa acá. No es un prompt — sirve para leer el funnel de un vistazo.</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Identificar el estado</span>
+                    <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Contale a tu equipo qué sucede en este paso del flujo. El nombre y propósito son obligatorios.</span>
                   </div>
-                  {DescriptionField}
+                  {/* Nombre */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>Nombre del estado</label>
+                    <input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Ej: Calificar leads"
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '12px 14px', borderRadius: 10,
+                        border: '1.5px solid #E2E8F0', outline: 'none',
+                        fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                        color: '#0F172A', background: '#F8FAFC',
+                        transition: 'border-color 0.15s, background 0.15s',
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                    />
+                  </div>
+                  {/* ¿Para qué sirve? */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
+                    {DescriptionField}
+                  </div>
                 </div>
               )}
               {step === 2 && (
                 <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>¿Quién va a conversar con el usuario?</span>
-                    <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Elegí si conversa la IA o un agente humano.</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>¿Quién responde en este paso?</span>
+                    <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Elegí si conversa la IA sola, la IA con revisión humana, o un agente humano.</span>
                   </div>
                   {AssignCards}
                 </div>
@@ -1159,7 +1199,7 @@ function EditStateDrawer({
               {step === 4 && (
                 <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Instrucciones para el agente</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Instrucciones para el agente <span style={{ fontSize: 12, fontWeight: 500, color: '#CBD5E1' }}>· Opcional</span></span>
                   </div>
                   {renderAdvanced()}
                 </div>
@@ -1191,7 +1231,7 @@ function EditStateDrawer({
 
               {/* Descripción */}
               <div style={secStyle('desc')} onClick={() => setFocusedSection('desc')}>
-                {SectionHeader('desc', 1, 'Descripción del estado')}
+                {SectionHeader('desc', 1, '¿Para qué sirve este estado?')}
                 {DescriptionField}
               </div>
 
@@ -1231,9 +1271,13 @@ function EditStateDrawer({
 
       {/* ══════ MODE D: creación guiada / edición completa ═════ */}
       {drawerMode === 'mix' && (() => {
-        // Secciones según el modo de conversación (humano no tiene instrucciones)
-        const hasAdvanced = convMode !== 'human'
-        const sectionKeys = hasAdvanced ? ['desc', 'assign', 'data', 'advanced'] : ['desc', 'assign', 'data']
+        // Descripción vive en el header — los steps son: assign, data?, advanced?
+        // Humano: solo assign (sin datos ni instrucciones)
+        const isHumanMode = convMode === 'human'
+        const hasAdvanced = !isHumanMode
+        const sectionKeys = isHumanMode
+          ? ['assign']
+          : ['assign', 'data', 'advanced']
         const totalSteps = sectionKeys.length
         const descMissing = !description.trim()
         // advance: avanza activo + actualiza máximo alcanzado
@@ -1261,7 +1305,8 @@ function EditStateDrawer({
                   if (!isCreating || !isActive(secIdx)) return null
                   const isSecLast = secIdx + 1 >= totalSteps
                   const isSecOptional = secKey === 'data' || secKey === 'advanced'
-                  const isBlocked = secKey === 'desc' && descMissing
+                  // El último paso bloquea el Listo si la descripción está vacía
+                  const isBlocked = isSecLast && descMissing
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14 }}>
                       {/* Atrás — visible en pasos 2+ */}
@@ -1341,10 +1386,9 @@ function EditStateDrawer({
                 }
 
                 const sections = [
-                  { key: 'desc',     idx: 0, label: 'Descripción del estado',             tag: undefined,   always: true },
-                  { key: 'assign',   idx: 1, label: '¿Quién conversa con el usuario?',     tag: undefined,   always: true },
-                  { key: 'data',     idx: 2, label: '¿Qué datos se guardan en este estado?', tag: 'Opcional', always: true },
-                  { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',        tag: 'Opcional',  always: hasAdvanced },
+                  { key: 'assign',   idx: 0, label: '¿Quién responde en este paso?',        tag: undefined,   always: true },
+                  { key: 'data',     idx: 1, label: '¿Qué datos se guardan en este estado?', tag: 'Opcional',  always: !isHumanMode },
+                  { key: 'advanced', idx: 2, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
 
                 return (
@@ -1390,7 +1434,7 @@ function EditStateDrawer({
           {!isCreating && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
               <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 100, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
-              <button onClick={() => { if (!descMissing) onClose() }} disabled={descMissing} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: descMissing ? '#E2E8F0' : PRIMARY, color: descMissing ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: descMissing ? 'default' : 'pointer' }}>Listo ✓</button>
+              <button onClick={() => { if (!descMissing) onClose() }} disabled={descMissing} title={descMissing ? 'Completá la descripción del estado para continuar' : ''} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: descMissing ? '#E2E8F0' : PRIMARY, color: descMissing ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: descMissing ? 'default' : 'pointer' }}>Listo ✓</button>
             </div>
           )}
         </>
