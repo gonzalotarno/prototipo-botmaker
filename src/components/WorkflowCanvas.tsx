@@ -611,6 +611,7 @@ function EditStateDrawer({
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(true)
   const [focusedSection, setFocusedSection] = useState<'identify' | 'desc' | 'assign' | 'data' | 'advanced'>('identify')
+  const [identifyErrors, setIdentifyErrors] = useState<{ name?: boolean; description?: boolean }>({})
   // Modo creación: activeStep = paso expandido actualmente, maxStep = hasta dónde llegó (para los ✓)
   const [activeStep, setActiveStep] = useState(isCreating ? 1 : 99)
   const [maxStep, setMaxStep] = useState(isCreating ? 1 : 99)
@@ -1316,7 +1317,7 @@ function EditStateDrawer({
                           onClick={e => {
                             e.stopPropagation()
                             if (sec.key === 'identify' && (nameMissing || descMissing)) {
-                              alert('Por favor completa el nombre y descripción del paso para continuar')
+                              setIdentifyErrors({ name: nameMissing, description: descMissing })
                               return
                             }
                             if (!isBlocked) advance()
