@@ -903,44 +903,23 @@ function EditStateDrawer({
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <div style={{ borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 18px' }}>
-
-          {/* Color picker */}
-          <div style={{ position: 'relative', flexShrink: 0, paddingTop: 3 }}>
-            <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
-            {colorOpen && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
-                {COLORS.map(c => (
-                  <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Identity block: nombre + para qué sirve — un solo bloque unificado */}
-          {drawerMode === 'mix' ? (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {/* Nombre — siempre editable inline */}
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Nombre del estado"
-                style={{ fontFamily: 'Roboto, sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A', border: 'none', outline: 'none', background: 'transparent', padding: 0, width: '100%' }}
-              />
-              {/* ¿Para qué sirve? — subtítulo inline */}
-              <input
-                value={description}
-                onChange={e => handleDescChange(e.target.value)}
-                maxLength={MAX_CHARS}
-                placeholder="¿Para qué sirve este estado?"
-                style={{ fontFamily: 'Roboto, sans-serif', fontSize: 12.5, color: description ? '#475569' : '#94A3B8', border: 'none', outline: 'none', background: 'transparent', padding: 0, width: '100%' }}
-              />
-              {description.length >= MAX_CHARS * 0.85 && (
-                <div style={{ fontSize: 10.5, color: description.length >= MAX_CHARS ? '#DC2626' : '#F59E0B', textAlign: 'right' }}>{description.length}/{MAX_CHARS}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 18px' }}>
+          {/* Color picker — solo en otros modos (en mix está en Paso 1) */}
+          {drawerMode !== 'mix' && (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
+              {colorOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
+                  ))}
+                </div>
               )}
             </div>
-          ) : (
-            /* Otros modos: nombre editable con click (comportamiento anterior) */
+          )}
+
+          {/* Nombre — solo en otros modos (en mix está en Paso 1) */}
+          {drawerMode !== 'mix' ? (
             <div style={{ flex: 1, minWidth: 0 }}>
               {editingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -958,23 +937,22 @@ function EditStateDrawer({
                 </button>
               )}
             </div>
+          ) : (
+            <div />
           )}
 
           {/* Acciones: Ayuda + cerrar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {/* Mode toggle — solo visible en dev */}
-            {false && null}
             {drawerMode === 'mix' && (
-              <button onClick={() => setHelpOpen(o => !o)} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 7,
-                border: '1px solid #E2E8F0', background: helpOpen ? PRIMARY : 'white',
-                color: helpOpen ? 'white' : '#64748B', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s',
+              <button onClick={() => setHelpOpen(o => !o)} title={helpOpen ? 'Ocultar ayuda' : 'Mostrar ayuda'} style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%',
+                border: '1px solid #E2E8F0', background: helpOpen ? '#F1F5F9' : 'white',
+                color: '#64748B', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
               }}>
-                <Info size={13} /> Ayuda
+                <Info size={16} strokeWidth={2} />
               </button>
             )}
-            <button onClick={onClose} title="Cerrar" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
+            <button onClick={onClose} title="Cerrar" style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}
               onMouseEnter={e => (e.currentTarget.style.background = '#F1F5F9')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >✕</button>
@@ -1413,24 +1391,38 @@ function EditStateDrawer({
                           {SectionHeader(sec.key as any, sec.idx + 1, sec.label, sec.tag, true)}
                           {sec.key === 'identify' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 0 14px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>Nombre del estado</label>
-                                <input
-                                  value={name}
-                                  onChange={e => setName(e.target.value)}
-                                  placeholder="Ej: Calificar leads"
-                                  autoFocus
-                                  style={{
-                                    width: '100%', boxSizing: 'border-box',
-                                    padding: '12px 14px', borderRadius: 10,
-                                    border: '1.5px solid #E2E8F0', outline: 'none',
-                                    fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
-                                    color: '#0F172A', background: '#F8FAFC',
-                                    transition: 'border-color 0.15s, background 0.15s',
-                                  }}
-                                  onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
-                                  onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
-                                />
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                {/* Color picker */}
+                                <div style={{ position: 'relative', flexShrink: 0, paddingTop: 3 }}>
+                                  <button onClick={() => setColorOpen(o => !o)} title="Color del estado" style={{ width: 14, height: 14, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block' }} />
+                                  {colorOpen && (
+                                    <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
+                                      {COLORS.map(c => (
+                                        <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Nombre */}
+                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>Nombre del estado</label>
+                                  <input
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="Ej: Calificar leads"
+                                    autoFocus
+                                    style={{
+                                      width: '100%', boxSizing: 'border-box',
+                                      padding: '12px 14px', borderRadius: 10,
+                                      border: '1.5px solid #E2E8F0', outline: 'none',
+                                      fontFamily: 'Roboto, sans-serif', fontSize: 13.5, lineHeight: 1.6,
+                                      color: '#0F172A', background: '#F8FAFC',
+                                      transition: 'border-color 0.15s, background 0.15s',
+                                    }}
+                                    onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
+                                    onBlur={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                                  />
+                                </div>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <label style={{ fontSize: 12.5, fontWeight: 600, color: '#64748B' }}>¿Para qué sirve este estado?</label>
