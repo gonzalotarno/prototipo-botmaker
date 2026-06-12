@@ -733,19 +733,19 @@ function EditStateDrawer({
       {/* Contextual content per mode */}
       <div key={convMode} style={{ animation: 'wfFadeUp 0.2s ease-out' }}>
         {convMode === 'ia' && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '12px 14px', borderRadius: 10, background: 'rgba(48,79,254,0.04)', border: '1px solid rgba(48,79,254,0.12)' }}>
-            <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.3 }}>🤖</span>
-            <span style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>La IA responde sola en este estado, de forma autónoma y entendiendo el contexto.</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 16px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(48,79,254,0.06) 0%, rgba(48,79,254,0.02) 100%)', border: `2px solid rgba(48,79,254,0.15)`, borderTop: `3px solid ${PRIMARY}` }}>
+            <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🤖</span>
+            <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6, fontWeight: 500 }}>La IA responde sola en este paso, de forma autónoma y entendiendo el contexto.</span>
           </div>
         )}
         {convMode === 'hitl' && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '12px 14px', borderRadius: 10, background: 'rgba(48,79,254,0.04)', border: '1px solid rgba(48,79,254,0.12)', marginBottom: 12 }}>
-              <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.3 }}>🤝</span>
-              <span style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 16px', borderRadius: 12, background: 'linear-gradient(135deg, rgba(48,79,254,0.06) 0%, rgba(48,79,254,0.02) 100%)', border: `2px solid rgba(48,79,254,0.15)`, borderTop: `3px solid ${PRIMARY}`, marginBottom: 14 }}>
+              <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🤝</span>
+              <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6, fontWeight: 500 }}>La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#64748B' }}>¿Quién revisa?</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién revisa?</span>
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar equipos</button>
             </div>
             <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
@@ -753,12 +753,12 @@ function EditStateDrawer({
         )}
         {convMode === 'human' && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '12px 14px', borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0', marginBottom: 12 }}>
-              <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.3 }}>🧑</span>
-              <span style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>La conversación se deriva a un operador, que la maneja por completo. La IA no participa en este estado.</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 16px', borderRadius: 12, background: '#F8FAFC', border: `2px solid #E2E8F0`, borderTop: `3px solid #94A3B8`, marginBottom: 14 }}>
+              <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🧑</span>
+              <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6, fontWeight: 500 }}>La conversación se deriva a un operador, que la maneja por completo. La IA no participa en este paso.</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#64748B' }}>¿Quién atiende?</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién atiende?</span>
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar equipos</button>
             </div>
             <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
