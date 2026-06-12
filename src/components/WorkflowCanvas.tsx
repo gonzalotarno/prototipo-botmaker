@@ -710,61 +710,51 @@ function EditStateDrawer({
   }
 
   const AssignCards = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Segmented tabs */}
-      <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 12, background: '#F1F5F9' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Cards grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
         {CONV_TABS.map(tab => {
           const sel = convMode === tab.key
+          const descriptions: Record<string, string> = {
+            ia: 'La IA responde sola, de forma autónoma y entendiendo el contexto.',
+            hitl: 'La IA responde, pero una persona revisa y aprueba antes de avanzar.',
+            human: 'La conversación se deriva a un operador, que la maneja por completo.',
+          }
           return (
             <button key={tab.key} onClick={() => setConvMode(tab.key)} style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-              padding: '10px 6px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
-              border: 'none', transition: 'background 0.15s, box-shadow 0.15s',
-              background: sel ? 'white' : 'transparent',
-              boxShadow: sel ? '0 1px 3px rgba(15,23,42,0.10)' : 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              padding: '16px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit',
+              border: `2.5px solid ${sel ? PRIMARY : '#E2E8F0'}`,
+              background: sel ? 'rgba(48,79,254,0.05)' : 'white',
+              transition: 'all 0.15s',
             }}>
               {convTabIcon(tab.key, sel)}
-              <span style={{ fontSize: 12, fontWeight: 700, color: sel ? PRIMARY : '#64748B', whiteSpace: 'nowrap' }}>{tab.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: sel ? PRIMARY : '#0F172A', textAlign: 'center' }}>{tab.label}</span>
+              <span style={{ fontSize: 11.5, color: '#64748B', lineHeight: 1.4, textAlign: 'center' }}>{descriptions[tab.key]}</span>
             </button>
           )
         })}
       </div>
 
-      {/* Contextual content per mode */}
-      <div key={convMode} style={{ animation: 'wfFadeUp 0.2s ease-out', marginTop: 8, paddingLeft: 12, borderLeft: `4px solid ${PRIMARY}` }}>
-        {convMode === 'ia' && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🤖</span>
-            <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6 }}>La IA responde sola en este paso, de forma autónoma y entendiendo el contexto.</span>
+      {/* Conditional config (only for modes that need it) */}
+      {convMode === 'hitl' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién revisa?</span>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar</button>
           </div>
-        )}
-        {convMode === 'hitl' && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🤝</span>
-              <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6 }}>La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién revisa?</span>
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar equipos</button>
-            </div>
-            <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
+          <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
+        </div>
+      )}
+      {convMode === 'human' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién atiende?</span>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar</button>
           </div>
-        )}
-        {convMode === 'human' && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.2 }}>🧑</span>
-              <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.6 }}>La conversación se deriva a un operador, que la maneja por completo. La IA no participa en este paso.</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién atiende?</span>
-              <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar equipos</button>
-            </div>
-            <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
-          </div>
-        )}
-      </div>
+          <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
+        </div>
+      )}
     </div>
   )
 
@@ -1171,7 +1161,7 @@ function EditStateDrawer({
               {step === 2 && (
                 <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>¿Quién responde en este paso?</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>¿Quién resuelve en este paso?</span>
                     <span style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>Elegí si conversa la IA sola, la IA con revisión humana, o un agente humano.</span>
                   </div>
                   {AssignCards}
@@ -1301,18 +1291,18 @@ function EditStateDrawer({
                   // El último paso bloquea el Listo si faltan campos obligatorios
                   const isBlocked = isSecLast && (nameMissing || descMissing)
                   return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, paddingTop: 14 }}>
                       {/* Atrás — visible en pasos 2+ */}
                       {secIdx > 0 ? (
-                        <button onClick={e => { e.stopPropagation(); setActiveStep(s => s - 1) }} style={{ padding: '8px 16px', borderRadius: 100, background: 'transparent', border: '1px solid #E2E8F0', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Atrás</button>
+                        <button onClick={e => { e.stopPropagation(); setActiveStep(s => s - 1) }} style={{ padding: '8px 16px', borderRadius: '100px 0 0 100px', background: 'transparent', border: '1px solid #E2E8F0', borderRight: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Atrás</button>
                       ) : null}
                       {isSecOptional && (
-                        <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 100, background: 'transparent', border: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
+                        <button onClick={e => { e.stopPropagation(); advance() }} style={{ padding: '8px 16px', borderRadius: 0, background: 'transparent', border: '1px solid #E2E8F0', borderRight: 'none', color: '#64748B', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Omitir</button>
                       )}
                       <button
                         onClick={e => { e.stopPropagation(); if (!isBlocked) advance() }}
                         disabled={isBlocked}
-                        style={{ padding: '8px 20px', borderRadius: 100, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', transition: 'background 0.15s', marginLeft: 'auto' }}
+                        style={{ padding: '8px 20px', borderRadius: secIdx > 0 || isSecOptional ? '0 100px 100px 0' : 100, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'default' : 'pointer', background: isBlocked ? '#E2E8F0' : PRIMARY, color: isBlocked ? '#94A3B8' : 'white', transition: 'background 0.15s', marginLeft: 'auto', flex: secIdx > 0 || isSecOptional ? 0 : 1 }}
                       >{isSecLast ? 'Listo ✓' : 'Siguiente'}</button>
                     </div>
                   )
@@ -1379,7 +1369,7 @@ function EditStateDrawer({
 
                 const sections = [
                   { key: 'identify', idx: 0, label: 'Identificar el paso',                 tag: undefined,   always: true },
-                  { key: 'assign',   idx: 1, label: '¿Quién responde en este paso?',        tag: undefined,   always: true },
+                  { key: 'assign',   idx: 1, label: '¿Quién resuelve en este paso?',        tag: undefined,   always: true },
                   { key: 'data',     idx: 2, label: '¿Qué datos se guardan en este paso?', tag: 'Opcional',  always: !isHumanMode },
                   { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
