@@ -718,9 +718,9 @@ function EditStateDrawer({
         {CONV_TABS.map(tab => {
           const sel = convMode === tab.key
           const descriptions: Record<string, string> = {
-            ia: 'La IA responde sola, de forma autónoma y entendiendo el contexto.',
-            hitl: 'El agente responde junto con la IA. Una persona revisa y aprueba antes de avanzar.',
-            human: 'La conversación se deriva a un operador, que la maneja por completo.',
+            ia: 'El agente de ia resuelve de forma autónoma este paso.',
+            hitl: 'El agente de ia resuelve bajo supervisición humana.',
+            human: 'El agente humano resuelve de principio a fin este paso sin participación del agente de ia.',
           }
           return (
             <button key={tab.key} onClick={() => setConvMode(tab.key)} style={{
@@ -742,7 +742,7 @@ function EditStateDrawer({
       {convMode === 'hitl' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: assigneeError ? '#DC2626' : '#64748B' }}>¿Quién revisa?</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: assigneeError ? '#DC2626' : '#64748B' }}>¿Quién supervisa?</span>
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar</button>
           </div>
           <AssigneeSelect value={assignee} onChange={v => { setAssignee(v); setAssigneeError(false) }} placeholder="Elegir una persona o equipo" error={assigneeError} />
@@ -794,13 +794,13 @@ function EditStateDrawer({
   const HELP: Record<'identify' | 'desc' | 'assign' | 'data' | 'advanced', React.ReactNode> = {
     identify: (
       <>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📌 Identificar el paso</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📌 Información del paso</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 12px' }}>
-          Dale un nombre claro a este paso y explicá en pocas palabras qué sucede acá. Así tu equipo entiende el flujo de un vistazo.
+          Dale un nombre claro a este paso y una breve descripción (máx. 140 caracteres) de qué sucede acá. <strong style={{ color: '#475569' }}>La descripción es solo un rótulo</strong>, no es un prompt para el agente.
         </p>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Ejemplo</div>
         <div style={{ fontSize: 11.5, color: '#475569', background: 'white', borderRadius: 32, padding: '10px 12px', border: '1px solid #E2E8F0', lineHeight: 1.55 }}>
-          Nombre: "Calificar leads"<br />Propósito: "Detectar intención de compra"
+          Nombre: "Calificar leads"<br />Descripción: "Detectar intención de compra"
         </div>
       </>
     ),
@@ -821,23 +821,23 @@ function EditStateDrawer({
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>¿Quién resuelve en este paso?</div>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤖 Agente IA</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          La IA responde sola, de forma autónoma y entendiendo el contexto.
+          El agente de ia resuelve de forma autónoma este paso.
         </p>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤝 Human in the Loop</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          El agente responde en conjunto con la IA, colaborando para resolver. Una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.
+          El agente de ia resuelve bajo supervisición humana. Ideal para aprobaciones, reclamos o casos delicados.
         </p>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>👤 Agente humano</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: 0 }}>
-          La conversación se deriva a un operador, que la maneja por completo. La IA no participa en este paso.
+          El agente humano resuelve de principio a fin este paso sin participación del agente de ia.
         </p>
       </>
     ),
     data: (
       <>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📋 Datos a recolectar</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📋 Datos que se completan</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          Son los campos que el agente obtiene del usuario en este estado. Quedan guardados y disponibles para los siguientes estados.
+          Son los campos que el agente obtiene del usuario en este paso. Quedan guardados y disponibles para los pasos siguientes.
         </p>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 }}>Ejemplos</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -1406,9 +1406,9 @@ function EditStateDrawer({
                 }
 
                 const sections = [
-                  { key: 'identify', idx: 0, label: 'Identificar el paso',                 tag: undefined,   always: true },
+                  { key: 'identify', idx: 0, label: 'Información del paso',                 tag: undefined,   always: true },
                   { key: 'assign',   idx: 1, label: '¿Quién resuelve en este paso?',        tag: undefined,   always: true },
-                  { key: 'data',     idx: 2, label: '¿Quieres agregar datos a solicitar en este paso?', tag: 'Opcional',  always: !isHumanMode },
+                  { key: 'data',     idx: 2, label: '¿Qué datos se completan en este paso?', tag: 'Opcional',  always: !isHumanMode },
                   { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
 
@@ -1432,7 +1432,7 @@ function EditStateDrawer({
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 0 14px' }}>
                               {/* Nombre + Color picker */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.name ? '#DC2626' : '#64748B', marginBottom: 2 }}>Nombre del paso</label>
+                                <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.name ? '#DC2626' : '#64748B', marginBottom: 2 }}>Nombre</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   {/* Color picker */}
                                   <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -1468,9 +1468,12 @@ function EditStateDrawer({
                                 </div>
                                 {identifyErrors.name && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>El nombre es obligatorio</span>}
                               </div>
-                              {/* ¿Para qué sirve? */}
+                              {/* Breve descripción */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.description ? '#DC2626' : '#64748B' }}>¿Para qué sirve este paso?</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.description ? '#DC2626' : '#64748B' }}>Breve descripción (140 caracteres)</label>
+                                  <span style={{ fontSize: 11.5, color: '#94A3B8' }}>No es un prompt</span>
+                                </div>
                                 <textarea
                                   value={description}
                                   onChange={e => { handleDescChange(e.target.value); setIdentifyErrors(e => ({ ...e, description: false })) }}
