@@ -719,7 +719,7 @@ function EditStateDrawer({
           const sel = convMode === tab.key
           const descriptions: Record<string, string> = {
             ia: 'La IA responde sola, de forma autónoma y entendiendo el contexto.',
-            hitl: 'La IA responde, pero una persona revisa y aprueba antes de avanzar.',
+            hitl: 'El agente responde junto con la IA. Una persona revisa y aprueba antes de avanzar.',
             human: 'La conversación se deriva a un operador, que la maneja por completo.',
           }
           return (
