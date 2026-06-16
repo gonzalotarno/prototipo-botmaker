@@ -524,7 +524,7 @@ const DRAWER_WIDTH: Record<DrawerMode, number> = { simple: 860, steps: 600, full
 const ATTENTION_TEAMS = ['Equipo de Ventas', 'Equipo de Soporte', 'Cobranzas', 'Onboarding']
 const ATTENTION_PEOPLE = ['María González', 'Juan Pérez', 'Lucía Fernández', 'Carlos Ruiz']
 
-function AssigneeSelect({ value, onChange, placeholder }: { value?: string; onChange: (v: string) => void; placeholder: string }) {
+function AssigneeSelect({ value, onChange, placeholder, error }: { value?: string; onChange: (v: string) => void; placeholder: string; error?: boolean }) {
   const [open, setOpen] = useState(false)
   const isTeam = value ? ATTENTION_TEAMS.includes(value) : false
   return (
@@ -534,7 +534,7 @@ function AssigneeSelect({ value, onChange, placeholder }: { value?: string; onCh
         style={{
           display: 'flex', alignItems: 'center', gap: 9, width: '100%',
           padding: '9px 12px', borderRadius: 9, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-          border: `1.5px solid ${open ? PRIMARY : '#E2E8F0'}`, background: 'white', transition: 'border-color 0.15s',
+          border: `2px solid ${error ? '#DC2626' : (open ? PRIMARY : '#E2E8F0')}`, background: error ? '#FEF2F2' : 'white', transition: 'border-color 0.15s, background 0.15s',
         }}
       >
         {value ? (
@@ -612,6 +612,7 @@ function EditStateDrawer({
   const [helpOpen, setHelpOpen] = useState(true)
   const [focusedSection, setFocusedSection] = useState<'identify' | 'desc' | 'assign' | 'data' | 'advanced'>('identify')
   const [identifyErrors, setIdentifyErrors] = useState<{ name?: boolean; description?: boolean }>({})
+  const [assigneeError, setAssigneeError] = useState(false)
   // Modo creación: activeStep = paso expandido actualmente, maxStep = hasta dónde llegó (para los ✓)
   const [activeStep, setActiveStep] = useState(isCreating ? 1 : 99)
   const [maxStep, setMaxStep] = useState(isCreating ? 1 : 99)
@@ -741,19 +742,21 @@ function EditStateDrawer({
       {convMode === 'hitl' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién revisa?</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: assigneeError ? '#DC2626' : '#64748B' }}>¿Quién revisa?</span>
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar</button>
           </div>
-          <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
+          <AssigneeSelect value={assignee} onChange={v => { setAssignee(v); setAssigneeError(false) }} placeholder="Elegir una persona o equipo" error={assigneeError} />
+          {assigneeError && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>Debes elegir quién revisa para continuar</span>}
         </div>
       )}
       {convMode === 'human' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>¿Quién atiende?</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: assigneeError ? '#DC2626' : '#64748B' }}>¿Quién atiende?</span>
             <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, color: PRIMARY, fontWeight: 600, padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}><UserCog size={12} /> Personalizar</button>
           </div>
-          <AssigneeSelect value={assignee} onChange={setAssignee} placeholder="Elegir una persona o equipo" />
+          <AssigneeSelect value={assignee} onChange={v => { setAssignee(v); setAssigneeError(false) }} placeholder="Elegir una persona o equipo" error={assigneeError} />
+          {assigneeError && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>Debes elegir quién atiende para continuar</span>}
         </div>
       )}
     </div>
@@ -822,7 +825,7 @@ function EditStateDrawer({
         </p>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤝 Human in the Loop</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.
+          El agente responde en conjunto con la IA, colaborando para resolver. Una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.
         </p>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>👤 Agente humano</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: 0 }}>
@@ -1328,6 +1331,10 @@ function EditStateDrawer({
                                 setIdentifyErrors({ name: nameEmpty, description: descEmpty })
                                 return
                               }
+                            }
+                            if (secKey === 'assign' && (convMode === 'hitl' || convMode === 'human') && !assignee) {
+                              setAssigneeError(true)
+                              return
                             }
                             if (!isBlocked) advance()
                           }}
