@@ -643,7 +643,7 @@ function EditStateDrawer({
   }
 
   useEffect(() => {
-    // HITL (requiresHuman) sólo aplica cuando conversa la IA
+    // HITL (requiresHuman) solo aplica cuando conversa la IA
     onSave(node.id, { name, description, color, requiresHuman: handledBy === 'ia' ? requiresHuman : false, handledBy, assignee, prompt, requiredData, resources })
   }, [name, description, color, requiresHuman, handledBy, assignee, prompt, // eslint-disable-line
     requiredData.map(f => f.id + f.name + f.description + String(f.optional)).join(),
@@ -762,12 +762,11 @@ function EditStateDrawer({
     </div>
   )
 
-  // Contenido "Avanzado": sólo las instrucciones del agente (el "prompt")
+  // Contenido "Avanzado": solo las instrucciones del agente (el "prompt")
   const renderAdvanced = (rich = false) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
-        Escribí cómo debe comportarse el agente: cómo saludar, qué preguntar, qué tono usar, qué evitar.<br />
-        <span style={{ color: '#94A3B8' }}>Es opcional — podés dejarlo vacío y el agente actúa con el contexto del paso.</span>
+        Escribe cómo debe comportarse el agente: cómo saludar, qué preguntar, qué tono usar, qué evitar.
       </div>
       {rich ? (
         <InstructionsTextarea value={prompt} onChange={setPrompt} />
@@ -776,7 +775,7 @@ function EditStateDrawer({
           value={prompt}
           onChange={e => setPrompt(e.target.value)}
           rows={5}
-          placeholder={'Ej: Saludá al usuario por su nombre si lo tenés.\nPreguntá por el tipo de consulta antes de ofrecer soluciones.\nUsá un tono cercano. Si mencionan presupuesto, registralo.'}
+          placeholder={'Ej: Saluda al usuario por su nombre si lo tienes.\nPregunta por el tipo de consulta antes de ofrecer soluciones.\nUsa un tono cercano. Si mencionan presupuesto, registralo.'}
           style={{
             width: '100%', boxSizing: 'border-box', resize: 'vertical',
             padding: '12px 14px', borderRadius: 10,
@@ -851,10 +850,10 @@ function EditStateDrawer({
       <>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>📝 Instrucciones para el agente</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          Acá le explicás al agente, con tus palabras, qué querés que haga en este paso. Es lo que <strong style={{ color: '#475569' }}>realmente sigue</strong> al conversar.
+          Aquí le explicas al agente, con tus palabras, qué quieres que haga en este paso. Es lo que <strong style={{ color: '#475569' }}>realmente sigue</strong> al conversar.
         </p>
         <p style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.6, margin: 0 }}>
-          La descripción de arriba, en cambio, es sólo un rótulo corto para que el equipo entienda el funnel.
+          La descripción de arriba, en cambio, es solo un rótulo corto para que el equipo entienda el funnel.
         </p>
       </>
     ),
@@ -992,7 +991,7 @@ function EditStateDrawer({
 
               {/* Q1 — qué hace */}
               <div style={{ marginBottom: 28 }}>
-                {Q(1, '¿Qué hace el agente en este paso?', 'Contalo como si se lo explicaras a un compañero. En pocas palabras.')}
+                {Q(1, '¿Qué hace el agente en este paso?', 'Cuéntalo como si se lo explicaras a un compañero. En pocas palabras.')}
                 {DescriptionField}
               </div>
 
@@ -1525,7 +1524,7 @@ function EditStateDrawer({
           {!isCreating && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, borderTop: '1px solid #E2E8F0', background: '#FAFBFD', borderBottomLeftRadius: 14, borderBottomRightRadius: 14, flexShrink: 0 }}>
               <button onClick={() => { onDelete(node.id); onClose() }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 100, background: '#FFFFFF', border: '1px solid #FECACA', color: '#DC2626', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}><Trash2 size={14} /> Eliminar</button>
-              <button onClick={() => { if (!nameMissing && !descMissing) onClose() }} disabled={nameMissing || descMissing} title={nameMissing || descMissing ? 'Completá el nombre y descripción del estado para continuar' : ''} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: (nameMissing || descMissing) ? '#E2E8F0' : PRIMARY, color: (nameMissing || descMissing) ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: (nameMissing || descMissing) ? 'default' : 'pointer' }}>Listo ✓</button>
+              <button onClick={() => { if (!nameMissing && !descMissing) onClose() }} disabled={nameMissing || descMissing} title={nameMissing || descMissing ? 'Completa el nombre y descripción del estado para continuar' : ''} style={{ padding: '8px 24px', borderRadius: 100, border: 'none', background: (nameMissing || descMissing) ? '#E2E8F0' : PRIMARY, color: (nameMissing || descMissing) ? '#94A3B8' : 'white', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: (nameMissing || descMissing) ? 'default' : 'pointer' }}>Listo ✓</button>
             </div>
           )}
         </>
@@ -4475,7 +4474,7 @@ function MindsetScreen({ processId, onContinue }: { processId: string; onContinu
           {[
             { icon: '🤖', title: 'El agente maneja el adentro', body: 'Preguntas, validaciones, respuestas — todo lo que pasa dentro de una etapa lo resuelve el agente solo.' },
             { icon: '📋', title: 'Los estados son etapas, no pasos', body: 'Cada estado representa una fase del proceso, como en un Kanban de ventas. No un mensaje ni una acción.' },
-            { icon: '⚙️', title: '¿Lógica técnica? Flujo avanzado', body: 'Si necesitás condiciones o acciones complejas, podés agregarlas dentro de cada estado con el flujo avanzado.' },
+            { icon: '⚙️', title: '¿Lógica técnica? Flujo avanzado', body: 'Si necesitás condiciones o acciones complejas, puedes agregarlas dentro de cada estado con el flujo avanzado.' },
           ].map(p => (
             <div key={p.title} style={{ padding: '16px 18px', borderRadius: 12, background: 'white', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>{p.icon}</div>
