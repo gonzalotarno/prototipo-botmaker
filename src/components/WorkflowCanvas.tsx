@@ -815,13 +815,18 @@ function EditStateDrawer({
     ),
     assign: (
       <>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>¿Quién resuelve en este paso?</div>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤖 Agente IA</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
-          La IA conversa sola y entiende el contexto. Podés sumarle <strong style={{ color: '#475569' }}>confirmación humana (HITL)</strong> para que un operador apruebe antes de avanzar, y definir su <strong style={{ color: '#475569' }}>prompt y herramientas</strong>.
+          La IA responde sola, de forma autónoma y entendiendo el contexto.
+        </p>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤝 IA + Humano</div>
+        <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
+          La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.
         </p>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>👤 Agente humano</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: 0 }}>
-          Para estados sensibles —reclamos, negociaciones, aprobaciones— donde querés que una persona maneje toda la conversación.
+          La conversación se deriva a un operador, que la maneja por completo. La IA no participa en este paso.
         </p>
       </>
     ),
