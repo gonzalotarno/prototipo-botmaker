@@ -1408,7 +1408,7 @@ function EditStateDrawer({
                 const sections = [
                   { key: 'identify', idx: 0, label: 'Identificar el paso',                 tag: undefined,   always: true },
                   { key: 'assign',   idx: 1, label: '¿Quién resuelve en este paso?',        tag: undefined,   always: true },
-                  { key: 'data',     idx: 2, label: '¿Quieres agregar datos obligatorios en este paso?', tag: 'Opcional',  always: !isHumanMode },
+                  { key: 'data',     idx: 2, label: '¿Quieres agregar datos a solicitar en este paso?', tag: 'Opcional',  always: !isHumanMode },
                   { key: 'advanced', idx: 3, label: 'Instrucciones para el agente',          tag: 'Opcional',  always: hasAdvanced },
                 ]
 
