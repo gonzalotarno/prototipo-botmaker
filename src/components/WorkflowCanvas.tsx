@@ -699,7 +699,7 @@ function EditStateDrawer({
 
   const CONV_TABS: { key: 'ia' | 'hitl' | 'human'; label: string }[] = [
     { key: 'ia',    label: 'Agente IA'     },
-    { key: 'hitl',  label: 'IA + Humano'   },
+    { key: 'hitl',  label: 'Human in the Loop'   },
     { key: 'human', label: 'Agente humano' },
   ]
   const convTabIcon = (key: 'ia' | 'hitl' | 'human', sel: boolean) => {
@@ -820,7 +820,7 @@ function EditStateDrawer({
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
           La IA responde sola, de forma autónoma y entendiendo el contexto.
         </p>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤝 IA + Humano</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>🤝 Human in the Loop</div>
         <p style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6, margin: '0 0 14px' }}>
           La IA responde, pero una persona revisa y aprueba antes de avanzar. Ideal para aprobaciones, reclamos o casos delicados.
         </p>
@@ -1346,7 +1346,7 @@ function EditStateDrawer({
                   if (key === 'desc')     return description.trim() || null
                   if (key === 'assign') {
                     if (convMode === 'ia')    return assignee ? `Agente IA · revisa ${assignee}` : 'Agente IA'
-                    if (convMode === 'hitl')  return assignee ? `IA + Humano · revisa ${assignee}` : 'IA + Humano'
+                    if (convMode === 'hitl')  return assignee ? `Human in the Loop · revisa ${assignee}` : 'Human in the Loop'
                     return assignee ? `Agente humano · ${assignee}` : 'Agente humano'
                   }
                   if (key === 'data') {
