@@ -1433,20 +1433,6 @@ function EditStateDrawer({
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.name ? '#DC2626' : '#64748B', marginBottom: 2 }}>Nombre</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  {/* Color picker */}
-                                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                                    <button onClick={() => setColorOpen(o => !o)} title="Color del paso" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
-                                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)' }}
-                                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-                                    />
-                                    {colorOpen && (
-                                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
-                                        {COLORS.map(c => (
-                                          <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
                                   {/* Input */}
                                   <input
                                     value={name}
@@ -1464,13 +1450,27 @@ function EditStateDrawer({
                                     onFocus={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.background = 'white' }}
                                     onBlur={e => { e.currentTarget.style.borderColor = identifyErrors.name ? '#DC2626' : '#E2E8F0'; e.currentTarget.style.background = identifyErrors.name ? '#FEF2F2' : '#F8FAFC' }}
                                   />
+                                  {/* Color picker */}
+                                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    <button onClick={() => setColorOpen(o => !o)} title="Color del paso" style={{ width: 18, height: 18, borderRadius: '50%', background: color, border: '2px solid rgba(0,0,0,0.08)', cursor: 'pointer', padding: 0, display: 'block', transition: 'transform 0.15s' }}
+                                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                                    />
+                                    {colorOpen && (
+                                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50, padding: 10, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 12px 28px -8px rgba(15,23,42,0.18)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, minWidth: 180 }}>
+                                        {COLORS.map(c => (
+                                          <button key={c} onClick={() => { setColor(c); setColorOpen(false) }} style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', padding: 0, outline: color === c ? `2px solid ${PRIMARY}` : 'none', outlineOffset: 2 }} />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                                 {identifyErrors.name && <span style={{ fontSize: 11.5, color: '#DC2626', fontWeight: 600 }}>El nombre es obligatorio</span>}
                               </div>
                               {/* Breve descripción */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.description ? '#DC2626' : '#64748B' }}>Breve descripción (140 caracteres)</label>
+                                  <label style={{ fontSize: 12.5, fontWeight: 600, color: identifyErrors.description ? '#DC2626' : '#64748B' }}>Breve descripción</label>
                                   <span style={{ fontSize: 11.5, color: '#94A3B8' }}>No es un prompt</span>
                                 </div>
                                 <textarea
