@@ -19,6 +19,10 @@ import FlowTest from './FlowTest'
 import WorkshopInsights from './WorkshopInsights'
 import AppleFlow from './AppleFlow'
 import TaskReminderButton from './components/TaskReminderButton'
+import Onboarding from './Onboarding'
+import ChatsView, { ChatsDiferente, ChatsDisruptiva } from './livechat/ChatsView'
+import OnboardingReturnButton from './components/OnboardingReturnButton'
+import HomeAssistantNudge from './components/HomeAssistantNudge'
 
 // Hide "Send to Figma" browser extension button that gets injected into the page
 ;(() => {
@@ -137,7 +141,7 @@ function App() {
   // Las superficies internas siguen accesibles por path directo.
   if (path === '/') return <ThemesIndex />
   if (path === '/estados') return <><EstadosOptions /><BackToLandingButton /></>
-  if (path === '/estados-a') return <><AgentDetail initialTab="estados" variant="v2" showBuilder /><TaskReminderButton /></>
+  if (path === '/estados-a') return <><AgentDetail initialTab="estados" variant="v2" showBuilder /><TaskReminderButton /><OnboardingReturnButton /></>
   if (path === '/estados-b') return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#fff', borderBottom: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', flexShrink: 0 }}>
@@ -155,11 +159,15 @@ function App() {
   if (path === '/home') return <><HomeOptions /><BackToLandingButton /></>
   if (path === '/home-a') return <><Home variant="a" /><BackToLandingButton /></>
   if (path === '/home-b') return <><Home variant="b" /><BackToLandingButton /></>
-  if (path === '/home-c') return <><Home variant="c" /><BackToLandingButton /></>
+  if (path === '/home-c') return <><Home variant="c" /><HomeAssistantNudge /><BackToLandingButton /></>
   if (path === '/home-d') return <><Home variant="d" /><BackToLandingButton /></>
   if (path === '/dev') return <Landing />
   if (path === '/metricas') return <><Metrics /><BackToLandingButton /></>
   if (path === '/bienvenida') return <><AgentesFirstTime /><BackToLandingButton /></>
+  if (path === '/onboarding') return <Onboarding />
+  if (path === '/chats' || path === '/livechat') return <><ChatsView /><OnboardingReturnButton /></>
+  if (path === '/chats-diferente') return <><ChatsDiferente /><OnboardingReturnButton /></>
+  if (path === '/chats-disruptiva') return <><ChatsDisruptiva /><OnboardingReturnButton /></>
 
   let page: JSX.Element
   if (path === '/proyecto')                         page = <AgentsShell />
