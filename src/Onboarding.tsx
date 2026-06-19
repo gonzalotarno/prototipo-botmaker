@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useRef, useCallback } from 'react'
+import { STEPS, type Step, type StepId, loadDone, saveDone, setOnboardingActive, COMMENT, ANSWERS } from './onboardingData'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING — el camino ideal del usuario nuevo en Botmaker.
@@ -46,35 +47,6 @@ function Orb({ size = 36, radius }: { size?: number; radius?: number }) {
     </div>
   )
 }
-
-// ── Persistencia del progreso (sobrevive navegación a /estados-a y vuelta) ────
-const STORE_KEY = 'bm_onboarding_done'
-function loadDone(): string[] {
-  try { return JSON.parse(sessionStorage.getItem(STORE_KEY) || '[]') } catch { return [] }
-}
-function saveDone(ids: string[]) {
-  try { sessionStorage.setItem(STORE_KEY, JSON.stringify(ids)) } catch { /* noop */ }
-}
-
-// ── Pasos del onboarding ──────────────────────────────────────────────────────
-type StepId = 'agente' | 'canal' | 'probar' | 'chats'
-interface Step {
-  id: StepId
-  num: number
-  icon: string
-  title: string
-  desc: string
-  cta: string
-  href?: string          // navega a una superficie real
-  inline?: boolean       // se resuelve dentro del onboarding
-  minutes: string
-}
-const STEPS: Step[] = [
-  { id: 'agente', num: 1, icon: 'smart_toy', title: 'Crea tu primer agente de IA', desc: 'Define qué resuelve, quién responde y qué datos necesita. Yo te guío paso a paso.', cta: 'Crear agente', href: '/estados-a', minutes: '3 min' },
-  { id: 'canal', num: 2, icon: 'hub', title: 'Conecta un canal', desc: 'Elige dónde va a atender tu agente: WhatsApp, Instagram o tu sitio web.', cta: 'Elegir canal', inline: true, minutes: '1 min' },
-  { id: 'probar', num: 3, icon: 'play_circle', title: 'Prueba tu agente', desc: 'Conversa con él como lo haría un cliente y ajusta lo que haga falta.', cta: 'Probar ahora', inline: true, minutes: '1 min' },
-  { id: 'chats', num: 4, icon: 'forum', title: 'Mira tus conversaciones en vivo', desc: 'El asistente te acompaña también en la bandeja: resume, sugiere y aprueba contigo.', cta: 'Abrir conversaciones', href: '/chats-diferente', minutes: '2 min' },
-]
 
 // ── Canales (paso 2 inline) ───────────────────────────────────────────────────
 const CHANNELS = [
@@ -200,7 +172,7 @@ function StepCard({ step, state, delay, markDone }: { step: Step; state: 'done' 
   const onAction = () => {
     if (step.href) {
       markDone(step.id)               // marca como visitado y navega
-      try { sessionStorage.setItem('bm_onboarding_active', '1') } catch { /* noop */ }
+      setOnboardingActive(true)
       window.location.href = step.href
     } else if (step.inline) {
       setExpanded(e => !e)
@@ -504,22 +476,6 @@ function AssistantInput({ onSend }: { onSend: (q: string) => void }) {
       </button>
     </div>
   )
-}
-
-// ── Respuestas/comentarios de Boti (demo) ─────────────────────────────────────
-const COMMENT: Record<StepId, string> = {
-  agente: '¡Genial, ya tienes tu agente creado! Ahora conectémoslo a un canal para que pueda atender.',
-  canal: 'Canal conectado. Probémoslo: escríbele como si fueras un cliente.',
-  probar: 'Tu agente respondió bien. Último paso: mira cómo se ven las conversaciones en vivo.',
-  chats: 'Ahí tienes tu bandeja con el asistente integrado.',
-}
-const ANSWERS: Record<string, string> = {
-  '¿Qué es un agente de IA?': 'Es un asistente que atiende a tus clientes por ti: entiende lo que necesitan, responde con el contexto de tu negocio y puede resolver tareas. Tú defines cómo se comporta y cuándo pedir ayuda a una persona.',
-  '¿Cuánto tarda?': 'El onboarding completo lleva menos de 10 minutos. Crear el agente son unos 3 minutos; el resto es conectar y probar.',
-  '¿Qué hace este paso?': 'Este paso te ayuda a avanzar en la configuración. Toca el botón del paso activo y te voy guiando con valores sugeridos.',
-  'Dame un ejemplo': 'Por ejemplo: un agente de soporte que responde preguntas frecuentes en WhatsApp y, si el caso es delicado, lo deriva a una persona del equipo.',
-  '¿Cómo mido los resultados?': 'En Métricas vas a ver conversaciones atendidas, tasa de resolución y calidad de las respuestas. Te puedo armar un resumen cuando quieras.',
-  '¿Puedo agregar otro canal?': 'Sí, cuando quieras. Un mismo agente puede atender en WhatsApp, Instagram y tu web a la vez.',
 }
 
 // ── Topbar glass (estilo Home C) ──────────────────────────────────────────────
