@@ -2,12 +2,12 @@ import { useState, useEffect, useId, useRef, useCallback } from 'react'
 import { STEPS, type StepId, loadDone, saveDone, setOnboardingActive, isOnboardingActive, COMMENT, ANSWERS } from '../onboardingData'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GlobalAssistant — Boti, el asistente que está EN TODAS LAS SUPERFICIES.
+// GlobalAssistant — asistente asistente que está EN TODAS LAS SUPERFICIES.
 // · ABIERTO: drawer grande a la derecha (como livechat) con la CHECKLIST adentro
-//   (primeros pasos) + chat de Boti (saludo, comentarios, Q&A).
+//   (primeros pasos) + chat de asistente (saludo, comentarios, Q&A).
 // · CERRADO: orb (bottom-right) y, arriba, burbujas de comentarios proactivos
 //   ("Sigue completando tu agente", "Conecta un canal"…) que vas viendo.
-// El progreso vive en sessionStorage, así Boti sigue al usuario por todas las pantallas.
+// El progreso vive en sessionStorage, así asistente sigue al usuario por todas las pantallas.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BRAND = '#304FFE', BRAND400 = '#6272FF', BRAND600 = '#2A46E8', BRAND700 = '#1E34C4', BRANDL = '#EEF1FF', BRANDL2 = '#E4E9FF'
@@ -88,7 +88,7 @@ export default function GlobalAssistant() {
       ? '¡Listo! Completaste los primeros pasos. Estoy en cada pantalla por si necesitás una mano.'
       : onboardingActive
       ? 'Seguimos con tu configuración. Acá abajo tenés tus primeros pasos — el próximo está resaltado.'
-      : 'Hola, soy Boti, tu asistente. Te acompaño en todas las pantallas. Empecemos por tus primeros pasos 👇'
+      : 'Hola, soy tu asistente de IA. Te acompaño en todas las pantallas. Empecemos por tus primeros pasos 👇'
     setTimeout(() => pushAI(greeting), 300)
     return () => { if (streamRef.current) clearTimeout(streamRef.current) }
   }, []) // eslint-disable-line
@@ -144,7 +144,7 @@ export default function GlobalAssistant() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderBottom: `1px solid ${INK100}`, flexShrink: 0 }}>
             <div style={{ animation: 'bmGaFloat 3.5s ease-in-out infinite' }}><Orb size={40} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: INK, fontFamily: INTER_TIGHT }}>Boti · Asistente de IA</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: INK, fontFamily: INTER_TIGHT }}>Asistente de IA</div>
               <div style={{ fontSize: 11.5, color: OK, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 5, height: 5, borderRadius: 999, background: OK }} /> En línea · te acompaña
               </div>
@@ -201,7 +201,7 @@ export default function GlobalAssistant() {
 
             <div style={{ height: 1, background: INK100, margin: '0 18px' }} />
 
-            {/* ── Chat de Boti ── */}
+            {/* ── Chat de asistente ── */}
             <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 11 }}>
               {thread.map((m, i) => {
                 const isLastAI = i === thread.length - 1 && m.role === 'ai' && streaming
@@ -253,7 +253,7 @@ export default function GlobalAssistant() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                 <Orb size={18} />
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: INK500 }}>Boti</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: INK500 }}>Asistente de IA</span>
               </div>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: INK }}>
                 {allDone ? '¡Tu agente ya puede atender! 🎉 Tocá para ver más.' : NUDGE[activeStep!.id]}
@@ -303,7 +303,7 @@ function Input({ onSend }: { onSend: (q: string) => void }) {
   const send = () => { if (!v.trim()) return; onSend(v.trim()); setV('') }
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: INK50, border: `1px solid ${INK200}`, borderRadius: 12, padding: '4px 4px 4px 14px' }}>
-      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Pregúntale a Boti…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13.5, fontFamily: FONT, color: INK }} />
+      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Escribe tu pregunta…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13.5, fontFamily: FONT, color: INK }} />
       <button onClick={send} style={{ width: 34, height: 34, borderRadius: 9, border: 'none', background: BRAND, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <MS name="arrow_upward" size={18} color="#fff" />
       </button>

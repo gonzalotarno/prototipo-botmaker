@@ -3,7 +3,7 @@ import { STEPS, type Step, type StepId, loadDone, saveDone, setOnboardingActive,
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONBOARDING — el camino ideal del usuario nuevo en Botmaker.
-// La IA (Boti) es el copiloto persistente: saluda, guía los primeros pasos y
+// La IA (asistente) es el copiloto persistente: saluda, guía los primeros pasos y
 // acompaña al usuario hacia su primer agente y sus conversaciones en vivo.
 // Lenguaje visual de la Home C (mesh aurora, glass topbar, Inter Tight).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ function AssistantPanel({ phase, done, onStart, allDone }: { phase: 'welcome' | 
     greetedRef.current = true
     const greeting = done.length > 0
       ? 'Seguimos donde lo dejamos. Te marco el próximo paso a la derecha — cualquier duda, pregúntame.'
-      : 'Hola, soy Boti, tu asistente. Te voy a acompañar en cada paso para que pongas tu primer agente a atender. ¿Empezamos?'
+      : 'Hola, soy tu asistente de IA. Te voy a acompañar en cada paso para que pongas tu primer agente a atender. ¿Empezamos?'
     setTimeout(() => pushAI(greeting), 400)
     return () => { if (streamRef.current) clearTimeout(streamRef.current) }
   }, []) // eslint-disable-line
@@ -407,7 +407,7 @@ function AssistantPanel({ phase, done, onStart, allDone }: { phase: 'welcome' | 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderBottom: `1px solid ${T.ink100}`, flexShrink: 0 }}>
         <div style={{ animation: 'obFloat 3.5s ease-in-out infinite', display: 'flex' }}><Orb size={38} radius={12} /></div>
         <div>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: T.ink900, fontFamily: INTER_TIGHT }}>Boti · Asistente de IA</div>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: T.ink900, fontFamily: INTER_TIGHT }}>Asistente de IA</div>
           <div style={{ fontSize: 11.5, color: T.ok, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 5, height: 5, borderRadius: 999, background: T.ok }} /> En línea · te acompaña
           </div>
@@ -470,7 +470,7 @@ function AssistantInput({ onSend }: { onSend: (q: string) => void }) {
   const send = () => { if (!v.trim()) return; onSend(v.trim()); setV('') }
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: T.ink50, border: `1px solid ${T.ink200}`, borderRadius: 12, padding: '4px 4px 4px 14px' }}>
-      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Pregúntale a Boti…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13.5, fontFamily: FONT, color: T.ink900 }} />
+      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Escribe tu pregunta…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13.5, fontFamily: FONT, color: T.ink900 }} />
       <button onClick={send} style={{ width: 34, height: 34, borderRadius: 9, border: 'none', background: T.brand, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <MS name="arrow_upward" size={18} color="#fff" />
       </button>

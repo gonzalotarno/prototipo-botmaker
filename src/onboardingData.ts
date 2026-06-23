@@ -55,7 +55,7 @@ export function hideChecklist() {
   try { sessionStorage.setItem(HIDDEN_KEY, '1') } catch { /* noop */ }
 }
 
-// ── Comentarios y respuestas de Boti (demo) ───────────────────────────────────
+// ── Comentarios y respuestas de asistente (demo) ───────────────────────────────────
 export const COMMENT: Record<StepId, string> = {
   agente: '¡Genial, ya tienes tu agente creado! Ahora conectémoslo a un canal para que pueda atender.',
   canal: 'Canal conectado. Probémoslo: escríbele como si fueras un cliente.',
