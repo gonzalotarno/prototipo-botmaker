@@ -20,7 +20,7 @@ export interface Step {
 }
 
 export const STEPS: Step[] = [
-  { id: 'agente', num: 1, icon: 'smart_toy', title: 'Crea tu primer agente', short: 'Define qué resuelve y quién responde', desc: 'Define qué resuelve, quién responde y qué datos necesita. Yo te guío paso a paso.', cta: 'Crear agente', href: '/estados-a', minutes: '3 min' },
+  { id: 'agente', num: 1, icon: 'smart_toy', title: 'Crea tu primer agente', short: 'Elige una plantilla y configúralo', desc: 'Empieza con una plantilla lista (Ventas, Leads, Soporte…) o desde cero. Yo te guío paso a paso.', cta: 'Crear agente', href: '/crear-agente', minutes: '3 min' },
   { id: 'canal', num: 2, icon: 'hub', title: 'Conecta un canal', short: 'WhatsApp, Instagram o tu sitio web', desc: 'Elige dónde va a atender tu agente: WhatsApp, Instagram o tu sitio web.', cta: 'Elegir canal', inline: true, minutes: '1 min' },
   { id: 'probar', num: 3, icon: 'play_circle', title: 'Prueba tu agente', short: 'Conversa con él como un cliente', desc: 'Conversa con él como lo haría un cliente y ajusta lo que haga falta.', cta: 'Probar ahora', inline: true, minutes: '1 min' },
   { id: 'chats', num: 4, icon: 'forum', title: 'Mira tus conversaciones', short: 'Tu bandeja con el asistente integrado', desc: 'El asistente te acompaña también en la bandeja: resume, sugiere y aprueba contigo.', cta: 'Abrir conversaciones', href: '/chats-diferente', minutes: '2 min' },

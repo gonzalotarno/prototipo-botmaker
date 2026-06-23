@@ -23,6 +23,7 @@ import Onboarding from './Onboarding'
 import ChatsView, { ChatsDiferente, ChatsDisruptiva } from './livechat/ChatsView'
 import GlobalAssistant from './components/GlobalAssistant'
 import OnboardingChecklist from './components/OnboardingChecklist'
+import AgentTemplates from './AgentTemplates'
 
 // Hide "Send to Figma" browser extension button that gets injected into the page
 ;(() => {
@@ -165,6 +166,7 @@ function App() {
   if (path === '/metricas') return <><Metrics /><BackToLandingButton /></>
   if (path === '/bienvenida') return <><AgentesFirstTime /><BackToLandingButton /></>
   if (path === '/onboarding') return <Onboarding />
+  if (path === '/crear-agente') return <><AgentTemplates /><GlobalAssistant /><OnboardingChecklist /></>
   if (path === '/chats' || path === '/livechat') return <><ChatsView /><GlobalAssistant /><OnboardingChecklist /></>
   if (path === '/chats-diferente') return <><ChatsDiferente /><GlobalAssistant /><OnboardingChecklist /></>
   if (path === '/chats-disruptiva') return <><ChatsDisruptiva /><GlobalAssistant /><OnboardingChecklist /></>
