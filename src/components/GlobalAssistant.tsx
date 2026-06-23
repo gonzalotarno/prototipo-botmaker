@@ -1,19 +1,16 @@
 import { useState, useEffect, useId, useRef, useCallback } from 'react'
-import { STEPS, type StepId, loadDone, saveDone, setOnboardingActive, isOnboardingActive, COMMENT, ANSWERS } from '../onboardingData'
+import { STEPS, loadDone, isOnboardingActive, ANSWERS } from '../onboardingData'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GlobalAssistant — Boti, el asistente que está EN TODAS LAS SUPERFICIES.
-// Orb flotante (bottom-right) que abre un panel con:
-//   · Primeros pasos — el progreso del onboarding vive ACÁ, no en un botón aparte
-//   · Chat de Boti — saludo, sugerencias, Q&A
-// Lee/escribe el progreso en sessionStorage, así sigue al usuario por agents,
-// livechat, métricas, etc. Se monta en cada ruta (menos /onboarding, que tiene
-// su propia versión a pantalla completa).
+// GlobalAssistant — Boti, el ayudante que está EN TODAS LAS SUPERFICIES.
+// Orb flotante (bottom-right) que abre un chat: saludo, sugerencias, Q&A.
+// Los primeros pasos viven en el OnboardingChecklist (minimalista, aparte).
+// Se monta en cada ruta para acompañar al usuario en todo momento.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BRAND = '#304FFE', BRAND400 = '#6272FF', BRAND600 = '#2A46E8', BRAND700 = '#1E34C4', BRANDL = '#EEF1FF', BRANDL2 = '#E4E9FF'
-const INK = '#0A0F1F', INK500 = '#5B6172', INK400 = '#8990A0', INK200 = '#E4E6EC', INK100 = '#EEF0F4', INK50 = '#F7F8FB'
-const OK = '#16A34A', OKBG = '#E9F9EF'
+const BRAND = '#304FFE', BRAND400 = '#6272FF', BRAND600 = '#2A46E8', BRAND700 = '#1E34C4', BRANDL = '#EEF1FF'
+const INK = '#0A0F1F', INK500 = '#5B6172', INK200 = '#E4E6EC', INK100 = '#EEF0F4', INK50 = '#F7F8FB'
+const OK = '#16A34A'
 const INTER_TIGHT = "'Inter Tight', 'Inter', system-ui, sans-serif"
 const FONT = "'Roboto', system-ui, sans-serif"
 const EASE = 'cubic-bezier(0.16,1,0.3,1)'
@@ -37,7 +34,6 @@ function Orb({ size = 36 }: { size?: number }) {
 
 export default function GlobalAssistant() {
   const [open, setOpen] = useState(false)
-  const [done, setDone] = useState<StepId[]>(() => loadDone())
   const [thread, setThread] = useState<{ role: 'ai' | 'user'; text: string }[]>([])
   const [streaming, setStreaming] = useState(false)
   const [streamText, setStreamText] = useState('')
@@ -46,8 +42,7 @@ export default function GlobalAssistant() {
   const greetedRef = useRef(false)
 
   const onboardingActive = isOnboardingActive()
-  const activeIdx = STEPS.findIndex(s => !done.includes(s.id))
-  const allDone = done.length === STEPS.length
+  const allDone = loadDone().length === STEPS.length
 
   const streamWords = useCallback((text: string, onFinish?: () => void) => {
     const words = text.split(' '); let i = 0; let built = ''
@@ -95,20 +90,6 @@ export default function GlobalAssistant() {
     return () => { if (streamRef.current) clearTimeout(streamRef.current) }
   }, [open]) // eslint-disable-line
 
-  const goStep = (id: StepId) => {
-    const step = STEPS.find(s => s.id === id)!
-    if (step.href) {
-      const next = done.includes(id) ? done : [...done, id]
-      saveDone(next); setDone(next)
-      setOnboardingActive(true)
-      window.location.href = step.href
-    } else {
-      // pasos inline → se completan en la página /onboarding
-      setOnboardingActive(true)
-      window.location.href = '/onboarding'
-    }
-  }
-
   const ask = (q: string) => {
     setThread(t => [...t, { role: 'user', text: q }])
     setTimeout(() => pushAI(ANSWERS[q] ?? 'Buena pregunta. En el producto real te respondo con el contexto de tu cuenta; acá es una demo del acompañamiento.'), 320)
@@ -143,49 +124,8 @@ export default function GlobalAssistant() {
             </button>
           </div>
 
-          {/* Scroll: pasos + chat */}
+          {/* Scroll: chat de Boti (los pasos viven en el checklist minimalista) */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {/* ── Primeros pasos (el progreso vive en el asistente) ── */}
-            {!allDone && (
-              <div style={{ padding: '14px 16px 4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: INK, letterSpacing: 0.2 }}>Primeros pasos</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: INK400 }}>{done.length}/{STEPS.length}</span>
-                </div>
-                {/* Barra de progreso */}
-                <div style={{ height: 5, borderRadius: 999, background: INK100, overflow: 'hidden', marginBottom: 12 }}>
-                  <div style={{ width: `${(done.length / STEPS.length) * 100}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${BRAND}, ${BRAND400})`, transition: `width 500ms ${EASE}` }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {STEPS.map((step, i) => {
-                    const isDone = done.includes(step.id)
-                    const isActive = i === activeIdx
-                    const clickable = isDone || isActive
-                    return (
-                      <button key={step.id} onClick={() => clickable && goStep(step.id)} disabled={!clickable} style={{
-                        display: 'flex', alignItems: 'center', gap: 11, padding: '10px 11px', borderRadius: 11, textAlign: 'left', width: '100%',
-                        border: `1px solid ${isActive ? BRANDL2 : 'transparent'}`,
-                        background: isActive ? BRANDL : 'transparent',
-                        cursor: clickable ? 'pointer' : 'default', opacity: clickable ? 1 : 0.5,
-                        fontFamily: FONT, transition: `all 150ms ${EASE}`,
-                      }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDone ? OKBG : isActive ? BRAND : INK100 }}>
-                          {isDone ? <MS name="check" size={17} color={OK} weight={600} /> : <MS name={step.icon} size={16} color={isActive ? '#fff' : INK400} fill={isActive ? 1 : 0} />}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: isDone ? INK500 : INK }}>{step.title}</div>
-                          {isActive && <div style={{ fontSize: 11, color: BRAND600, fontWeight: 600, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3 }}>{step.cta} <MS name="arrow_forward" size={12} color={BRAND600} /></div>}
-                        </div>
-                        {!clickable && <MS name="lock" size={15} color={INK400} />}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ height: 1, background: INK100, margin: '14px 0 0' }} />
-              </div>
-            )}
-
-            {/* ── Chat de Boti ── */}
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {thread.map((m, i) => {
                 const isLastAI = i === thread.length - 1 && m.role === 'ai' && streaming
@@ -208,17 +148,6 @@ export default function GlobalAssistant() {
               <div ref={bottomRef} />
             </div>
           </div>
-
-          {/* CTA continuar (cuando hay onboarding en curso) */}
-          {!allDone && activeIdx >= 0 && (
-            <div style={{ padding: '0 16px 10px', flexShrink: 0 }}>
-              <button onClick={() => goStep(STEPS[activeIdx].id)} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 18px', borderRadius: 999, background: BRAND, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 14, fontWeight: 600 }}
-                onMouseEnter={e => { e.currentTarget.style.background = BRAND600 }}
-                onMouseLeave={e => { e.currentTarget.style.background = BRAND }}>
-                {done.length === 0 ? 'Empezar' : 'Continuar'}: {STEPS[activeIdx].title} <MS name="arrow_forward" size={17} color="#fff" />
-              </button>
-            </div>
-          )}
 
           {/* Sugerencias + input */}
           <div style={{ padding: '10px 16px 14px', borderTop: `1px solid ${INK100}`, flexShrink: 0 }}>
@@ -244,12 +173,6 @@ export default function GlobalAssistant() {
         animation: open ? 'none' : 'bmGaPulse 2.6s ease-in-out infinite',
       }}>
         <Orb size={44} />
-        {/* Badge con pasos pendientes */}
-        {!open && !allDone && (
-          <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999, background: BRAND, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
-            {STEPS.length - done.length}
-          </span>
-        )}
       </button>
 
       <style>{`
