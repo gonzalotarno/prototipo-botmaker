@@ -1,15 +1,17 @@
 import { useState, useEffect, useId, useRef, useCallback } from 'react'
-import { STEPS, loadDone, isOnboardingActive, ANSWERS } from '../onboardingData'
+import { STEPS, type StepId, loadDone, saveDone, setOnboardingActive, isOnboardingActive, COMMENT, ANSWERS } from '../onboardingData'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GlobalAssistant — Boti, el ayudante que está EN TODAS LAS SUPERFICIES.
-// Orb flotante (bottom-right) que abre un chat: saludo, sugerencias, Q&A.
-// Los primeros pasos viven en el OnboardingChecklist (minimalista, aparte).
-// Se monta en cada ruta para acompañar al usuario en todo momento.
+// GlobalAssistant — Boti, el asistente que está EN TODAS LAS SUPERFICIES.
+// · ABIERTO: drawer grande a la derecha (como livechat) con la CHECKLIST adentro
+//   (primeros pasos) + chat de Boti (saludo, comentarios, Q&A).
+// · CERRADO: orb (bottom-right) y, arriba, burbujas de comentarios proactivos
+//   ("Sigue completando tu agente", "Conecta un canal"…) que vas viendo.
+// El progreso vive en sessionStorage, así Boti sigue al usuario por todas las pantallas.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BRAND = '#304FFE', BRAND400 = '#6272FF', BRAND600 = '#2A46E8', BRAND700 = '#1E34C4', BRANDL = '#EEF1FF'
-const INK = '#0A0F1F', INK500 = '#5B6172', INK200 = '#E4E6EC', INK100 = '#EEF0F4', INK50 = '#F7F8FB'
+const BRAND = '#304FFE', BRAND400 = '#6272FF', BRAND600 = '#2A46E8', BRAND700 = '#1E34C4', BRANDL = '#EEF1FF', BRANDL2 = '#E4E9FF'
+const INK = '#0A0F1F', INK500 = '#5B6172', INK400 = '#8990A0', INK200 = '#E4E6EC', INK100 = '#EEF0F4', INK50 = '#F7F8FB'
 const OK = '#16A34A'
 const INTER_TIGHT = "'Inter Tight', 'Inter', system-ui, sans-serif"
 const FONT = "'Roboto', system-ui, sans-serif"
@@ -32,17 +34,30 @@ function Orb({ size = 36 }: { size?: number }) {
   )
 }
 
+// Nudges proactivos (burbujas arriba del orb) según el próximo paso
+const NUDGE: Record<StepId, string> = {
+  agente: 'Empecemos: crea tu primer agente 🚀',
+  canal: 'Buen avance. Ahora conecta un canal 🔌',
+  probar: 'Probá tu agente como un cliente 💬',
+  chats: 'Último paso: mira tus conversaciones 📥',
+}
+
 export default function GlobalAssistant() {
   const [open, setOpen] = useState(false)
+  const [done, setDone] = useState<StepId[]>(() => loadDone())
   const [thread, setThread] = useState<{ role: 'ai' | 'user'; text: string }[]>([])
   const [streaming, setStreaming] = useState(false)
   const [streamText, setStreamText] = useState('')
+  const [bubbleDismissed, setBubbleDismissed] = useState(false)
   const streamRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const greetedRef = useRef(false)
+  const prevDone = useRef(done.length)
 
   const onboardingActive = isOnboardingActive()
-  const allDone = loadDone().length === STEPS.length
+  const activeIdx = STEPS.findIndex(s => !done.includes(s.id))
+  const allDone = done.length === STEPS.length
+  const activeStep = activeIdx >= 0 ? STEPS[activeIdx] : null
 
   const streamWords = useCallback((text: string, onFinish?: () => void) => {
     const words = text.split(' '); let i = 0; let built = ''
@@ -51,7 +66,7 @@ export default function GlobalAssistant() {
       if (i >= words.length) { setStreaming(false); onFinish?.(); return }
       built += (i > 0 ? ' ' : '') + words[i++]
       setStreamText(built)
-      streamRef.current = setTimeout(tick, 28 + Math.random() * 24)
+      streamRef.current = setTimeout(tick, 26 + Math.random() * 22)
     }
     tick()
   }, [])
@@ -65,34 +80,47 @@ export default function GlobalAssistant() {
     })
   }, [streamWords])
 
-  // Auto-apertura una sola vez por sesión (saludo en la primera pantalla)
+  // Saludo inicial (se siembra una vez, así al abrir el drawer ves el historial)
   useEffect(() => {
-    let autoOpened = false
-    try { autoOpened = sessionStorage.getItem('bm_ga_autoopened') === '1' } catch { /* noop */ }
-    if (autoOpened) return
-    const t = setTimeout(() => {
-      setOpen(true)
-      try { sessionStorage.setItem('bm_ga_autoopened', '1') } catch { /* noop */ }
-    }, 1200)
-    return () => clearTimeout(t)
-  }, [])
-
-  // Saludo contextual al abrir por primera vez
-  useEffect(() => {
-    if (!open || greetedRef.current) return
+    if (greetedRef.current) return
     greetedRef.current = true
     const greeting = allDone
       ? '¡Listo! Completaste los primeros pasos. Estoy en cada pantalla por si necesitás una mano.'
       : onboardingActive
-      ? 'Seguimos con tu configuración. Tu próximo paso está acá abajo — cualquier duda, preguntame.'
-      : 'Hola, soy Boti, tu asistente. Estoy en todas las pantallas para ayudarte. ¿Seguimos con los primeros pasos?'
-    setTimeout(() => pushAI(greeting), 250)
+      ? 'Seguimos con tu configuración. Acá abajo tenés tus primeros pasos — el próximo está resaltado.'
+      : 'Hola, soy Boti, tu asistente. Te acompaño en todas las pantallas. Empecemos por tus primeros pasos 👇'
+    setTimeout(() => pushAI(greeting), 300)
     return () => { if (streamRef.current) clearTimeout(streamRef.current) }
-  }, [open]) // eslint-disable-line
+  }, []) // eslint-disable-line
+
+  // Al completar un paso: comentario en el chat + reaparece la burbuja
+  useEffect(() => {
+    if (done.length > prevDone.current) {
+      prevDone.current = done.length
+      const last = done[done.length - 1]
+      const msg = allDone
+        ? '¡Excelente! Completaste todos los pasos. Tu agente ya puede atender 🎉'
+        : COMMENT[last] ?? '¡Genial! Vamos por el siguiente.'
+      setTimeout(() => pushAI(msg), 250)
+      setBubbleDismissed(false)
+    }
+  }, [done, allDone, pushAI])
+
+  const goStep = (id: StepId) => {
+    const step = STEPS.find(s => s.id === id)!
+    setOnboardingActive(true)
+    if (step.href) {
+      const next = done.includes(id) ? done : [...done, id]
+      saveDone(next); setDone(next)
+      window.location.href = step.href
+    } else {
+      window.location.href = '/onboarding'
+    }
+  }
 
   const ask = (q: string) => {
     setThread(t => [...t, { role: 'user', text: q }])
-    setTimeout(() => pushAI(ANSWERS[q] ?? 'Buena pregunta. En el producto real te respondo con el contexto de tu cuenta; acá es una demo del acompañamiento.'), 320)
+    setTimeout(() => pushAI(ANSWERS[q] ?? 'Buena pregunta. En el producto real te respondo con el contexto de tu cuenta; acá es una demo del acompañamiento.'), 300)
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
   }
 
@@ -100,47 +128,95 @@ export default function GlobalAssistant() {
     ? ['¿Cómo mido los resultados?', '¿Puedo agregar otro canal?']
     : ['¿Qué es un agente de IA?', 'Dame un ejemplo']
 
+  const pct = Math.round((done.length / STEPS.length) * 100)
+
   return (
-    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12, fontFamily: FONT }}>
+    <>
+      {/* ══════ DRAWER (abierto) ══════════════════════════════════════════ */}
       {open && (
-        <div style={{
-          width: 372, maxWidth: 'calc(100vw - 48px)', maxHeight: 'min(620px, calc(100vh - 120px))',
-          background: '#fff', borderRadius: 18, border: `1px solid ${INK200}`,
-          boxShadow: '0 28px 70px -18px rgba(10,15,31,0.32)', overflow: 'hidden',
-          display: 'flex', flexDirection: 'column',
-          animation: `bmGaIn 320ms ${EASE} both`,
+        <div role="dialog" aria-label="Asistente de IA" style={{
+          position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 100000,
+          width: 412, maxWidth: '94vw', background: '#fff', borderLeft: `1px solid ${INK200}`,
+          boxShadow: '-16px 0 48px -16px rgba(10,15,31,0.30)', display: 'flex', flexDirection: 'column',
+          fontFamily: FONT, animation: `bmGaDrawer 300ms ${EASE} both`,
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px', borderBottom: `1px solid ${INK100}`, flexShrink: 0 }}>
-            <div style={{ animation: 'bmGaFloat 3.5s ease-in-out infinite' }}><Orb size={36} /></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderBottom: `1px solid ${INK100}`, flexShrink: 0 }}>
+            <div style={{ animation: 'bmGaFloat 3.5s ease-in-out infinite' }}><Orb size={40} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: INTER_TIGHT }}>Boti · Asistente de IA</div>
-              <div style={{ fontSize: 11, color: OK, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: INK, fontFamily: INTER_TIGHT }}>Boti · Asistente de IA</div>
+              <div style={{ fontSize: 11.5, color: OK, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 5, height: 5, borderRadius: 999, background: OK }} /> En línea · te acompaña
               </div>
             </div>
-            <button onClick={() => setOpen(false)} aria-label="Cerrar" style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: INK50, color: INK500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <MS name="close" size={18} color={INK500} />
+            <button onClick={() => setOpen(false)} aria-label="Cerrar" style={{ width: 34, height: 34, borderRadius: 999, border: 'none', background: INK50, color: INK500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MS name="close" size={20} color={INK500} />
             </button>
           </div>
 
-          {/* Scroll: chat de Boti (los pasos viven en el checklist minimalista) */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* ── CHECKLIST adentro del asistente ── */}
+            <div style={{ padding: '16px 18px' }}>
+              <div style={{ borderRadius: 14, border: `1px solid ${INK100}`, background: INK50, padding: '14px 14px 8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: INK, fontFamily: INTER_TIGHT }}>{allDone ? '¡Todo listo! 🎉' : 'Primeros pasos'}</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: INK500 }}>{done.length}/{STEPS.length}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
+                  <span style={{ fontSize: 14 }}>{allDone ? '🎉' : '👏'}</span>
+                  <div style={{ flex: 1, height: 6, borderRadius: 999, background: INK100, overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${BRAND}, ${BRAND400})`, transition: `width 500ms ${EASE}` }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: INK500, minWidth: 30, textAlign: 'right' }}>{pct}%</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {STEPS.map((step, i) => {
+                    const isDone = done.includes(step.id)
+                    const isActive = !allDone && i === activeIdx
+                    const clickable = isDone || isActive
+                    return (
+                      <button key={step.id} onClick={() => clickable && goStep(step.id)} disabled={!clickable} style={{
+                        display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+                        padding: '9px 9px', borderRadius: 10, border: 'none',
+                        background: isActive ? '#fff' : 'transparent',
+                        boxShadow: isActive ? `0 2px 10px -4px ${BRAND}40` : 'none',
+                        cursor: clickable ? 'pointer' : 'default', fontFamily: FONT, transition: `all 150ms ${EASE}`,
+                      }}
+                        onMouseEnter={e => { if (clickable && !isActive) e.currentTarget.style.background = '#fff' }}
+                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDone ? '#fff' : isActive ? BRAND : INK100, border: isDone ? `1.5px solid ${OK}` : 'none' }}>
+                          {isDone ? <MS name="check" size={16} color={OK} weight={700} /> : <MS name={step.icon} size={15} color={isActive ? '#fff' : INK400} fill={isActive ? 1 : 0} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: isDone ? INK400 : INK, textDecoration: isDone ? 'line-through' : 'none', textDecorationColor: INK200 }}>{step.title}</div>
+                          {isActive && <div style={{ fontSize: 11, color: BRAND600, fontWeight: 600, marginTop: 1, display: 'flex', alignItems: 'center', gap: 3 }}>{step.cta} <MS name="arrow_forward" size={12} color={BRAND600} /></div>}
+                        </div>
+                        {!clickable && <MS name="lock" size={14} color={INK400} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: INK100, margin: '0 18px' }} />
+
+            {/* ── Chat de Boti ── */}
+            <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 11 }}>
               {thread.map((m, i) => {
                 const isLastAI = i === thread.length - 1 && m.role === 'ai' && streaming
                 const text = isLastAI ? streamText : m.text
                 return (
                   <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', animation: `bmGaUp 260ms ${EASE} both` }}>
-                    {m.role === 'ai' && <div style={{ marginTop: 2 }}><Orb size={24} /></div>}
+                    {m.role === 'ai' && <div style={{ marginTop: 2 }}><Orb size={26} /></div>}
                     <div style={{
-                      maxWidth: '82%', padding: '9px 12px', fontSize: 13, lineHeight: 1.5,
-                      borderRadius: m.role === 'user' ? '13px 13px 4px 13px' : '4px 13px 13px 13px',
+                      maxWidth: '82%', padding: '10px 13px', fontSize: 13.5, lineHeight: 1.5,
+                      borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
                       background: m.role === 'user' ? BRAND : INK50,
                       color: m.role === 'user' ? '#fff' : INK,
                       border: m.role === 'user' ? 'none' : `1px solid ${INK100}`,
                     }}>
-                      {text}{isLastAI && <span style={{ display: 'inline-block', width: 5, height: 13, marginLeft: 2, background: BRAND, borderRadius: 2, animation: 'bmGaBlink 1s step-end infinite', verticalAlign: 'middle' }} />}
+                      {text}{isLastAI && <span style={{ display: 'inline-block', width: 5, height: 14, marginLeft: 2, background: BRAND, borderRadius: 2, animation: 'bmGaBlink 1s step-end infinite', verticalAlign: 'middle' }} />}
                     </div>
                   </div>
                 )
@@ -150,10 +226,10 @@ export default function GlobalAssistant() {
           </div>
 
           {/* Sugerencias + input */}
-          <div style={{ padding: '10px 16px 14px', borderTop: `1px solid ${INK100}`, flexShrink: 0 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 9 }}>
+          <div style={{ padding: '12px 18px 18px', borderTop: `1px solid ${INK100}`, flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
               {suggestions.map(s => (
-                <button key={s} onClick={() => ask(s)} style={{ padding: '5px 11px', borderRadius: 999, border: `1px solid ${INK200}`, background: '#fff', color: INK500, fontSize: 11.5, fontFamily: FONT, cursor: 'pointer', transition: `all 150ms ${EASE}` }}
+                <button key={s} onClick={() => ask(s)} style={{ padding: '6px 12px', borderRadius: 999, border: `1px solid ${INK200}`, background: '#fff', color: INK500, fontSize: 12, fontFamily: FONT, cursor: 'pointer', transition: `all 150ms ${EASE}` }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND; e.currentTarget.style.color = BRAND }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = INK200; e.currentTarget.style.color = INK500 }}>
                   {s}
@@ -165,24 +241,60 @@ export default function GlobalAssistant() {
         </div>
       )}
 
-      {/* Orb launcher — siempre visible */}
-      <button onClick={() => setOpen(o => !o)} title="Asistente de IA" style={{
-        position: 'relative', width: 58, height: 58, borderRadius: 999, border: 'none', cursor: 'pointer', padding: 0,
-        background: '#fff', boxShadow: '0 10px 28px -6px rgba(48,79,254,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        animation: open ? 'none' : 'bmGaPulse 2.6s ease-in-out infinite',
-      }}>
-        <Orb size={44} />
-      </button>
+      {/* ══════ CERRADO (orb + burbujas de comentarios arriba) ════════════ */}
+      {!open && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12, fontFamily: FONT }}>
+          {/* Burbuja proactiva */}
+          {!bubbleDismissed && (activeStep || allDone) && (
+            <div style={{
+              position: 'relative', maxWidth: 268, background: '#fff', borderRadius: '16px 16px 4px 16px',
+              border: `1px solid ${INK200}`, boxShadow: '0 14px 34px -12px rgba(10,15,31,0.24)',
+              padding: '12px 32px 12px 14px', animation: `bmGaBubble 360ms ${EASE} both`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                <Orb size={18} />
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: INK500 }}>Boti</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: INK }}>
+                {allDone ? '¡Tu agente ya puede atender! 🎉 Tocá para ver más.' : NUDGE[activeStep!.id]}
+              </p>
+              <button onClick={e => { e.stopPropagation(); setBubbleDismissed(true) }} aria-label="Descartar" style={{ position: 'absolute', top: 7, right: 7, width: 22, height: 22, borderRadius: 999, border: 'none', background: 'transparent', color: INK400, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MS name="close" size={15} color={INK400} />
+              </button>
+              {/* CTA: abrir y continuar */}
+              {!allDone && (
+                <button onClick={() => { setBubbleDismissed(false); setOpen(true) }} style={{ marginTop: 9, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 999, border: 'none', background: BRAND, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>
+                  {activeStep!.cta} <MS name="arrow_forward" size={13} color="#fff" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Orb launcher */}
+          <button onClick={() => setOpen(true)} title="Asistente de IA" style={{
+            position: 'relative', width: 58, height: 58, borderRadius: 999, border: 'none', cursor: 'pointer', padding: 0,
+            background: '#fff', boxShadow: '0 10px 28px -6px rgba(48,79,254,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'bmGaPulse 2.6s ease-in-out infinite',
+          }}>
+            <Orb size={44} />
+            {!allDone && (
+              <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999, background: BRAND, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                {STEPS.length - done.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       <style>{`
-        @keyframes bmGaIn { from { opacity: 0; transform: translateY(14px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } }
+        @keyframes bmGaDrawer { from { opacity: 0; transform: translateX(28px) } to { opacity: 1; transform: translateX(0) } }
+        @keyframes bmGaBubble { from { opacity: 0; transform: translateY(10px) scale(0.96) } to { opacity: 1; transform: translateY(0) scale(1) } }
         @keyframes bmGaUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes bmGaFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
         @keyframes bmGaBlink { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
         @keyframes bmGaPulse { 0%,100% { box-shadow: 0 10px 28px -6px rgba(48,79,254,0.45) } 50% { box-shadow: 0 10px 28px -6px rgba(48,79,254,0.45), 0 0 0 8px rgba(48,79,254,0.10) } }
       `}</style>
-    </div>
+    </>
   )
 }
 
@@ -190,10 +302,10 @@ function Input({ onSend }: { onSend: (q: string) => void }) {
   const [v, setV] = useState('')
   const send = () => { if (!v.trim()) return; onSend(v.trim()); setV('') }
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: INK50, border: `1px solid ${INK200}`, borderRadius: 12, padding: '4px 4px 4px 13px' }}>
-      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Pregúntale a Boti…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13, fontFamily: FONT, color: INK }} />
-      <button onClick={send} style={{ width: 32, height: 32, borderRadius: 9, border: 'none', background: BRAND, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <MS name="arrow_upward" size={17} color="#fff" />
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: INK50, border: `1px solid ${INK200}`, borderRadius: 12, padding: '4px 4px 4px 14px' }}>
+      <input value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="Pregúntale a Boti…" style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 13.5, fontFamily: FONT, color: INK }} />
+      <button onClick={send} style={{ width: 34, height: 34, borderRadius: 9, border: 'none', background: BRAND, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <MS name="arrow_upward" size={18} color="#fff" />
       </button>
     </div>
   )
