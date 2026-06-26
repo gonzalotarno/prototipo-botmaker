@@ -21,7 +21,7 @@ function fetchIconSvg(name: string, filled: boolean): Promise<string> {
   if (svgCache[key]) return Promise.resolve(svgCache[key])
   if (key in pendingFetches) return pendingFetches[key]
 
-  const url = `https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/${name}/default/24px.svg`
+  const url = `https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/${name}/default/24px.svg`
   pendingFetches[key] = fetch(url)
     .then(r => r.ok ? r.text() : '')
     .then(svg => { svgCache[key] = svg; delete pendingFetches[key]; return svg })
@@ -44,7 +44,7 @@ export default function Icon({ name, size = 20, color, style, filled }: IconProp
     // Fallback: font-based while loading
     return (
       <span
-        className="material-symbols-outlined"
+        className="material-symbols-rounded"
         style={{
           fontSize: size,
           color,

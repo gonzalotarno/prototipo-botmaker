@@ -7,9 +7,10 @@ import { color } from '../ds'
 
 interface Props {
   onToggleSidebar?: () => void
+  title?: string
 }
 
-export default function AgentsTopBar({ onToggleSidebar }: Props) {
+export default function AgentsTopBar({ onToggleSidebar, title = 'Agents' }: Props) {
   return (
     <header style={{ background: 'white', padding: '0 20px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, zIndex: 11, borderBottom: `1px solid ${color.borderSubtle}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -21,7 +22,7 @@ export default function AgentsTopBar({ onToggleSidebar }: Props) {
         >
           <Icon name="menu" size={18} />
         </button>
-        <span style={{ fontSize: 14, fontWeight: 600, color: color.grey900 }}>Agents</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: color.grey900 }}>{title}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <button
