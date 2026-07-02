@@ -24,6 +24,8 @@ import ChatsView, { ChatsDiferente, ChatsDisruptiva } from './livechat/ChatsView
 import GlobalAssistant from './components/GlobalAssistant'
 import AgentTemplates from './AgentTemplates'
 import IntegrationsShell from './integraciones/IntegrationsShell'
+import IntegrationsOptions from './integraciones/IntegrationsOptions'
+import WhatsAppOptionScreen from './integraciones/WhatsAppOptionScreen'
 
 // Hide "Send to Figma" browser extension button that gets injected into the page
 ;(() => {
@@ -167,7 +169,12 @@ function App() {
   if (path === '/bienvenida') return <><AgentesFirstTime /><BackToLandingButton /></>
   if (path === '/onboarding') return <Onboarding />
   if (path === '/crear-agente') return <><AgentTemplates /><GlobalAssistant /></>
-  if (path === '/integraciones' || path === '/integraciones/whatsapp') return <IntegrationsShell />
+  if (path === '/integraciones') return <IntegrationsShell leaf="WhatsApp"><IntegrationsOptions /></IntegrationsShell>
+  if (path === '/integraciones/whatsapp') return <IntegrationsShell leaf="WhatsApp"><WhatsAppOptionScreen variant={1} /></IntegrationsShell>
+  {
+    const m = path.match(/^\/integraciones\/opcion-(\d+)$/)
+    if (m) return <IntegrationsShell leaf="WhatsApp"><WhatsAppOptionScreen variant={Number(m[1])} /></IntegrationsShell>
+  }
   if (path === '/chats' || path === '/livechat') return <><ChatsView /><GlobalAssistant /></>
   if (path === '/chats-diferente') return <><ChatsDiferente /><GlobalAssistant /></>
   if (path === '/chats-disruptiva') return <><ChatsDisruptiva /><GlobalAssistant /></>
