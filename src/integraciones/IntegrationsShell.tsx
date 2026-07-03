@@ -41,7 +41,8 @@ export default function IntegrationsShell({ children, leaf = 'WhatsApp' }: Props
           </span>
         </nav>
 
-        {/* Quick options switcher */}
+        {/* Quick options switcher — solo en rutas /opcion-N (no en la página del CEO) */}
+        {path.startsWith('/integraciones/opcion-') && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: color.grey500 }}>Ver</span>
           <div style={{ display: 'flex', gap: 2, background: color.grey100, borderRadius: 100, padding: 3 }}>
@@ -60,6 +61,7 @@ export default function IntegrationsShell({ children, leaf = 'WhatsApp' }: Props
             })}
           </div>
         </div>
+        )}
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}

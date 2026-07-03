@@ -169,8 +169,8 @@ function App() {
   if (path === '/bienvenida') return <><AgentesFirstTime /><BackToLandingButton /></>
   if (path === '/onboarding') return <Onboarding />
   if (path === '/crear-agente') return <><AgentTemplates /><GlobalAssistant /></>
-  if (path === '/integraciones') return <IntegrationsShell leaf="WhatsApp"><IntegrationsOptions /></IntegrationsShell>
-  if (path === '/integraciones/whatsapp') return <IntegrationsShell leaf="WhatsApp"><WhatsAppOptionScreen variant={1} /></IntegrationsShell>
+  if (path === '/integraciones' || path === '/integraciones/whatsapp') return <IntegrationsShell leaf="WhatsApp"><WhatsAppOptionScreen variant={1} /></IntegrationsShell>
+  if (path === '/integraciones/opciones') return <IntegrationsShell leaf="WhatsApp"><IntegrationsOptions /></IntegrationsShell>
   {
     const m = path.match(/^\/integraciones\/opcion-(\d+)$/)
     if (m) return <IntegrationsShell leaf="WhatsApp"><WhatsAppOptionScreen variant={Number(m[1])} /></IntegrationsShell>
