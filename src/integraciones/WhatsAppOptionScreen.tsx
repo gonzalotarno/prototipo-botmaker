@@ -18,7 +18,7 @@ export default function WhatsAppOptionScreen({ variant }: { variant: number }) {
   return (
     <WhatsAppChannel
       alert={<WebChatDerivationAlert variant={variant} total={ACCOUNTS.length} migratingCount={migrating.length} onSetAll={setAll} />}
-      consent={{ migrating, onToggle: toggle }}
+      consent={{ migrating, onToggle: toggle, plain: variant !== 1 }}
     />
   )
 }

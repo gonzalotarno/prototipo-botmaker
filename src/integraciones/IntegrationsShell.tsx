@@ -46,7 +46,7 @@ export default function IntegrationsShell({ children, leaf = 'WhatsApp' }: Props
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: color.grey500 }}>Ver</span>
           <div style={{ display: 'flex', gap: 2, background: color.grey100, borderRadius: 100, padding: 3 }}>
-            {[1, 2, 3, 4, 5, 6, 7].map(n => {
+            {[1, 2].map(n => {
               const href = `/integraciones/opcion-${n}`
               const active = path === href
               return (

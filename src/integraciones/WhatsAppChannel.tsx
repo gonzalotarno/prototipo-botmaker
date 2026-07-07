@@ -18,6 +18,7 @@ const WARN_DARK = color.warningDark
 interface ConsentConfig {
   migrating: string[]
   onToggle: (id: string) => void
+  plain?: boolean // V2: sin caja, checkbox + link
 }
 
 interface Props {
@@ -140,13 +141,11 @@ function Checkbox({ checked }: { checked: boolean }) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 const BASE_COLUMNS = ['Perfil', 'Línea', 'WABA', 'Username', 'Estado', 'Calidad', 'Test de WhatsApp', 'QR', 'Link']
-const CENTERED = new Set(['QR', 'Link', 'Username', 'Test de WhatsApp'])
+const CENTERED = new Set(['QR', 'Link', 'Username', 'Test de WhatsApp', 'Derivar a WebChat'])
 
 export default function WhatsAppChannel({ alert, consent }: Props) {
-  // Insert the consent column right after "Calidad".
-  const columns = consent
-    ? [...BASE_COLUMNS.slice(0, 6), 'Derivar a WebChat', ...BASE_COLUMNS.slice(6)]
-    : BASE_COLUMNS
+  // Consent column goes at the far right (after Link).
+  const columns = consent ? [...BASE_COLUMNS, 'Derivar a WebChat'] : BASE_COLUMNS
 
   const td: React.CSSProperties = { padding: '8px 20px', verticalAlign: 'middle' }
 
@@ -270,36 +269,6 @@ export default function WhatsAppChannel({ alert, consent }: Props) {
                     {/* Calidad */}
                     <td style={td}><QualityCell quality={acc.quality} /></td>
 
-                    {/* Derivar a WebChat (Option 2) */}
-                    {consent && (
-                      <td style={td}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                          <button
-                            onClick={() => consent.onToggle(acc.id)}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: 'none', background: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 8 }}
-                            onMouseEnter={e => (e.currentTarget.style.background = color.grey100)}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                          >
-                            <Checkbox checked={migrating} />
-                            <span style={{ fontSize: 12, fontWeight: 600, color: migrating ? INFO : WARN_DARK, whiteSpace: 'nowrap' }}>
-                              {migrating ? 'Derivar' : 'Asume costo'}
-                            </span>
-                          </button>
-                          {migrating && (
-                            <button
-                              title="Probar WebChat"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 100, border: `1.5px solid ${INFO}`, background: '#fff', color: INFO, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                              onMouseEnter={e => (e.currentTarget.style.background = INFO_LIGHT)}
-                              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
-                            >
-                              <Icon name="play_circle" size={14} color={INFO} filled />
-                              Probar
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    )}
-
                     {/* Test de WhatsApp */}
                     <td style={{ ...td, textAlign: 'center' }}><TestButton /></td>
 
@@ -308,6 +277,38 @@ export default function WhatsAppChannel({ alert, consent }: Props) {
 
                     {/* Link */}
                     <td style={{ ...td, textAlign: 'center' }}><IconBtn name="link" tint={INFO} /></td>
+
+                    {/* Derivar a WebChat (Option 2) — al final */}
+                    {consent && (
+                      <td style={{ ...td, textAlign: 'center' }}>
+                        {consent.plain ? (
+                          /* V2 — sin caja: checkbox + link */
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+                            <button onClick={() => consent.onToggle(acc.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}>
+                              <Checkbox checked={migrating} />
+                              <span style={{ fontSize: 12, fontWeight: 600, color: migrating ? INFO : WARN_DARK, whiteSpace: 'nowrap' }}>
+                                {migrating ? 'Derivar' : 'Asume costo'}
+                              </span>
+                            </button>
+                            <button title="Vista previa de la conversación en el WebChat (Open Channel)" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, border: 'none', background: 'none', cursor: 'pointer', padding: 0, color: INFO, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              <Icon name="visibility" size={14} color={INFO} filled />
+                              Ver experiencia
+                            </button>
+                          </div>
+                        ) : (
+                          /* V1 — recuadro gris con el checkbox */
+                          <button
+                            onClick={() => consent.onToggle(acc.id)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: color.grey50, border: `1px solid ${color.grey200}`, cursor: 'pointer' }}
+                          >
+                            <Checkbox checked={migrating} />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: migrating ? INFO : WARN_DARK, whiteSpace: 'nowrap' }}>
+                              {migrating ? 'Derivación activa' : 'Derivación apagada'}
+                            </span>
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 )
               })}
