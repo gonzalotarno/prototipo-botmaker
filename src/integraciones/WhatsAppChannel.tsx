@@ -302,7 +302,7 @@ export default function WhatsAppChannel({ alert, consent }: Props) {
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: color.grey50, border: `1px solid ${color.grey200}`, cursor: 'pointer' }}
                           >
                             <Checkbox checked={migrating} />
-                            <span style={{ fontSize: 12, fontWeight: 600, color: migrating ? INFO : WARN_DARK, whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: migrating ? INFO : WARN_DARK, whiteSpace: 'nowrap', display: 'inline-block', width: 116, textAlign: 'left' }}>
                               {migrating ? 'Derivación activa' : 'Derivación apagada'}
                             </span>
                           </button>

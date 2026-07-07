@@ -16,6 +16,7 @@ const WARN_DARK = color.warningDark  // #9C6511
 
 const DATE = '1 de octubre de 2026'
 const HELP_URL = 'https://help.botmaker.com'
+const PRICES_URL = 'https://business.whatsapp.com/products/platform-pricing'
 
 interface Props {
   variant: number
@@ -50,7 +51,7 @@ function useModals(on: boolean, onSetAll: (all: boolean) => void) {
 
 // ── V1 — alert amarillo + card de derivación ──────────────────────────────────
 function V1({ on, onSetAll }: VP) {
-  const { modals, handleCheck, openPricing } = useModals(on, onSetAll)
+  const { modals, handleCheck } = useModals(on, onSetAll)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {modals}
@@ -62,9 +63,9 @@ function V1({ on, onSetAll }: VP) {
           <strong style={{ color: WARN_DARK }}>Nuevos precios de Meta.</strong>{' '}
           A partir del <strong>{DATE}</strong>, van a empezar a cobrar todos los mensajes enviados a los usuarios, incluyendo los que no son templates.
         </span>
-        <button onClick={openPricing} style={{ ...link(WARN_DARK), flexShrink: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
-          Ver nuevos precios<Icon name="chevron_right" size={15} color={WARN_DARK} />
-        </button>
+        <a href={PRICES_URL} target="_blank" rel="noreferrer" style={{ ...link(WARN_DARK), flexShrink: 0 }}>
+          Ver nuevos precios<Icon name="open_in_new" size={14} color={WARN_DARK} />
+        </a>
       </div>
 
       {/* Derivación a WebChat — blanco */}
